@@ -98,7 +98,7 @@ func logStackOnRecover(panicReason interface{}, w http.ResponseWriter) {
 	}
 	w.Header().Set("Content-Type", "application/json") //todo
 	w.WriteHeader(http.StatusInternalServerError)      //todo
-	w.Write(buffer.Bytes())                            //todo
+	_, _ = w.Write(buffer.Bytes())                     //todo
 }
 
 func serviceErrorHandler(serviceError restful.ServiceError, _ *restful.Request, resp *restful.Response) {
@@ -107,5 +107,5 @@ func serviceErrorHandler(serviceError restful.ServiceError, _ *restful.Request, 
 
 	resp.Header().Set("Content-Type", "application/json") //todo
 	resp.WriteHeader(http.StatusInternalServerError)      //todo
-	resp.Write([]byte(errText))                           //todo
+	_, _ = resp.Write([]byte(errText))                    //todo
 }

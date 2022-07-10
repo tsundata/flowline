@@ -27,7 +27,7 @@ func NewConfig() *Config {
 }
 
 //DefaultBuildHandlerChain set default filters
-func DefaultBuildHandlerChain(apiHandler http.Handler, c *Config) http.Handler {
+func DefaultBuildHandlerChain(apiHandler http.Handler, _ *Config) http.Handler {
 	handler := filters.WithCORS(apiHandler, nil, nil, nil, nil, "true")
 	return handler
 }
@@ -40,7 +40,7 @@ func installAPI(s *GenericAPIServer, c *Config) {
 	installAPIGroup(s, c)
 }
 
-func installAPIGroup(s *GenericAPIServer, c *Config) {
+func installAPIGroup(s *GenericAPIServer, _ *Config) {
 	ws := endpoints.NewWebService("apps", "v1")
 	endpoints.RegisterHandler("deployments", ws)
 	s.Handler.RestfulContainer.Add(ws)

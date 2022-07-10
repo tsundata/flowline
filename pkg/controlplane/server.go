@@ -33,7 +33,7 @@ func NewGenericAPIServer(name string, config *Config) *GenericAPIServer {
 	return s
 }
 
-func (g *GenericAPIServer) Run(stopCh <-chan struct{}) error {
+func (g *GenericAPIServer) Run(_ <-chan struct{}) error {
 	log.FLog.Info(fmt.Sprintf("apiserver addr %s", g.httpServer.Addr))
 	if err := g.httpServer.ListenAndServe(); err != nil {
 		return err

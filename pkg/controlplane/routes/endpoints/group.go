@@ -42,10 +42,10 @@ type Foo struct {
 func getHandler(req *restful.Request, res *restful.Response) {
 	namespace := req.PathParameter("namespace")
 	name := req.PathParameter("name")
-	res.WriteEntity(Foo{Namespace: namespace, Name: name})
+	_ = res.WriteEntity(Foo{Namespace: namespace, Name: name})
 }
 
 func postHandler(req *restful.Request, res *restful.Response) {
 	namespace := req.PathParameter("namespace")
-	res.WriteEntity(Foo{Namespace: namespace, Name: ""})
+	_ = res.WriteEntity(Foo{Namespace: namespace, Name: ""})
 }

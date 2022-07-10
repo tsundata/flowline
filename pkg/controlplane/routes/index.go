@@ -12,5 +12,5 @@ func (i Index) Install(mux *mux.Router) {
 }
 
 func (i Index) Index(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("apiserver"))
+	_, _ = w.Write([]byte("apiserver"))
 }
