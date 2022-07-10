@@ -3,6 +3,7 @@ package controlplane
 import (
 	"github.com/tsundata/flowline/pkg/controlplane/filters"
 	"github.com/tsundata/flowline/pkg/controlplane/routes"
+	"github.com/tsundata/flowline/pkg/controlplane/routes/endpoints"
 	"net/http"
 )
 
@@ -36,4 +37,11 @@ func installAPI(s *GenericAPIServer, c *Config) {
 	if c.EnableIndex {
 		routes.Index{}.Install(s.Handler.NonRestfulMux)
 	}
+	installAPIGroup(s, c)
+}
+
+func installAPIGroup(s *GenericAPIServer, c *Config) {
+	ws := endpoints.NewWebService("apps", "v1")
+	endpoints.RegisterHandler("deployments", ws)
+	s.Handler.RestfulContainer.Add(ws)
 }

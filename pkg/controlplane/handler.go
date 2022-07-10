@@ -60,6 +60,7 @@ type director struct {
 
 func (d director) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	path := req.URL.Path
+	log.FLog.Info(fmt.Sprintf("%s %s", req.Method, path))
 
 	for _, ws := range d.restfulContainer.RegisteredWebServices() {
 		switch {
