@@ -2,7 +2,7 @@ package controlplane
 
 import (
 	"github.com/tsundata/flowline/pkg/controlplane/controller"
-	"github.com/tsundata/flowline/pkg/util/log"
+	"github.com/tsundata/flowline/pkg/util/flog"
 )
 
 type Instance struct {
@@ -26,7 +26,7 @@ func (i *Instance) Run(stopCh <-chan struct{}) error {
 
 	<-stopCh
 
-	log.FLog.Info("apiserver is exiting")
+	flog.Info("apiserver is exiting")
 	return nil
 }
 

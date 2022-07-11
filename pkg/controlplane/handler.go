@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/emicklei/go-restful/v3"
 	"github.com/gorilla/mux"
-	"github.com/tsundata/flowline/pkg/util/log"
+	"github.com/tsundata/flowline/pkg/util/flog"
 	"net/http"
 	"runtime"
 	"strings"
@@ -60,7 +60,7 @@ type director struct {
 
 func (d director) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	path := req.URL.Path
-	log.FLog.Info(fmt.Sprintf("%s %s", req.Method, path))
+	flog.Infof("%s %s", req.Method, path)
 
 	for _, ws := range d.restfulContainer.RegisteredWebServices() {
 		switch {
@@ -90,7 +90,7 @@ func logStackOnRecover(panicReason interface{}, w http.ResponseWriter) {
 		}
 		buffer.WriteString(fmt.Sprintf("    %s:%d\r\n", file, line))
 	}
-	log.FLog.Error(errors.New(buffer.String()))
+	flog.Error(errors.New(buffer.String()))
 
 	headers := http.Header{}
 	if ct := w.Header().Get("Content-Type"); len(ct) > 0 {
@@ -103,7 +103,7 @@ func logStackOnRecover(panicReason interface{}, w http.ResponseWriter) {
 
 func serviceErrorHandler(serviceError restful.ServiceError, _ *restful.Request, resp *restful.Response) {
 	errText := fmt.Sprintf("error %d %s", serviceError.Code, serviceError.Message)
-	log.FLog.Error(errors.New(errText))
+	flog.Error(errors.New(errText))
 
 	resp.Header().Set("Content-Type", "application/json") //todo
 	resp.WriteHeader(http.StatusInternalServerError)      //todo

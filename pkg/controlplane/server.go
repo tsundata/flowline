@@ -2,7 +2,7 @@ package controlplane
 
 import (
 	"fmt"
-	"github.com/tsundata/flowline/pkg/util/log"
+	"github.com/tsundata/flowline/pkg/util/flog"
 	"net/http"
 	"time"
 )
@@ -34,7 +34,7 @@ func NewGenericAPIServer(name string, config *Config) *GenericAPIServer {
 }
 
 func (g *GenericAPIServer) Run(_ <-chan struct{}) error {
-	log.FLog.Info(fmt.Sprintf("apiserver addr %s", g.httpServer.Addr))
+	flog.Infof("apiserver addr %s", g.httpServer.Addr)
 	if err := g.httpServer.ListenAndServe(); err != nil {
 		return err
 	}

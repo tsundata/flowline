@@ -1,9 +1,7 @@
 package filters
 
 import (
-	"errors"
-	"fmt"
-	"github.com/tsundata/flowline/pkg/util/log"
+	"github.com/tsundata/flowline/pkg/util/flog"
 	"net/http"
 	"regexp"
 	"strings"
@@ -55,7 +53,7 @@ func WithCORS(handler http.Handler, allowedOriginPatterns []string, allowedMetho
 func allowedOriginRegexps(allowedOrigins []string) []*regexp.Regexp {
 	res, err := compileRegexps(allowedOrigins)
 	if err != nil {
-		log.FLog.Error(errors.New(fmt.Sprintf("Invalid CORS allowed origin, --cors-allowed-origins flag was set to %v - %v", strings.Join(allowedOrigins, ","), err)))
+		flog.Errorf("Invalid CORS allowed origin, --cors-allowed-origins flag was set to %v - %v", strings.Join(allowedOrigins, ","), err)
 	}
 	return res
 }

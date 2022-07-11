@@ -3,7 +3,7 @@ package app
 import (
 	"fmt"
 	"github.com/tsundata/flowline/pkg/controlplane"
-	"github.com/tsundata/flowline/pkg/util/log"
+	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/signal"
 	"github.com/tsundata/flowline/pkg/util/version"
 	"github.com/urfave/cli/v2"
@@ -60,7 +60,7 @@ func NewAPIServerCommand() *cli.App {
 }
 
 func Run(c *controlplane.Config, stopCh <-chan struct{}) error {
-	log.FLog.Info("apiserver running")
+	flog.Info("apiserver running")
 
 	server, err := CreateServerChain(c)
 	if err != nil {
