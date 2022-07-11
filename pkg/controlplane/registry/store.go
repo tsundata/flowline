@@ -3,8 +3,9 @@ package registry
 import (
 	"context"
 	"fmt"
+	"github.com/emicklei/go-restful/v3"
 	"github.com/tsundata/flowline/pkg/controlplane/api/meta"
-	"github.com/tsundata/flowline/pkg/controlplane/registry/generic"
+	"github.com/tsundata/flowline/pkg/controlplane/registry/options"
 	"github.com/tsundata/flowline/pkg/controlplane/registry/rest"
 	"github.com/tsundata/flowline/pkg/controlplane/runtime"
 	"github.com/tsundata/flowline/pkg/controlplane/runtime/schema"
@@ -137,7 +138,7 @@ func (e *Store) GetDeleteStrategy() rest.RESTDeleteStrategy {
 
 // CompleteWithOptions updates the store with the provided options and
 // defaults common fields.
-func (e *Store) CompleteWithOptions(options *generic.StoreOptions) error {
+func (e *Store) CompleteWithOptions(options *options.StoreOptions) error {
 	if e.DefaultQualifiedResource.Empty() {
 		return fmt.Errorf("store %#v must have a non-empty qualified resource", e)
 	}
@@ -224,4 +225,24 @@ func (e *Store) CompleteWithOptions(options *generic.StoreOptions) error {
 	}
 
 	return nil
+}
+
+func (e *Store) GetHandler(req *restful.Request, res *restful.Response) {
+	name := req.PathParameter("name")
+	_ = res.WriteEntity(fmt.Sprintf("get response %s %+v", name, e.New()))
+}
+
+func (e *Store) PostHandler(req *restful.Request, res *restful.Response) {
+	name := req.PathParameter("name")
+	_ = res.WriteEntity(fmt.Sprintf("post response %s", name))
+}
+
+func (e *Store) PutHandler(req *restful.Request, res *restful.Response) {
+	name := req.PathParameter("name")
+	_ = res.WriteEntity(fmt.Sprintf("put response %s", name))
+}
+
+func (e *Store) DeleteHandler(req *restful.Request, res *restful.Response) {
+	name := req.PathParameter("name")
+	_ = res.WriteEntity(fmt.Sprintf("delete response %s", name))
 }

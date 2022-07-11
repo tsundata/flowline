@@ -1,16 +1,16 @@
-package generic
+package options
 
 import (
-	"github.com/tsundata/flowline/pkg/controlplane/runtime"
 	"github.com/tsundata/flowline/pkg/controlplane/runtime/schema"
-	"github.com/tsundata/flowline/pkg/controlplane/storage"
+	"github.com/tsundata/flowline/pkg/controlplane/storage/config"
+	"github.com/tsundata/flowline/pkg/controlplane/storage/decorator"
 	"time"
 )
 
 // RESTOptions is set of resource-specific configuration options to generic registries.
 type RESTOptions struct {
-	StorageConfig *storage.ConfigForResource
-	Decorator     StorageDecorator
+	StorageConfig *config.ConfigForResource
+	Decorator     decorator.StorageDecorator
 
 	EnableGarbageCollection bool
 	DeleteCollectionWorkers int
@@ -31,14 +31,3 @@ type RESTOptionsGetter interface {
 type StoreOptions struct {
 	RESTOptions RESTOptionsGetter
 }
-
-// StorageDecorator is a function signature for producing a storage.Interface
-// and an associated DestroyFunc from given parameters.
-type StorageDecorator func(
-	config *storage.ConfigForResource,
-	resourcePrefix string,
-	keyFunc func(obj runtime.Object) (string, error),
-	newFunc func() runtime.Object,
-	newListFunc func() runtime.Object) (storage.Interface, DestroyFunc, error)
-
-type DestroyFunc func()

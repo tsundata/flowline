@@ -2,6 +2,8 @@ package controlplane
 
 import (
 	"fmt"
+	"github.com/tsundata/flowline/pkg/controlplane/registry/rest"
+	"github.com/tsundata/flowline/pkg/controlplane/registry/rest/dag"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"net/http"
 	"time"
@@ -9,16 +11,22 @@ import (
 
 type GenericAPIServer struct {
 	Handler    *APIServerHandler
+	Storage    map[string]rest.Storage
 	httpServer *http.Server
 }
 
 func NewGenericAPIServer(name string, config *Config) *GenericAPIServer {
+	storageMap := make(map[string]rest.Storage)
+	dagStorage, _ := dag.NewREST()
+	storageMap["dag"] = dagStorage // todo
+
 	handlerChainBuilder := func(handler http.Handler) http.Handler {
 		return config.BuildHandlerChainFunc(handler, config)
 	}
 	apiServerHandler := NewAPIServerHandler(name, handlerChainBuilder, nil)
 	s := &GenericAPIServer{
 		Handler: apiServerHandler,
+		Storage: storageMap,
 		httpServer: &http.Server{
 			Addr:           fmt.Sprintf("%s:%d", config.Host, config.Port),
 			Handler:        apiServerHandler.Director,
@@ -28,7 +36,10 @@ func NewGenericAPIServer(name string, config *Config) *GenericAPIServer {
 		},
 	}
 
-	installAPI(s, config)
+	err := installAPI(s, config)
+	if err != nil {
+		panic(err)
+	}
 
 	return s
 }

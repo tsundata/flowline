@@ -1,4 +1,4 @@
-package storage
+package config
 
 import (
 	"github.com/tsundata/flowline/pkg/controlplane/runtime"
