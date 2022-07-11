@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"github.com/tsundata/flowline/pkg/controlplane/api/meta"
+	"github.com/tsundata/flowline/pkg/controlplane/runtime/schema"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"io"
 )
@@ -30,7 +30,7 @@ type Identifier string
 type Encoder interface {
 	// Encode writes an object to a stream. Implementations may return errors if the versions are
 	// incompatible, or if no conversion is defined.
-	Encode(obj interface{}, w io.Writer) error
+	Encode(obj Object, w io.Writer) error
 	// Identifier returns an identifier of the encoder.
 	// Identifiers of two different encoders should be equal if and only if for every input
 	// object it will be encoded to the same representation by both of them.
@@ -56,7 +56,7 @@ type Decoder interface {
 	// guaranteed to be populated. The returned object is not guaranteed to match into. If defaults are
 	// provided, they are applied to the data by default. If no defaults or partial defaults are provided, the
 	// type of the into may be used to guide conversion decisions.
-	Decode(data []byte, defaults string, into interface{}) (interface{}, string, error)
+	Decode(data []byte, defaults *schema.GroupVersionKind, into Object) (Object, *schema.GroupVersionKind, error)
 }
 
 type base64Serializer struct {
@@ -88,11 +88,11 @@ func identifier(e Encoder) Identifier {
 	return Identifier(identifier)
 }
 
-func (s base64Serializer) Encode(obj interface{}, stream io.Writer) error {
+func (s base64Serializer) Encode(obj Object, stream io.Writer) error {
 	return s.doEncode(obj, stream)
 }
 
-func (s base64Serializer) doEncode(obj interface{}, stream io.Writer) error {
+func (s base64Serializer) doEncode(obj Object, stream io.Writer) error {
 	e := base64.NewEncoder(base64.StdEncoding, stream)
 	err := s.Encoder.Encode(obj, e)
 	_ = e.Close()
@@ -104,17 +104,17 @@ func (s base64Serializer) Identifier() Identifier {
 	return s.identifier
 }
 
-func (s base64Serializer) Decode(data []byte, defaults string, into interface{}) (interface{}, string, error) {
+func (s base64Serializer) Decode(data []byte, defaults *schema.GroupVersionKind, into Object) (Object, *schema.GroupVersionKind, error) {
 	out := make([]byte, base64.StdEncoding.DecodedLen(len(data)))
 	n, err := base64.StdEncoding.Decode(out, data)
 	if err != nil {
-		return nil, "", err
+		return nil, nil, err
 	}
 	return s.Decoder.Decode(out[:n], defaults, into)
 }
 
 // Encode is a convenience wrapper for encoding to a []byte from an Encoder
-func Encode(e Encoder, obj interface{}) ([]byte, error) {
+func Encode(e Encoder, obj Object) ([]byte, error) {
 	buf := &bytes.Buffer{}
 	if err := e.Encode(obj, buf); err != nil {
 		return nil, err
@@ -124,22 +124,21 @@ func Encode(e Encoder, obj interface{}) ([]byte, error) {
 
 // Decode is a convenience wrapper for decoding data into an Object.
 func Decode(d Decoder, data []byte) (interface{}, error) {
-	obj, _, err := d.Decode(data, "", nil)
+	obj, _, err := d.Decode(data, nil, nil)
 	return obj, err
 }
 
 type JsonCoder struct{}
 
-func (c JsonCoder) Decode(data []byte, _ string, _ interface{}) (interface{}, string, error) {
-	var obj *meta.Object
-	err := json.Unmarshal(data, &obj)
+func (c JsonCoder) Decode(data []byte, _ *schema.GroupVersionKind, into Object) (Object, *schema.GroupVersionKind, error) {
+	err := json.Unmarshal(data, &into)
 	if err != nil {
-		return nil, "", err
+		return nil, nil, err
 	}
-	return obj, "", nil
+	return into, nil, nil
 }
 
-func (c JsonCoder) Encode(obj interface{}, w io.Writer) error {
+func (c JsonCoder) Encode(obj Object, w io.Writer) error {
 	data, err := json.Marshal(obj)
 	if err != nil {
 		return err

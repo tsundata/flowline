@@ -10,6 +10,7 @@ import (
 	"github.com/tsundata/flowline/pkg/util/flog"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"path"
+	"reflect"
 	"strings"
 )
 
@@ -46,12 +47,12 @@ func newStore(c *clientv3.Client, codec runtime.Codec, prefix string, pagingEnab
 	}
 }
 
-func (s *store) Versioner() interface{} {
+func (s *store) Versioner() storage.Versioner {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *store) Create(ctx context.Context, key string, obj, out interface{}, ttl uint64) error {
+func (s *store) Create(ctx context.Context, key string, obj, out runtime.Object, ttl uint64) error {
 	if version, err := s.versioner.ObjectResourceVersion(obj); err == nil && version != 0 {
 		return errors.New("resourceVersion should not be set on objects to be created")
 	}
@@ -92,7 +93,7 @@ func (s *store) Create(ctx context.Context, key string, obj, out interface{}, tt
 	return nil
 }
 
-func (s *store) Delete(ctx context.Context, key string, out interface{}, preconditions interface{}, validateDeletion interface{}, cachedExistingObject interface{}) error {
+func (s *store) Delete(ctx context.Context, key string, out runtime.Object, preconditions interface{}, validateDeletion interface{}, cachedExistingObject runtime.Object) error {
 	key = path.Join(s.pathPrefix, key)
 	_, err := s.client.Delete(ctx, key) // todo
 	return err
@@ -109,7 +110,7 @@ func (s *store) Watch(ctx context.Context, key string, opts storage.ListOptions)
 	return nil, nil
 }
 
-func (s *store) Get(ctx context.Context, key string, opts storage.GetOptions, out interface{}) error {
+func (s *store) Get(ctx context.Context, key string, opts storage.GetOptions, out runtime.Object) error {
 	key = path.Join(s.pathPrefix, key)
 	// startTime := time.Now()
 	getResp, err := s.client.KV.Get(ctx, key)
@@ -128,10 +129,17 @@ func (s *store) Get(ctx context.Context, key string, opts storage.GetOptions, ou
 	return decode(s.codec, s.versioner, data, out, kv.ModRevision)
 }
 
-func (s *store) GetList(ctx context.Context, key string, opts storage.ListOptions, listObj interface{}) error {
+func (s *store) GetList(ctx context.Context, key string, opts storage.ListOptions, listObj runtime.Object) error {
 	recursive := opts.Recursive
 	pred := opts.Predicate
-
+	listPtr, err := meta.GetItemsPtr(listObj)
+	if err != nil {
+		return err
+	}
+	v, err := meta.EnforcePtr(listPtr)
+	if err != nil || v.Kind() != reflect.Slice {
+		return fmt.Errorf("need ptr to slice: %v", err)
+	}
 	key = path.Join(s.pathPrefix, key)
 
 	// For recursive lists, we need to make sure the key ended with "/" so that we only
@@ -150,7 +158,7 @@ func (s *store) GetList(ctx context.Context, key string, opts storage.ListOption
 	}
 	for _, kv := range getResp.Kvs {
 		data := kv.Value
-		if err := appendListItem(listObj, data, uint64(kv.ModRevision), pred, s.codec, s.versioner, nil); err != nil {
+		if err := appendListItem(v, data, uint64(kv.ModRevision), pred, s.codec, s.versioner, nil); err != nil {
 			return err
 		}
 	}
@@ -162,7 +170,7 @@ func (s *store) GetList(ctx context.Context, key string, opts storage.ListOption
 	return s.versioner.UpdateList(listObj, uint64(returnedRV), "", nil)
 }
 
-func (s *store) GuaranteedUpdate(ctx context.Context, key string, destination interface{}, ignoreNotFound bool, preconditions interface{}, tryUpdate interface{}, cachedExistingObject interface{}) error {
+func (s *store) GuaranteedUpdate(ctx context.Context, key string, destination runtime.Object, ignoreNotFound bool, preconditions interface{}, tryUpdate interface{}, cachedExistingObject runtime.Object) error {
 	key = path.Join(s.pathPrefix, key)
 
 	getResp, err := s.client.KV.Get(ctx, key)
@@ -235,8 +243,8 @@ func (s *store) ttlOpts(ctx context.Context, ttl int64) ([]clientv3.OpOption, er
 
 // decode decodes value of bytes into object. It will also set the object resource version to rev.
 // On success, objPtr would be set to the object.
-func decode(codec runtime.Codec, versioner storage.Versioner, value []byte, objPtr interface{}, rev int64) error {
-	_, _, err := codec.Decode(value, "", objPtr)
+func decode(codec runtime.Codec, versioner storage.Versioner, value []byte, objPtr runtime.Object, rev int64) error {
+	_, _, err := codec.Decode(value, nil, objPtr)
 	if err != nil {
 		return err
 	}
@@ -248,8 +256,8 @@ func decode(codec runtime.Codec, versioner storage.Versioner, value []byte, objP
 }
 
 // appendListItem decodes and appends the object (if it passes filter) to v, which must be a slice.
-func appendListItem(v interface{}, data []byte, rev uint64, _ storage.SelectionPredicate, codec runtime.Codec, versioner storage.Versioner, newItemFunc func() interface{}) error {
-	obj, _, err := codec.Decode(data, "", nil)
+func appendListItem(v reflect.Value, data []byte, rev uint64, _ storage.SelectionPredicate, codec runtime.Codec, versioner storage.Versioner, newItemFunc func() interface{}) error {
+	obj, _, err := codec.Decode(data, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -257,9 +265,7 @@ func appendListItem(v interface{}, data []byte, rev uint64, _ storage.SelectionP
 	if err := versioner.UpdateObject(obj, rev); err != nil {
 		flog.Errorf("failed to update object version: %v", err)
 	}
-	if l, ok := v.([]*meta.Object); ok {
-		l = append(l, obj.(*meta.Object)) // todo
-	}
+	v.Set(reflect.Append(v, reflect.ValueOf(obj).Elem())) // todo
 
 	return nil
 }

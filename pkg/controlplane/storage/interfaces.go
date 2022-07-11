@@ -1,18 +1,20 @@
 package storage
 
-import "context"
+import (
+	"context"
+	"github.com/tsundata/flowline/pkg/controlplane/runtime"
+)
 
 // Interface offers a common interface for object marshaling/unmarshaling operations and
 // hides all the storage-related operations behind it.
-// source: staging/src/k8s.io/apiserver/pkg/storage/interfaces.go
 type Interface interface {
-	// Versioner associated with this interface.
-	Versioner() interface{}
+	// Returns Versioner associated with this interface.
+	Versioner() Versioner
 
 	// Create adds a new object at a key unless it already exists. 'ttl' is time-to-live
 	// in seconds (0 means forever). If no error is returned and out is not nil, out will be
 	// set to the read value from database.
-	Create(ctx context.Context, key string, obj, out interface{}, ttl uint64) error
+	Create(ctx context.Context, key string, obj, out runtime.Object, ttl uint64) error
 
 	// Delete removes the specified key and returns the value that existed at that spot.
 	// If key didn't exist, it will return NotFound storage error.
@@ -20,8 +22,8 @@ type Interface interface {
 	// current version of the object to avoid read operation from storage to get it.
 	// However, the implementations have to retry in case suggestion is stale.
 	Delete(
-		ctx context.Context, key string, out interface{}, preconditions interface{},
-		validateDeletion interface{}, cachedExistingObject interface{}) error
+		ctx context.Context, key string, out runtime.Object, preconditions interface{},
+		validateDeletion interface{}, cachedExistingObject runtime.Object) error
 
 	// Watch begins watching the specified key. Events are decoded into API objects,
 	// and any items selected by 'p' are sent down to returned watch.Interface.
@@ -37,7 +39,7 @@ type Interface interface {
 	// Treats empty responses and nil response nodes exactly like a not found error.
 	// The returned contents may be delayed, but it is guaranteed that they will
 	// match 'opts.ResourceVersion' according 'opts.ResourceVersionMatch'.
-	Get(ctx context.Context, key string, opts GetOptions, objPtr interface{}) error
+	Get(ctx context.Context, key string, opts GetOptions, objPtr runtime.Object) error
 
 	// GetList unmarshalls objects found at key into a *List api object (an object
 	// that satisfies runtime.IsList definition).
@@ -45,7 +47,7 @@ type Interface interface {
 	// is true, 'key' is used as a prefix.
 	// The returned contents may be delayed, but it is guaranteed that they will
 	// match 'opts.ResourceVersion' according 'opts.ResourceVersionMatch'.
-	GetList(ctx context.Context, key string, opts ListOptions, listObj interface{}) error
+	GetList(ctx context.Context, key string, opts ListOptions, listObj runtime.Object) error
 
 	// GuaranteedUpdate keeps calling 'tryUpdate()' to update key 'key' (of type 'destination')
 	// retrying the update until success if there is index conflict.
@@ -66,7 +68,7 @@ type Interface interface {
 	// s := /* implementation of Interface */
 	// err := s.GuaranteedUpdate(
 	//     "myKey", &MyType{}, true, preconditions,
-	//     func(input interface{}, res ResponseMeta) (interface{}, *uint64, error) {
+	//     func(input runtime.Object, res ResponseMeta) (runtime.Object, *uint64, error) {
 	//       // Before each invocation of the user defined function, "input" is reset to
 	//       // current contents for "myKey" in database.
 	//       curr := input.(*MyType)  // Guaranteed to succeed.
@@ -80,8 +82,8 @@ type Interface interface {
 	//    }, cachedExistingObject
 	// )
 	GuaranteedUpdate(
-		ctx context.Context, key string, destination interface{}, ignoreNotFound bool,
-		preconditions interface{}, tryUpdate interface{}, cachedExistingObject interface{}) error
+		ctx context.Context, key string, destination runtime.Object, ignoreNotFound bool,
+		preconditions interface{}, tryUpdate interface{}, cachedExistingObject runtime.Object) error
 
 	// Count returns number of different entries under the key (generally being path prefix).
 	Count(key string) (int64, error)

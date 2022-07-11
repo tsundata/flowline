@@ -21,11 +21,11 @@ func TestEtcdStore(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	obj := &meta.Object{Value: "abc"}
+	obj := &meta.Object{Name: "abc"}
 	ctx := context.Background()
 	jsonCoder := runtime.JsonCoder{}
 	s := New(cli, runtime.NewBase64Serializer(jsonCoder, jsonCoder), "", false)
-	err = s.Create(ctx, "abc12", obj, obj, 10000)
+	err = s.Create(ctx, "test"+time.Now().String(), obj, obj, 10000)
 	if err != nil {
 		t.Fatal(err)
 	}
