@@ -1,4 +1,4 @@
-package dag
+package role
 
 import (
 	"github.com/tsundata/flowline/pkg/api/meta"
@@ -9,16 +9,16 @@ import (
 	"github.com/tsundata/flowline/pkg/util/flog"
 )
 
-type DagStorage struct {
+type RoleStorage struct {
 	REST *REST
 }
 
-func NewStorage(options *options.StoreOptions) (DagStorage, error) {
+func NewStorage(options *options.StoreOptions) (RoleStorage, error) {
 	r, err := NewREST(options)
 	if err != nil {
-		return DagStorage{}, err
+		return RoleStorage{}, err
 	}
-	return DagStorage{REST: r}, nil
+	return RoleStorage{REST: r}, nil
 }
 
 type REST struct {
@@ -27,9 +27,9 @@ type REST struct {
 
 func NewREST(options *options.StoreOptions) (*REST, error) {
 	store := &registry.Store{
-		NewFunc:                  func() runtime.Object { return &meta.Dag{} },
-		NewListFunc:              func() runtime.Object { return &meta.DagList{} },
-		DefaultQualifiedResource: rest.Resource("dag"),
+		NewFunc:                  func() runtime.Object { return &meta.Role{} },
+		NewListFunc:              func() runtime.Object { return &meta.RoleList{} },
+		DefaultQualifiedResource: rest.Resource("role"),
 
 		CreateStrategy:      Strategy,
 		UpdateStrategy:      Strategy,

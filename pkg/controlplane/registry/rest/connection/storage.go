@@ -1,4 +1,4 @@
-package dag
+package connection
 
 import (
 	"github.com/tsundata/flowline/pkg/api/meta"
@@ -9,16 +9,16 @@ import (
 	"github.com/tsundata/flowline/pkg/util/flog"
 )
 
-type DagStorage struct {
+type ConnectionStorage struct {
 	REST *REST
 }
 
-func NewStorage(options *options.StoreOptions) (DagStorage, error) {
+func NewStorage(options *options.StoreOptions) (ConnectionStorage, error) {
 	r, err := NewREST(options)
 	if err != nil {
-		return DagStorage{}, err
+		return ConnectionStorage{}, err
 	}
-	return DagStorage{REST: r}, nil
+	return ConnectionStorage{REST: r}, nil
 }
 
 type REST struct {
@@ -27,9 +27,9 @@ type REST struct {
 
 func NewREST(options *options.StoreOptions) (*REST, error) {
 	store := &registry.Store{
-		NewFunc:                  func() runtime.Object { return &meta.Dag{} },
-		NewListFunc:              func() runtime.Object { return &meta.DagList{} },
-		DefaultQualifiedResource: rest.Resource("dag"),
+		NewFunc:                  func() runtime.Object { return &meta.Connection{} },
+		NewListFunc:              func() runtime.Object { return &meta.ConnectionList{} },
+		DefaultQualifiedResource: rest.Resource("connection"),
 
 		CreateStrategy:      Strategy,
 		UpdateStrategy:      Strategy,

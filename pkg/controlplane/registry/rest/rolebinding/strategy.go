@@ -1,4 +1,4 @@
-package dag
+package rolebinding
 
 // deploymentStrategy implements behavior for Deployments.
 type strategy struct{}

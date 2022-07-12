@@ -1,4 +1,4 @@
-package dag
+package job
 
 // deploymentStrategy implements behavior for Deployments.
 type strategy struct{}
