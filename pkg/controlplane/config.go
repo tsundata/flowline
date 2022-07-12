@@ -1,6 +1,7 @@
 package controlplane
 
 import (
+	"fmt"
 	restfulspec "github.com/emicklei/go-restful-openapi/v2"
 	"github.com/emicklei/go-restful/v3"
 	"github.com/go-openapi/spec"
@@ -83,30 +84,36 @@ func registerResourceHandlers(resource string, storage rest.Storage, ws *restful
 	uidParam := ws.PathParameter("uid", "uid of the resource").DataType("string")
 
 	getRoute := ws.GET(resource+"/{uid}").To(storage.GetHandler).
-		Doc("Get resource").
-		Metadata(restfulspec.KeyOpenAPITags, tags)
+		Doc(fmt.Sprintf("Get %s resource", resource)).
+		Operation(resource+"GetHandler").
+		Metadata(restfulspec.KeyOpenAPITags, tags).
+		Returns(http.StatusOK, "OK", storage.New())
 	getRoute.Param(uidParam)
 	rs = append(rs, getRoute)
 
 	postRoute := ws.POST(resource).To(storage.CreateHandler).
-		Doc("Create resource").
+		Doc(fmt.Sprintf("Create %s resource", resource)).
+		Operation(resource+"CreateHandler").
 		Metadata(restfulspec.KeyOpenAPITags, tags)
 	rs = append(rs, postRoute)
 
 	putRoute := ws.PUT(resource+"/{uid}").To(storage.UpdateHandler).
-		Doc("Update resource").
+		Doc(fmt.Sprintf("Update %s resource", resource)).
+		Operation(resource+"UpdateHandler").
 		Metadata(restfulspec.KeyOpenAPITags, tags)
 	putRoute.Param(uidParam)
 	rs = append(rs, putRoute)
 
 	deleteRoute := ws.DELETE(resource+"/{uid}").To(storage.DeleteHandler).
-		Doc("Delete resource").
+		Doc(fmt.Sprintf("Delete %s resource", resource)).
+		Operation(resource+"DeleteHandler").
 		Metadata(restfulspec.KeyOpenAPITags, tags)
 	deleteRoute.Param(uidParam)
 	rs = append(rs, deleteRoute)
 
 	listRoute := ws.GET(resource+"/list").To(storage.ListHandler).
-		Doc("List resource").
+		Doc(fmt.Sprintf("List %s resource", resource)).
+		Operation(resource+"ListHandler").
 		Metadata(restfulspec.KeyOpenAPITags, tags)
 	rs = append(rs, listRoute)
 
