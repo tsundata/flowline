@@ -1,9 +1,9 @@
 package options
 
 import (
-	"github.com/tsundata/flowline/pkg/controlplane/runtime/schema"
 	"github.com/tsundata/flowline/pkg/controlplane/storage/config"
 	"github.com/tsundata/flowline/pkg/controlplane/storage/decorator"
+	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"time"
 )
 

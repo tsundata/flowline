@@ -3,7 +3,7 @@ package meta
 import (
 	"errors"
 	"fmt"
-	"github.com/tsundata/flowline/pkg/controlplane/runtime"
+	"github.com/tsundata/flowline/pkg/runtime"
 	"reflect"
 )
 

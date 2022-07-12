@@ -1,11 +1,11 @@
 package registry
 
 import (
-	"github.com/tsundata/flowline/pkg/controlplane/runtime"
 	"github.com/tsundata/flowline/pkg/controlplane/storage"
 	"github.com/tsundata/flowline/pkg/controlplane/storage/config"
 	"github.com/tsundata/flowline/pkg/controlplane/storage/decorator"
 	"github.com/tsundata/flowline/pkg/controlplane/storage/etcd"
+	"github.com/tsundata/flowline/pkg/runtime"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"sync"
 	"time"

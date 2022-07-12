@@ -23,14 +23,6 @@ type store struct {
 	leaseManager  *leaseManager
 }
 
-type objState struct {
-	obj   interface{}
-	meta  *storage.ResponseMeta
-	rev   int64
-	data  []byte
-	stale bool
-}
-
 func New(c *clientv3.Client, codec runtime.Codec, prefix string, pagingEnabled bool) storage.Interface {
 	return newStore(c, codec, prefix, pagingEnabled)
 }

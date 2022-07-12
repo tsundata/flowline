@@ -1,9 +1,9 @@
 package config
 
 import (
-	"github.com/tsundata/flowline/pkg/controlplane/runtime"
-	"github.com/tsundata/flowline/pkg/controlplane/runtime/schema"
 	"github.com/tsundata/flowline/pkg/controlplane/storage/etcd"
+	"github.com/tsundata/flowline/pkg/runtime"
+	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"time"
 )
 

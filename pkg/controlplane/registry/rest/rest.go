@@ -2,8 +2,8 @@ package rest
 
 import (
 	"github.com/emicklei/go-restful/v3"
-	"github.com/tsundata/flowline/pkg/controlplane/runtime"
-	"github.com/tsundata/flowline/pkg/controlplane/runtime/schema"
+	"github.com/tsundata/flowline/pkg/runtime"
+	"github.com/tsundata/flowline/pkg/runtime/schema"
 )
 
 // ResetFieldsStrategy is an optional interface that a storage object can
@@ -47,8 +47,8 @@ type Storage interface {
 
 //Handler route handler
 type Handler interface {
-	GetHandler(req *restful.Request, res *restful.Response)
-	PostHandler(req *restful.Request, res *restful.Response)
-	PutHandler(req *restful.Request, res *restful.Response)
-	DeleteHandler(req *restful.Request, res *restful.Response)
+	GetHandler(req *restful.Request, resp *restful.Response)
+	PostHandler(req *restful.Request, resp *restful.Response)
+	PutHandler(req *restful.Request, resp *restful.Response)
+	DeleteHandler(req *restful.Request, resp *restful.Response)
 }

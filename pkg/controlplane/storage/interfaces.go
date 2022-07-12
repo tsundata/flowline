@@ -2,7 +2,7 @@ package storage
 
 import (
 	"context"
-	"github.com/tsundata/flowline/pkg/controlplane/runtime"
+	"github.com/tsundata/flowline/pkg/runtime"
 )
 
 // Interface offers a common interface for object marshaling/unmarshaling operations and

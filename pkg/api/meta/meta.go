@@ -22,10 +22,7 @@ type TypeMeta struct {
 // users must create.
 type ObjectMeta struct {
 	Name string `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
-
-	SelfLink string `json:"selfLink,omitempty" protobuf:"bytes,4,opt,name=selfLink"`
-
-	UID string `json:"uid,omitempty" protobuf:"bytes,5,opt,name=uid,casttype=k8s.io/kubernetes/pkg/types.UID"`
+	UID  string `json:"uid,omitempty" protobuf:"bytes,5,opt,name=uid,casttype=k8s.io/kubernetes/pkg/types.UID"`
 
 	ResourceVersion string `json:"resourceVersion,omitempty" protobuf:"bytes,6,opt,name=resourceVersion"`
 	Generation      int64  `json:"generation,omitempty" protobuf:"varint,7,opt,name=generation"`
@@ -39,12 +36,77 @@ type ObjectMeta struct {
 	Finalizers []string `json:"finalizers,omitempty" patchStrategy:"merge" protobuf:"bytes,14,rep,name=finalizers"`
 }
 
+func (o ObjectMeta) GetObjectMeta() Object {
+	return o
+}
+
+func (o ObjectMeta) GetName() string {
+	return o.Name
+}
+
+func (o ObjectMeta) SetName(name string) {
+	o.Name = name
+}
+
+func (o ObjectMeta) GetUID() string {
+	return o.UID
+}
+
+func (o ObjectMeta) SetUID(uid string) {
+	o.UID = uid
+}
+
+func (o ObjectMeta) GetResourceVersion() string {
+	return o.ResourceVersion
+}
+
+func (o ObjectMeta) SetResourceVersion(version string) {
+	o.ResourceVersion = version
+}
+
+func (o ObjectMeta) GetGeneration() int64 {
+	return o.Generation
+}
+
+func (o ObjectMeta) SetGeneration(generation int64) {
+	o.Generation = generation
+}
+
+func (o ObjectMeta) GetCreationTimestamp() time.Time {
+	return o.CreationTimestamp
+}
+
+func (o ObjectMeta) SetCreationTimestamp(timestamp time.Time) {
+	o.CreationTimestamp = timestamp
+}
+
+func (o ObjectMeta) GetDeletionTimestamp() *time.Time {
+	return o.DeletionTimestamp
+}
+
+func (o ObjectMeta) SetDeletionTimestamp(timestamp *time.Time) {
+	o.DeletionTimestamp = timestamp
+}
+
+func (o ObjectMeta) GetDeletionGracePeriodSeconds() *int64 {
+	return o.DeletionGracePeriodSeconds
+}
+
+func (o ObjectMeta) SetDeletionGracePeriodSeconds(i *int64) {
+	o.DeletionGracePeriodSeconds = i
+}
+
+func (o ObjectMeta) GetLabels() map[string]string {
+	return o.Labels
+}
+
+func (o ObjectMeta) SetLabels(labels map[string]string) {
+	o.Labels = labels
+}
+
 // ListMeta describes metadata that synthetic resources must have, including lists and
 // various status objects. A resource may have only one of {ObjectMeta, ListMeta}.
 type ListMeta struct {
-	// Deprecated: selfLink is a legacy read-only field that is no longer populated by the system.
-	SelfLink string `json:"selfLink,omitempty" protobuf:"bytes,1,opt,name=selfLink"`
-
 	// String that identifies the server's internal version of this object that
 	// can be used by clients to determine when objects have changed.
 	// Value must be treated as opaque by clients and passed unmodified back to the server.
@@ -72,4 +134,32 @@ type ListMeta struct {
 	// should not rely on the remainingItemCount to be set or to be exact.
 	// +optional
 	RemainingItemCount *int64 `json:"remainingItemCount,omitempty" protobuf:"bytes,4,opt,name=remainingItemCount"`
+}
+
+func (l ListMeta) GetListMeta() List {
+	return l
+}
+
+func (l ListMeta) GetResourceVersion() string {
+	return l.ResourceVersion
+}
+
+func (l ListMeta) SetResourceVersion(version string) {
+	l.ResourceVersion = version
+}
+
+func (l ListMeta) GetContinue() string {
+	return l.Continue
+}
+
+func (l ListMeta) SetContinue(c string) {
+	l.Continue = c
+}
+
+func (l ListMeta) GetRemainingItemCount() *int64 {
+	return l.RemainingItemCount
+}
+
+func (l ListMeta) SetRemainingItemCount(c *int64) {
+	l.RemainingItemCount = c
 }

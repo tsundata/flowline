@@ -21,7 +21,7 @@ func (a APIObjectVersioner) UpdateObject(obj interface{}, resourceVersion uint64
 	if resourceVersion != 0 {
 		versionString = strconv.FormatUint(resourceVersion, 10)
 	}
-	accessor.ResourceVersion = versionString
+	accessor.SetResourceVersion(versionString)
 	return nil
 }
 
@@ -35,11 +35,9 @@ func (a APIObjectVersioner) UpdateList(obj interface{}, resourceVersion uint64, 
 		return err
 	}
 	versionString := strconv.FormatUint(resourceVersion, 10)
-	for i := range listAccessor {
-		listAccessor[i].ResourceVersion = versionString
-		listAccessor[i].Continue = nextKey
-		listAccessor[i].RemainingItemCount = count
-	}
+	listAccessor.SetResourceVersion(versionString)
+	listAccessor.SetContinue(nextKey)
+	listAccessor.SetRemainingItemCount(count)
 	return nil
 }
 
@@ -49,8 +47,7 @@ func (a APIObjectVersioner) PrepareObjectForStorage(obj interface{}) error {
 	if err != nil {
 		return err
 	}
-	accessor.ResourceVersion = ""
-	accessor.SelfLink = ""
+	accessor.SetResourceVersion("")
 	return nil
 }
 
@@ -60,7 +57,7 @@ func (a APIObjectVersioner) ObjectResourceVersion(obj interface{}) (uint64, erro
 	if err != nil {
 		return 0, err
 	}
-	version := accessor.ResourceVersion
+	version := accessor.GetResourceVersion()
 	if len(version) == 0 {
 		return 0, nil
 	}

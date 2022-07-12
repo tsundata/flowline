@@ -3,6 +3,7 @@ package dag
 import (
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/controlplane/registry"
+	"github.com/tsundata/flowline/pkg/controlplane/registry/options"
 	"github.com/tsundata/flowline/pkg/controlplane/registry/rest"
 	"github.com/tsundata/flowline/pkg/runtime"
 )
@@ -11,8 +12,8 @@ type DagStorage struct {
 	Dag *REST
 }
 
-func NewStorage() (DagStorage, error) {
-	dagRest, err := NewREST()
+func NewStorage(options *options.StoreOptions) (DagStorage, error) {
+	dagRest, err := NewREST(options)
 	if err != nil {
 		return DagStorage{}, err
 	}
@@ -23,7 +24,7 @@ type REST struct {
 	*registry.Store
 }
 
-func NewREST() (*REST, error) {
+func NewREST(options *options.StoreOptions) (*REST, error) {
 	store := &registry.Store{
 		NewFunc:                  func() runtime.Object { return &meta.Dag{} },
 		NewListFunc:              func() runtime.Object { return &meta.DagList{} },
@@ -33,6 +34,11 @@ func NewREST() (*REST, error) {
 		UpdateStrategy:      Strategy,
 		DeleteStrategy:      Strategy,
 		ResetFieldsStrategy: Strategy,
+	}
+
+	err := store.CompleteWithOptions(options)
+	if err != nil {
+		panic(err)
 	}
 
 	return &REST{store}, nil

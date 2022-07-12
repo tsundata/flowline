@@ -1,9 +1,9 @@
 package decorator
 
 import (
-	"github.com/tsundata/flowline/pkg/controlplane/runtime"
 	"github.com/tsundata/flowline/pkg/controlplane/storage"
 	"github.com/tsundata/flowline/pkg/controlplane/storage/config"
+	"github.com/tsundata/flowline/pkg/runtime"
 )
 
 // StorageDecorator is a function signature for producing a storage.Interface

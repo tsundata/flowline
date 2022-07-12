@@ -3,7 +3,6 @@ package registry
 import (
 	"context"
 	"fmt"
-	"github.com/emicklei/go-restful/v3"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/controlplane/registry/options"
 	"github.com/tsundata/flowline/pkg/controlplane/registry/rest"
@@ -172,7 +171,6 @@ func (e *Store) CompleteWithOptions(options *options.StoreOptions) error {
 
 	// Set the default behavior for storage key generation
 	if e.KeyRootFunc == nil && e.KeyFunc == nil {
-
 		e.KeyRootFunc = func(ctx context.Context) string {
 			return prefix
 		}
@@ -189,7 +187,7 @@ func (e *Store) CompleteWithOptions(options *options.StoreOptions) error {
 			return "", err
 		}
 
-		return e.KeyFunc(context.Background(), accessor.Name)
+		return e.KeyFunc(context.Background(), accessor.GetName())
 	}
 
 	if e.DeleteCollectionWorkers == 0 {
@@ -204,7 +202,7 @@ func (e *Store) CompleteWithOptions(options *options.StoreOptions) error {
 			if err != nil {
 				return "", err
 			}
-			return accessor.Name, nil
+			return accessor.GetName(), nil
 		}
 	}
 
@@ -225,24 +223,4 @@ func (e *Store) CompleteWithOptions(options *options.StoreOptions) error {
 	}
 
 	return nil
-}
-
-func (e *Store) GetHandler(req *restful.Request, res *restful.Response) {
-	name := req.PathParameter("name")
-	_ = res.WriteEntity(fmt.Sprintf("get response %s %+v", name, e.New()))
-}
-
-func (e *Store) PostHandler(req *restful.Request, res *restful.Response) {
-	name := req.PathParameter("name")
-	_ = res.WriteEntity(fmt.Sprintf("post response %s", name))
-}
-
-func (e *Store) PutHandler(req *restful.Request, res *restful.Response) {
-	name := req.PathParameter("name")
-	_ = res.WriteEntity(fmt.Sprintf("put response %s", name))
-}
-
-func (e *Store) DeleteHandler(req *restful.Request, res *restful.Response) {
-	name := req.PathParameter("name")
-	_ = res.WriteEntity(fmt.Sprintf("delete response %s", name))
 }

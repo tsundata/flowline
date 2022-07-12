@@ -109,3 +109,7 @@ func serviceErrorHandler(serviceError restful.ServiceError, _ *restful.Request, 
 	resp.WriteHeader(http.StatusInternalServerError)      //todo
 	_, _ = resp.Write([]byte(errText))                    //todo
 }
+
+func (a *APIServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	a.FullHandlerChain.ServeHTTP(w, r)
+}
