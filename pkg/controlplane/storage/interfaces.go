@@ -131,6 +131,9 @@ type ListOptions struct {
 	// ProgressNotify determines whether storage-originated bookmark (progress notify) events should
 	// be delivered to the users. The option is ignored for non-watch requests.
 	ProgressNotify bool
+
+	Limit    int64
+	Continue string
 }
 
 // Versioner abstracts setting and retrieving metadata fields from database response

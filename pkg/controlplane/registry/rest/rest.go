@@ -1,9 +1,13 @@
 package rest
 
 import (
+	"context"
 	"github.com/emicklei/go-restful/v3"
+	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
+	"github.com/tsundata/flowline/pkg/util/uid"
+	"time"
 )
 
 // ResetFieldsStrategy is an optional interface that a storage object can
@@ -26,6 +30,18 @@ func Kind(kind string) schema.GroupKind {
 // Resource takes an unqualified resource and returns a Group qualified GroupResource
 func Resource(resource string) schema.GroupResource {
 	return SchemeGroupVersion.WithResource(resource).GroupResource()
+}
+
+// ValidateObjectFunc is a function to act on a given object. An error may be returned
+// if the hook cannot be completed. A ValidateObjectFunc may NOT transform the provided
+// object.
+type ValidateObjectFunc func(ctx context.Context, obj runtime.Object) error
+
+// FillObjectMetaSystemFields populates fields that are managed by the system on ObjectMeta.
+func FillObjectMetaSystemFields(o meta.Object) {
+	now := time.Now()
+	o.SetCreationTimestamp(&now)
+	o.SetUID(uid.New())
 }
 
 // Storage is a generic interface for RESTful storage services.

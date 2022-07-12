@@ -1,6 +1,8 @@
 package meta
 
-import "time"
+import (
+	"time"
+)
 
 // TypeMeta describes an individual object in an API response or request
 // with strings representing the type of the object and its API schema version.
@@ -27,7 +29,7 @@ type ObjectMeta struct {
 	ResourceVersion string `json:"resourceVersion,omitempty" protobuf:"bytes,6,opt,name=resourceVersion"`
 	Generation      int64  `json:"generation,omitempty" protobuf:"varint,7,opt,name=generation"`
 
-	CreationTimestamp          time.Time  `json:"creationTimestamp,omitempty" protobuf:"bytes,8,opt,name=creationTimestamp"`
+	CreationTimestamp          *time.Time `json:"creationTimestamp,omitempty" protobuf:"bytes,8,opt,name=creationTimestamp"`
 	DeletionTimestamp          *time.Time `json:"deletionTimestamp,omitempty" protobuf:"bytes,9,opt,name=deletionTimestamp"`
 	DeletionGracePeriodSeconds *int64     `json:"deletionGracePeriodSeconds,omitempty" protobuf:"varint,10,opt,name=deletionGracePeriodSeconds"`
 
@@ -36,71 +38,71 @@ type ObjectMeta struct {
 	Finalizers []string `json:"finalizers,omitempty" patchStrategy:"merge" protobuf:"bytes,14,rep,name=finalizers"`
 }
 
-func (o ObjectMeta) GetObjectMeta() Object {
+func (o *ObjectMeta) GetObjectMeta() Object {
 	return o
 }
 
-func (o ObjectMeta) GetName() string {
+func (o *ObjectMeta) GetName() string {
 	return o.Name
 }
 
-func (o ObjectMeta) SetName(name string) {
+func (o *ObjectMeta) SetName(name string) {
 	o.Name = name
 }
 
-func (o ObjectMeta) GetUID() string {
+func (o *ObjectMeta) GetUID() string {
 	return o.UID
 }
 
-func (o ObjectMeta) SetUID(uid string) {
+func (o *ObjectMeta) SetUID(uid string) {
 	o.UID = uid
 }
 
-func (o ObjectMeta) GetResourceVersion() string {
+func (o *ObjectMeta) GetResourceVersion() string {
 	return o.ResourceVersion
 }
 
-func (o ObjectMeta) SetResourceVersion(version string) {
+func (o *ObjectMeta) SetResourceVersion(version string) {
 	o.ResourceVersion = version
 }
 
-func (o ObjectMeta) GetGeneration() int64 {
+func (o *ObjectMeta) GetGeneration() int64 {
 	return o.Generation
 }
 
-func (o ObjectMeta) SetGeneration(generation int64) {
+func (o *ObjectMeta) SetGeneration(generation int64) {
 	o.Generation = generation
 }
 
-func (o ObjectMeta) GetCreationTimestamp() time.Time {
+func (o *ObjectMeta) GetCreationTimestamp() *time.Time {
 	return o.CreationTimestamp
 }
 
-func (o ObjectMeta) SetCreationTimestamp(timestamp time.Time) {
+func (o *ObjectMeta) SetCreationTimestamp(timestamp *time.Time) {
 	o.CreationTimestamp = timestamp
 }
 
-func (o ObjectMeta) GetDeletionTimestamp() *time.Time {
+func (o *ObjectMeta) GetDeletionTimestamp() *time.Time {
 	return o.DeletionTimestamp
 }
 
-func (o ObjectMeta) SetDeletionTimestamp(timestamp *time.Time) {
+func (o *ObjectMeta) SetDeletionTimestamp(timestamp *time.Time) {
 	o.DeletionTimestamp = timestamp
 }
 
-func (o ObjectMeta) GetDeletionGracePeriodSeconds() *int64 {
+func (o *ObjectMeta) GetDeletionGracePeriodSeconds() *int64 {
 	return o.DeletionGracePeriodSeconds
 }
 
-func (o ObjectMeta) SetDeletionGracePeriodSeconds(i *int64) {
+func (o *ObjectMeta) SetDeletionGracePeriodSeconds(i *int64) {
 	o.DeletionGracePeriodSeconds = i
 }
 
-func (o ObjectMeta) GetLabels() map[string]string {
+func (o *ObjectMeta) GetLabels() map[string]string {
 	return o.Labels
 }
 
-func (o ObjectMeta) SetLabels(labels map[string]string) {
+func (o *ObjectMeta) SetLabels(labels map[string]string) {
 	o.Labels = labels
 }
 
@@ -136,30 +138,30 @@ type ListMeta struct {
 	RemainingItemCount *int64 `json:"remainingItemCount,omitempty" protobuf:"bytes,4,opt,name=remainingItemCount"`
 }
 
-func (l ListMeta) GetListMeta() List {
+func (l *ListMeta) GetListMeta() List {
 	return l
 }
 
-func (l ListMeta) GetResourceVersion() string {
+func (l *ListMeta) GetResourceVersion() string {
 	return l.ResourceVersion
 }
 
-func (l ListMeta) SetResourceVersion(version string) {
+func (l *ListMeta) SetResourceVersion(version string) {
 	l.ResourceVersion = version
 }
 
-func (l ListMeta) GetContinue() string {
+func (l *ListMeta) GetContinue() string {
 	return l.Continue
 }
 
-func (l ListMeta) SetContinue(c string) {
+func (l *ListMeta) SetContinue(c string) {
 	l.Continue = c
 }
 
-func (l ListMeta) GetRemainingItemCount() *int64 {
+func (l *ListMeta) GetRemainingItemCount() *int64 {
 	return l.RemainingItemCount
 }
 
-func (l ListMeta) SetRemainingItemCount(c *int64) {
+func (l *ListMeta) SetRemainingItemCount(c *int64) {
 	l.RemainingItemCount = c
 }

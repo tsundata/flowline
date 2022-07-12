@@ -80,12 +80,12 @@ func registerResourceHandlers(resource string, storage rest.Storage, ws *restful
 	tags := []string{resource}
 	var rs []*restful.RouteBuilder
 
-	nameParam := ws.PathParameter("name", "name of the resource").DataType("string")
+	uidParam := ws.PathParameter("uid", "uid of the resource").DataType("string")
 
-	getRoute := ws.GET(resource+"/{name}").To(storage.GetHandler).
+	getRoute := ws.GET(resource+"/{uid}").To(storage.GetHandler).
 		Doc("Get resource").
 		Metadata(restfulspec.KeyOpenAPITags, tags)
-	getRoute.Param(nameParam)
+	getRoute.Param(uidParam)
 	rs = append(rs, getRoute)
 
 	postRoute := ws.POST(resource).To(storage.PostHandler).
@@ -93,16 +93,16 @@ func registerResourceHandlers(resource string, storage rest.Storage, ws *restful
 		Metadata(restfulspec.KeyOpenAPITags, tags)
 	rs = append(rs, postRoute)
 
-	putRoute := ws.PUT(resource+"/{name}").To(storage.PutHandler).
+	putRoute := ws.PUT(resource+"/{uid}").To(storage.PutHandler).
 		Doc("Update resource").
 		Metadata(restfulspec.KeyOpenAPITags, tags)
-	putRoute.Param(nameParam)
+	putRoute.Param(uidParam)
 	rs = append(rs, putRoute)
 
-	deleteRoute := ws.DELETE(resource+"/{name}").To(storage.DeleteHandler).
+	deleteRoute := ws.DELETE(resource+"/{uid}").To(storage.DeleteHandler).
 		Doc("Delete resource").
 		Metadata(restfulspec.KeyOpenAPITags, tags)
-	deleteRoute.Param(nameParam)
+	deleteRoute.Param(uidParam)
 	rs = append(rs, deleteRoute)
 
 	for _, route := range rs {

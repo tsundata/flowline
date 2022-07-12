@@ -2,15 +2,20 @@ package registry
 
 import (
 	"context"
-	"fmt"
 	"github.com/emicklei/go-restful/v3"
+	"github.com/tsundata/flowline/pkg/controlplane/storage"
 	"net/http"
-	"time"
 )
 
 func (e *Store) GetHandler(req *restful.Request, resp *restful.Response) {
-	name := req.PathParameter("name")
-	_ = resp.WriteEntity(fmt.Sprintf("get response %s %+v", name, e.New()))
+	ctx := context.Background()
+	uid := req.PathParameter("uid")
+	out, err := e.Get(ctx, uid, &storage.GetOptions{}) // todo resourceVersion
+	if err != nil {
+		_ = resp.WriteError(http.StatusNotFound, err)
+		return
+	}
+	_ = resp.WriteEntity(out)
 }
 
 func (e *Store) PostHandler(req *restful.Request, resp *restful.Response) {
@@ -18,25 +23,41 @@ func (e *Store) PostHandler(req *restful.Request, resp *restful.Response) {
 	obj := e.New()
 	err := req.ReadEntity(&obj)
 	if err != nil {
-		resp.WriteError(http.StatusInternalServerError, err)
+		_ = resp.WriteError(http.StatusInternalServerError, err)
 		return
 	}
-	//key, err := e.KeyFunc(ctx, "dag")
-	//if err != nil {
-	//	resp.WriteError(http.StatusInternalServerError, err)
-	//	return
-	//}
-	key := e.KeyRootFunc(ctx)
-	e.Storage.Create(ctx, key+time.Now().String(), obj, obj, 0, false)
-	_ = resp.WriteEntity(obj)
+	out, err := e.Create(ctx, obj, nil, nil)
+	if err != nil {
+		_ = resp.WriteError(http.StatusInternalServerError, err)
+		return
+	}
+	_ = resp.WriteEntity(out)
 }
 
 func (e *Store) PutHandler(req *restful.Request, resp *restful.Response) {
-	name := req.PathParameter("name")
-	_ = resp.WriteEntity(fmt.Sprintf("put response %s", name))
+	uid := req.PathParameter("uid")
+	ctx := context.Background()
+	obj := e.New()
+	err := req.ReadEntity(&obj)
+	if err != nil {
+		_ = resp.WriteError(http.StatusInternalServerError, err)
+		return
+	}
+	out, _, err := e.Update(ctx, uid, obj, nil, nil, true, nil)
+	if err != nil {
+		_ = resp.WriteError(http.StatusInternalServerError, err)
+		return
+	}
+	_ = resp.WriteEntity(out)
 }
 
 func (e *Store) DeleteHandler(req *restful.Request, resp *restful.Response) {
-	name := req.PathParameter("name")
-	_ = resp.WriteEntity(fmt.Sprintf("delete response %s", name))
+	uid := req.PathParameter("uid")
+	ctx := context.Background()
+	out, _, err := e.Delete(ctx, uid, nil, nil)
+	if err != nil {
+		_ = resp.WriteError(http.StatusInternalServerError, err)
+		return
+	}
+	_ = resp.WriteEntity(out)
 }

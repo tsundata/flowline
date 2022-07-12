@@ -2,10 +2,12 @@ package registry
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/controlplane/registry/options"
 	"github.com/tsundata/flowline/pkg/controlplane/registry/rest"
+	"github.com/tsundata/flowline/pkg/controlplane/storage"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"strings"
@@ -43,8 +45,8 @@ type Store struct {
 	// KeyFunc and KeyRootFunc must be supplied together or not at all.
 	KeyFunc func(ctx context.Context, name string) (string, error)
 
-	// ObjectNameFunc returns the name of an object or an error.
-	ObjectNameFunc func(obj runtime.Object) (string, error)
+	// ObjectUIDFunc returns the uid of an object or an error.
+	ObjectUIDFunc func(obj runtime.Object) (string, error)
 
 	// TTLFunc returns the TTL (time to live) that objects should be persisted
 	// with. The existing parameter is the current TTL or the default for this
@@ -175,7 +177,7 @@ func (e *Store) CompleteWithOptions(options *options.StoreOptions) error {
 			return prefix
 		}
 		e.KeyFunc = func(ctx context.Context, name string) (string, error) {
-			return "", fmt.Errorf("NoNamespaceKeyFunc %s %s", prefix, name)
+			return NoNamespaceKeyFunc(ctx, prefix, name)
 		}
 	}
 
@@ -196,13 +198,13 @@ func (e *Store) CompleteWithOptions(options *options.StoreOptions) error {
 
 	e.EnableGarbageCollection = opts.EnableGarbageCollection
 
-	if e.ObjectNameFunc == nil {
-		e.ObjectNameFunc = func(obj runtime.Object) (string, error) {
+	if e.ObjectUIDFunc == nil {
+		e.ObjectUIDFunc = func(obj runtime.Object) (string, error) {
 			accessor, err := meta.Accessor(obj)
 			if err != nil {
 				return "", err
 			}
-			return accessor.GetName(), nil
+			return accessor.GetUID(), nil
 		}
 	}
 
@@ -223,4 +225,168 @@ func (e *Store) CompleteWithOptions(options *options.StoreOptions) error {
 	}
 
 	return nil
+}
+
+func (e *Store) Create(ctx context.Context, obj runtime.Object, createValidation rest.ValidateObjectFunc, options interface{}) (runtime.Object, error) {
+	if objectMeta, err := meta.Accessor(obj); err != nil {
+		return nil, err
+	} else {
+		rest.FillObjectMetaSystemFields(objectMeta)
+	}
+
+	uid, err := e.ObjectUIDFunc(obj)
+	if err != nil {
+		return nil, err
+	}
+	key, err := e.KeyFunc(ctx, uid)
+	if err != nil {
+		return nil, err
+	}
+	ttl, err := e.calculateTTL(obj, 0, false)
+	if err != nil {
+		return nil, err
+	}
+	out := e.NewFunc()
+	if err = e.Storage.Create(ctx, key, obj, out, ttl, false); err != nil {
+		return nil, err
+	}
+	if e.Decorator != nil {
+		e.Decorator(out)
+	}
+	return out, nil
+}
+
+func (e *Store) Update(ctx context.Context, name string, objInfo interface{}, createValidation rest.ValidateObjectFunc, updateValidation interface{}, forceAllowCreate bool, options interface{}) (runtime.Object, bool, error) {
+	key, err := e.KeyFunc(ctx, name)
+	if err != nil {
+		return nil, false, err
+	}
+
+	out := e.NewFunc()
+	err = e.Storage.GuaranteedUpdate(ctx, key, out, true, nil, nil, false, nil)
+	if err != nil {
+		return nil, false, err
+	}
+	if e.Decorator != nil {
+		e.Decorator(out)
+	}
+	return out, false, nil
+}
+
+func (e *Store) Get(ctx context.Context, name string, options *storage.GetOptions) (runtime.Object, error) {
+	obj := e.NewFunc()
+	key, err := e.KeyFunc(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	if err = e.Storage.Get(ctx, key, storage.GetOptions{ResourceVersion: options.ResourceVersion}, obj); err != nil {
+		return nil, err
+	}
+	if e.Decorator != nil {
+		e.Decorator(obj)
+	}
+	return obj, nil
+}
+
+func (e *Store) Delete(ctx context.Context, name string, deleteValidation rest.ValidateObjectFunc, options interface{}) (runtime.Object, bool, error) {
+	key, err := e.KeyFunc(ctx, name)
+	if err != nil {
+		return nil, false, err
+	}
+	obj := e.NewFunc()
+	if err = e.Storage.Get(ctx, key, storage.GetOptions{}, obj); err != nil {
+		return nil, false, fmt.Errorf("InterpretDeleteError %s", err)
+	}
+
+	out := e.NewFunc()
+	if err = e.Storage.Delete(ctx, key, out, nil, nil, false, nil); err != nil {
+		return nil, false, err
+	}
+	return out, true, nil
+}
+
+// List returns a list of items matching labels and field according to the
+// store's PredicateFunc.
+func (e *Store) List(ctx context.Context, options *storage.ListOptions) (runtime.Object, error) {
+	out, err := e.ListPredicate(ctx, storage.SelectionPredicate{}, options)
+	if err != nil {
+		return nil, err
+	}
+	if e.Decorator != nil {
+		e.Decorator(out)
+	}
+	return out, nil
+}
+
+// ListPredicate returns a list of all the items matching the given
+// SelectionPredicate.
+func (e *Store) ListPredicate(ctx context.Context, p storage.SelectionPredicate, options *storage.ListOptions) (runtime.Object, error) {
+	p.Limit = options.Limit
+	p.Continue = options.Continue
+	list := e.NewListFunc()
+	storageOpts := storage.ListOptions{
+		ResourceVersion:      options.ResourceVersion,
+		ResourceVersionMatch: options.ResourceVersionMatch,
+		Predicate:            p,
+		Recursive:            true,
+	}
+	err := e.Storage.GetList(ctx, e.KeyRootFunc(ctx), storageOpts, list)
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
+// calculateTTL is a helper for retrieving the updated TTL for an object or
+// returning an error if the TTL cannot be calculated. The defaultTTL is
+// changed to 1 if less than zero. Zero means no TTL, not expire immediately.
+func (e *Store) calculateTTL(obj runtime.Object, defaultTTL int64, update bool) (ttl uint64, err error) {
+	// etcd may return a negative TTL for a node if the expiration has not
+	// occurred due to server lag - we will ensure that the value is at least
+	// set.
+	if defaultTTL < 0 {
+		defaultTTL = 1
+	}
+	ttl = uint64(defaultTTL)
+	if e.TTLFunc != nil {
+		ttl, err = e.TTLFunc(obj, ttl, update)
+	}
+	return ttl, err
+}
+
+// NoNamespaceKeyFunc is the default function for constructing storage paths
+// to a resource relative to the given prefix without a namespace.
+func NoNamespaceKeyFunc(ctx context.Context, prefix string, name string) (string, error) {
+	if len(name) == 0 {
+		return "", errors.New("name parameter required")
+	}
+	if msgs := IsValidPathSegmentName(name); len(msgs) != 0 {
+		return "", fmt.Errorf(fmt.Sprintf("Name parameter invalid: %q: %s", name, strings.Join(msgs, ";")))
+	}
+	key := prefix + "/" + name
+	return key, nil
+}
+
+// NameMayNotBe specifies strings that cannot be used as names specified as path segments (like the REST API or etcd store)
+var NameMayNotBe = []string{".", ".."}
+
+// NameMayNotContain specifies substrings that cannot be used in names specified as path segments (like the REST API or etcd store)
+var NameMayNotContain = []string{"/", "%"}
+
+// IsValidPathSegmentName validates the name can be safely encoded as a path segment
+func IsValidPathSegmentName(name string) []string {
+	for _, illegalName := range NameMayNotBe {
+		if name == illegalName {
+			return []string{fmt.Sprintf(`may not be '%s'`, illegalName)}
+		}
+	}
+
+	var errs []string
+	for _, illegalContent := range NameMayNotContain {
+		if strings.Contains(name, illegalContent) {
+			errs = append(errs, fmt.Sprintf(`may not contain '%s'`, illegalContent))
+		}
+	}
+
+	return errs
 }

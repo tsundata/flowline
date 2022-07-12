@@ -22,8 +22,8 @@ type Object interface {
 	SetResourceVersion(version string)
 	GetGeneration() int64
 	SetGeneration(generation int64)
-	GetCreationTimestamp() time.Time
-	SetCreationTimestamp(timestamp time.Time)
+	GetCreationTimestamp() *time.Time
+	SetCreationTimestamp(timestamp *time.Time)
 	GetDeletionTimestamp() *time.Time
 	SetDeletionTimestamp(timestamp *time.Time)
 	GetDeletionGracePeriodSeconds() *int64
