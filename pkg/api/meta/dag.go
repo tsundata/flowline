@@ -59,7 +59,7 @@ func (m *Dag) DeepCopyObject() runtime.Object {
 
 type DagList struct {
 	TypeMeta
-	ObjectMeta
+	ListMeta
 	Items []Dag
 }
 

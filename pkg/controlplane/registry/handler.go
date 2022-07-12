@@ -18,7 +18,7 @@ func (e *Store) GetHandler(req *restful.Request, resp *restful.Response) {
 	_ = resp.WriteEntity(out)
 }
 
-func (e *Store) PostHandler(req *restful.Request, resp *restful.Response) {
+func (e *Store) CreateHandler(req *restful.Request, resp *restful.Response) {
 	ctx := context.Background()
 	obj := e.New()
 	err := req.ReadEntity(&obj)
@@ -34,7 +34,7 @@ func (e *Store) PostHandler(req *restful.Request, resp *restful.Response) {
 	_ = resp.WriteEntity(out)
 }
 
-func (e *Store) PutHandler(req *restful.Request, resp *restful.Response) {
+func (e *Store) UpdateHandler(req *restful.Request, resp *restful.Response) {
 	uid := req.PathParameter("uid")
 	ctx := context.Background()
 	obj := e.New()
@@ -55,6 +55,16 @@ func (e *Store) DeleteHandler(req *restful.Request, resp *restful.Response) {
 	uid := req.PathParameter("uid")
 	ctx := context.Background()
 	out, _, err := e.Delete(ctx, uid, nil, nil)
+	if err != nil {
+		_ = resp.WriteError(http.StatusInternalServerError, err)
+		return
+	}
+	_ = resp.WriteEntity(out)
+}
+
+func (e *Store) ListHandler(_ *restful.Request, resp *restful.Response) {
+	ctx := context.Background()
+	out, err := e.List(ctx, &storage.ListOptions{})
 	if err != nil {
 		_ = resp.WriteError(http.StatusInternalServerError, err)
 		return

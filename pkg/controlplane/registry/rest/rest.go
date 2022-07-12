@@ -64,7 +64,8 @@ type Storage interface {
 //Handler route handler
 type Handler interface {
 	GetHandler(req *restful.Request, resp *restful.Response)
-	PostHandler(req *restful.Request, resp *restful.Response)
-	PutHandler(req *restful.Request, resp *restful.Response)
+	CreateHandler(req *restful.Request, resp *restful.Response)
+	UpdateHandler(req *restful.Request, resp *restful.Response)
 	DeleteHandler(req *restful.Request, resp *restful.Response)
+	ListHandler(req *restful.Request, resp *restful.Response)
 }

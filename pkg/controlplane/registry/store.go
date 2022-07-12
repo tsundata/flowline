@@ -256,13 +256,13 @@ func (e *Store) Create(ctx context.Context, obj runtime.Object, createValidation
 	return out, nil
 }
 
-func (e *Store) Update(ctx context.Context, name string, objInfo interface{}, createValidation rest.ValidateObjectFunc, updateValidation interface{}, forceAllowCreate bool, options interface{}) (runtime.Object, bool, error) {
+func (e *Store) Update(ctx context.Context, name string, objInfo runtime.Object, createValidation rest.ValidateObjectFunc, updateValidation interface{}, forceAllowCreate bool, options interface{}) (runtime.Object, bool, error) {
 	key, err := e.KeyFunc(ctx, name)
 	if err != nil {
 		return nil, false, err
 	}
 
-	out := e.NewFunc()
+	out := objInfo // fixme
 	err = e.Storage.GuaranteedUpdate(ctx, key, out, true, nil, nil, false, nil)
 	if err != nil {
 		return nil, false, err

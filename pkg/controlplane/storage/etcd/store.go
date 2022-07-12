@@ -142,15 +142,18 @@ func (s *store) GetList(ctx context.Context, key string, opts storage.ListOption
 		key += "/"
 	}
 
+	newItemFunc := getNewItemFunc(listObj, v)
+
 	var returnedRV int64
 	options := make([]clientv3.OpOption, 0, 4)
+	options = append(options, clientv3.WithPrefix())
 	getResp, err := s.client.KV.Get(ctx, key, options...)
 	if err != nil {
 		return err
 	}
 	for _, kv := range getResp.Kvs {
 		data := kv.Value
-		if err := appendListItem(v, data, uint64(kv.ModRevision), pred, s.codec, s.versioner, nil); err != nil {
+		if err := appendListItem(v, data, uint64(kv.ModRevision), pred, s.codec, s.versioner, newItemFunc); err != nil {
 			return err
 		}
 	}
@@ -169,6 +172,9 @@ func (s *store) GuaranteedUpdate(ctx context.Context, key string, destination ru
 	if err != nil {
 		return err
 	}
+	if getResp.Kvs == nil {
+		return fmt.Errorf("not found %s", key)
+	}
 	rev := getResp.Kvs[0].ModRevision
 
 	data, err := runtime.Encode(s.codec, destination)
@@ -178,8 +184,7 @@ func (s *store) GuaranteedUpdate(ctx context.Context, key string, destination ru
 
 	newData := data
 
-	ttl := 1000 //fixme
-	opts, err := s.ttlOpts(ctx, int64(ttl))
+	opts, err := s.ttlOpts(ctx, int64(0)) // todo
 	if err != nil {
 		return err
 	}
@@ -248,8 +253,8 @@ func decode(codec runtime.Codec, versioner storage.Versioner, value []byte, objP
 }
 
 // appendListItem decodes and appends the object (if it passes filter) to v, which must be a slice.
-func appendListItem(v reflect.Value, data []byte, rev uint64, _ storage.SelectionPredicate, codec runtime.Codec, versioner storage.Versioner, newItemFunc func() interface{}) error {
-	obj, _, err := codec.Decode(data, nil, nil)
+func appendListItem(v reflect.Value, data []byte, rev uint64, _ storage.SelectionPredicate, codec runtime.Codec, versioner storage.Versioner, newItemFunc func() runtime.Object) error {
+	obj, _, err := codec.Decode(data, nil, newItemFunc())
 	if err != nil {
 		return err
 	}
@@ -264,4 +269,12 @@ func appendListItem(v reflect.Value, data []byte, rev uint64, _ storage.Selectio
 
 func notFound(key string) clientv3.Cmp {
 	return clientv3.Compare(clientv3.ModRevision(key), "=", 0)
+}
+
+func getNewItemFunc(listObj runtime.Object, v reflect.Value) func() runtime.Object {
+	// Otherwise just instantiate an empty item
+	elem := v.Type().Elem()
+	return func() runtime.Object {
+		return reflect.New(elem).Interface().(runtime.Object)
+	}
 }

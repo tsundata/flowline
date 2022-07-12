@@ -88,12 +88,12 @@ func registerResourceHandlers(resource string, storage rest.Storage, ws *restful
 	getRoute.Param(uidParam)
 	rs = append(rs, getRoute)
 
-	postRoute := ws.POST(resource).To(storage.PostHandler).
+	postRoute := ws.POST(resource).To(storage.CreateHandler).
 		Doc("Create resource").
 		Metadata(restfulspec.KeyOpenAPITags, tags)
 	rs = append(rs, postRoute)
 
-	putRoute := ws.PUT(resource+"/{uid}").To(storage.PutHandler).
+	putRoute := ws.PUT(resource+"/{uid}").To(storage.UpdateHandler).
 		Doc("Update resource").
 		Metadata(restfulspec.KeyOpenAPITags, tags)
 	putRoute.Param(uidParam)
@@ -104,6 +104,11 @@ func registerResourceHandlers(resource string, storage rest.Storage, ws *restful
 		Metadata(restfulspec.KeyOpenAPITags, tags)
 	deleteRoute.Param(uidParam)
 	rs = append(rs, deleteRoute)
+
+	listRoute := ws.GET(resource+"/list").To(storage.ListHandler).
+		Doc("List resource").
+		Metadata(restfulspec.KeyOpenAPITags, tags)
+	rs = append(rs, listRoute)
 
 	for _, route := range rs {
 		ws.Route(route)
