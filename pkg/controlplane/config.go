@@ -58,7 +58,7 @@ func installAPI(s *GenericAPIServer, c *Config) error {
 }
 
 func installAPIGroup(s *GenericAPIServer, _ *Config) error {
-	ws := endpoints.NewWebService("apps", "v1")
+	ws := endpoints.NewWebService(rest.GroupName, rest.Version)
 	paths := make([]string, len(s.Storage))
 	var i = 0
 	for path := range s.Storage {

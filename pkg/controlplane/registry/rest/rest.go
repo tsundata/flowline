@@ -16,6 +16,8 @@ type ResetFieldsStrategy interface {
 	GetResetFields() map[string]interface{}
 }
 
+const Version = "v1"
+
 // GroupName is the group name use in this package
 const GroupName = "apps"
 

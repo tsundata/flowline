@@ -1,6 +1,7 @@
 package controlplane
 
 import (
+	"fmt"
 	"github.com/tsundata/flowline/pkg/controlplane/registry"
 	"github.com/tsundata/flowline/pkg/controlplane/registry/options"
 	"github.com/tsundata/flowline/pkg/controlplane/registry/rest"
@@ -135,14 +136,14 @@ func makeStoreOptions(resource string) *options.StoreOptions {
 					Codec: codec,
 				},
 				GroupResource: schema.GroupResource{
-					Group:    "apps",
+					Group:    rest.GroupName,
 					Resource: resource,
 				},
 			},
 			Decorator:               registry.StorageFactory(),
 			EnableGarbageCollection: false,
 			DeleteCollectionWorkers: 0,
-			ResourcePrefix:          resource,
+			ResourcePrefix:          fmt.Sprintf("%s/%s/%s", rest.GroupName, rest.Version, resource), //todo
 			CountMetricPollPeriod:   0,
 		},
 	}

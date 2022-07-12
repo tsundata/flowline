@@ -23,7 +23,7 @@ func StorageFactory() decorator.StorageDecorator {
 			return nil, nil, err
 		}
 
-		s := etcd.New(cli, config.Codec, resourcePrefix, false)
+		s := etcd.New(cli, config.Codec, "", false)
 
 		var once sync.Once
 		destroyFunc := func() {

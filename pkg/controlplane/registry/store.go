@@ -43,7 +43,7 @@ type Store struct {
 	// can be gotten from ctx.
 	//
 	// KeyFunc and KeyRootFunc must be supplied together or not at all.
-	KeyFunc func(ctx context.Context, name string) (string, error)
+	KeyFunc func(ctx context.Context, uid string) (string, error)
 
 	// ObjectUIDFunc returns the uid of an object or an error.
 	ObjectUIDFunc func(obj runtime.Object) (string, error)
@@ -189,7 +189,7 @@ func (e *Store) CompleteWithOptions(options *options.StoreOptions) error {
 			return "", err
 		}
 
-		return e.KeyFunc(context.Background(), accessor.GetName())
+		return e.KeyFunc(context.Background(), accessor.GetUID())
 	}
 
 	if e.DeleteCollectionWorkers == 0 {
@@ -356,14 +356,14 @@ func (e *Store) calculateTTL(obj runtime.Object, defaultTTL int64, update bool) 
 
 // NoNamespaceKeyFunc is the default function for constructing storage paths
 // to a resource relative to the given prefix without a namespace.
-func NoNamespaceKeyFunc(ctx context.Context, prefix string, name string) (string, error) {
-	if len(name) == 0 {
+func NoNamespaceKeyFunc(ctx context.Context, prefix string, uid string) (string, error) {
+	if len(uid) == 0 {
 		return "", errors.New("name parameter required")
 	}
-	if msgs := IsValidPathSegmentName(name); len(msgs) != 0 {
-		return "", fmt.Errorf(fmt.Sprintf("Name parameter invalid: %q: %s", name, strings.Join(msgs, ";")))
+	if msgs := IsValidPathSegmentName(uid); len(msgs) != 0 {
+		return "", fmt.Errorf(fmt.Sprintf("UID parameter invalid: %q: %s", uid, strings.Join(msgs, ";")))
 	}
-	key := prefix + "/" + name
+	key := prefix + "/" + uid
 	return key, nil
 }
 
