@@ -2,7 +2,7 @@ package storage
 
 import (
 	"fmt"
-	"github.com/tsundata/flowline/pkg/controlplane/api/meta"
+	"github.com/tsundata/flowline/pkg/api/meta"
 	"strconv"
 )
 

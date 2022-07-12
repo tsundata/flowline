@@ -1,6 +1,6 @@
 package runtime
 
-import "github.com/tsundata/flowline/pkg/controlplane/runtime/schema"
+import "github.com/tsundata/flowline/pkg/runtime/schema"
 
 const (
 	// APIVersionInternal may be used if you are registering a type that should not

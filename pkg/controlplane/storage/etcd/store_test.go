@@ -3,8 +3,8 @@ package etcd
 import (
 	"context"
 	"fmt"
-	"github.com/tsundata/flowline/pkg/controlplane/api/meta"
-	"github.com/tsundata/flowline/pkg/controlplane/runtime"
+	"github.com/tsundata/flowline/pkg/api/meta"
+	"github.com/tsundata/flowline/pkg/runtime"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"testing"
 	"time"

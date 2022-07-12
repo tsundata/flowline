@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/emicklei/go-restful/v3"
-	"github.com/tsundata/flowline/pkg/controlplane/api/meta"
+	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/controlplane/registry/options"
 	"github.com/tsundata/flowline/pkg/controlplane/registry/rest"
-	"github.com/tsundata/flowline/pkg/controlplane/runtime"
-	"github.com/tsundata/flowline/pkg/controlplane/runtime/schema"
+	"github.com/tsundata/flowline/pkg/runtime"
+	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"strings"
 )
 

@@ -2,8 +2,8 @@ package meta
 
 import (
 	"errors"
-	"github.com/tsundata/flowline/pkg/controlplane/runtime"
-	"github.com/tsundata/flowline/pkg/controlplane/runtime/schema"
+	"github.com/tsundata/flowline/pkg/runtime"
+	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"time"
 )
 
@@ -29,7 +29,7 @@ func (o *Object) DeepCopyObject() runtime.Object {
 	panic("implement me")
 }
 
-func Accessor(obj interface{}) (*Object, error) {
+func Accessor(obj interface{}) (*Object, error) { //fixme
 	switch t := obj.(type) {
 	case *Object:
 		return t, nil
@@ -38,7 +38,7 @@ func Accessor(obj interface{}) (*Object, error) {
 	}
 }
 
-func ListAccessor(obj interface{}) ([]*Object, error) {
+func ListAccessor(obj interface{}) ([]*Object, error) { //fixme
 	switch t := obj.(type) {
 	case []*Object:
 		return t, nil
@@ -47,6 +47,6 @@ func ListAccessor(obj interface{}) ([]*Object, error) {
 	}
 }
 
-func SetZeroValue(obj interface{}) error {
+func SetZeroValue(obj interface{}) error { //fixme
 	return nil
 }

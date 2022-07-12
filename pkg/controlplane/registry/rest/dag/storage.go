@@ -1,10 +1,10 @@
 package dag
 
 import (
-	"github.com/tsundata/flowline/pkg/controlplane/api/meta"
+	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/controlplane/registry"
 	"github.com/tsundata/flowline/pkg/controlplane/registry/rest"
-	"github.com/tsundata/flowline/pkg/controlplane/runtime"
+	"github.com/tsundata/flowline/pkg/runtime"
 )
 
 type DagStorage struct {
