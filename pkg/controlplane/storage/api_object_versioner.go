@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
+	"github.com/tsundata/flowline/pkg/util/flog"
 	"strconv"
 )
 
@@ -92,12 +93,12 @@ func (a APIObjectVersioner) CompareResourceVersion(lhs, rhs interface{}) int {
 	lhsVersion, err := a.ObjectResourceVersion(lhs)
 	if err != nil {
 		// coder error
-		panic(err)
+		flog.Panic(err)
 	}
 	rhsVersion, err := a.ObjectResourceVersion(rhs)
 	if err != nil {
 		// coder error
-		panic(err)
+		flog.Panic(err)
 	}
 
 	if lhsVersion == rhsVersion {

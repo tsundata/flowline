@@ -64,7 +64,7 @@ func NewGenericAPIServer(name string, config *Config) *GenericAPIServer {
 
 	err := installAPI(s, config)
 	if err != nil {
-		panic(err)
+		flog.Panic(err)
 	}
 
 	return s

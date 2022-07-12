@@ -43,6 +43,10 @@ func Warn(msg string, fields ...interface{}) {
 	l.Warn(msg, kvs...)
 }
 
+func Warnf(format string, a ...interface{}) {
+	l.Warn(fmt.Sprintf(format, a...))
+}
+
 func Error(err error, fields ...interface{}) {
 	kvs := zapFields(fields)
 	l.Error(err.Error(), kvs...)
@@ -55,6 +59,10 @@ func Errorf(format string, a ...interface{}) {
 func Panic(err error, fields ...interface{}) {
 	kvs := zapFields(fields)
 	l.Panic(err.Error(), kvs...)
+}
+
+func Panicf(format string, a ...interface{}) {
+	l.Panic(fmt.Sprintf(format, a...))
 }
 
 func Fatal(err error, fields ...interface{}) {

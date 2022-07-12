@@ -6,6 +6,7 @@ import (
 	"github.com/tsundata/flowline/pkg/controlplane/registry/options"
 	"github.com/tsundata/flowline/pkg/controlplane/registry/rest"
 	"github.com/tsundata/flowline/pkg/runtime"
+	"github.com/tsundata/flowline/pkg/util/flog"
 )
 
 type DagStorage struct {
@@ -38,7 +39,7 @@ func NewREST(options *options.StoreOptions) (*REST, error) {
 
 	err := store.CompleteWithOptions(options)
 	if err != nil {
-		panic(err)
+		flog.Panic(err)
 	}
 
 	return &REST{store}, nil

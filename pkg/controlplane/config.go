@@ -22,6 +22,8 @@ type Config struct {
 	EtcdUsername string
 	EtcdPassword string
 
+	JWTSecret string
+
 	// APIServerID is the ID of this API server
 	APIServerID           string
 	BuildHandlerChainFunc func(apiHandler http.Handler, c *Config) http.Handler
@@ -36,8 +38,9 @@ func NewConfig() *Config {
 }
 
 //DefaultBuildHandlerChain set default filters
-func DefaultBuildHandlerChain(apiHandler http.Handler, _ *Config) http.Handler {
+func DefaultBuildHandlerChain(apiHandler http.Handler, config *Config) http.Handler {
 	handler := filters.WithCORS(apiHandler, nil, nil, nil, nil, "true")
+	// handler = filters.WithJWT(handler, config.JWTSecret)
 	return handler
 }
 

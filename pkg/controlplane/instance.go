@@ -21,7 +21,7 @@ func (i *Instance) Run(stopCh <-chan struct{}) error {
 
 	err := i.GenericAPIServer.Run(stopCh)
 	if err != nil {
-		panic(err)
+		flog.Panic(err)
 	}
 
 	<-stopCh
