@@ -50,6 +50,7 @@ func NewWorkerCommand() *cli.App {
 			config.Host = c.String("host")
 			config.Port = c.Int("port")
 			config.ApiURL = c.String("api-url")
+			config.StageWorkers = 10
 			return Run(config, signal.SetupSignalHandler())
 		},
 		Commands: []*cli.Command{

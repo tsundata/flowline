@@ -8,6 +8,7 @@ import (
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"net"
+	"time"
 )
 
 type GenericSchedulerServer struct {
@@ -26,7 +27,7 @@ func (g *GenericSchedulerServer) Run(stopCh <-chan struct{}) error {
 	go func() {
 		fmt.Println("scheduler run")
 
-		conn, err := net.Dial("tcp", "127.0.0.1:5001") //todo
+		conn, err := net.Dial("tcp", "127.0.0.1:5001") //fixme
 		if err != nil {
 			flog.Error(err)
 			return
@@ -34,20 +35,25 @@ func (g *GenericSchedulerServer) Run(stopCh <-chan struct{}) error {
 
 		buf := bytes.NewBufferString("")
 		codec := runtime.JsonCoder{}
-		err = codec.Encode(&meta.Function{
+		err = codec.Encode(&meta.Stage{
 			Runtime: "javascript",
-			Code:    "input() + 1",
+			Code:    "input() + Math.floor(Date.now() / 1000)",
+			Input:   1000,
 		}, buf)
 		if err != nil {
 			flog.Error(err)
 			return
 		}
 		buf.WriteByte('\n')
-		flog.Info(buf.String())
-		_, err = conn.Write(buf.Bytes())
-		if err != nil {
-			flog.Error(err)
-			return
+
+		// fixme
+		for range time.Tick(time.Second) {
+			flog.Info(buf.String())
+			_, err = conn.Write(buf.Bytes())
+			if err != nil {
+				flog.Error(err)
+				return
+			}
 		}
 	}()
 	select {

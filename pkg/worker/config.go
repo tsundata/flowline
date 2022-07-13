@@ -5,6 +5,8 @@ type Config struct {
 	Port int
 
 	ApiURL string
+
+	StageWorkers int
 }
 
 func NewConfig() *Config {

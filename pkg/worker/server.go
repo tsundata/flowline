@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/tsundata/flowline/pkg/api/client"
 	"github.com/tsundata/flowline/pkg/util/flog"
+	"github.com/tsundata/flowline/pkg/worker/stage"
 	"net"
 )
 
@@ -22,6 +23,7 @@ func NewGenericWorkerServer(name string, config *Config) *GenericWorkerServer {
 }
 
 func (g *GenericWorkerServer) Run(stopCh <-chan struct{}) error {
+	// handle stage
 	go func() {
 		addr := fmt.Sprintf("%s:%d", g.config.Host, g.config.Port)
 		flog.Infof("worker %s starting", addr)
@@ -41,6 +43,12 @@ func (g *GenericWorkerServer) Run(stopCh <-chan struct{}) error {
 			go handler.Handle(conn)
 		}
 	}()
+	// run stage
+	for i := 0; i < g.config.StageWorkers; i++ {
+		flog.Infof("#%d stage run starting", i+1)
+		go stage.Run(i+1, stopCh)
+	}
+
 	select {
 	case <-stopCh:
 		flog.Info("stop worker server")

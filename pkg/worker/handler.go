@@ -2,11 +2,10 @@ package worker
 
 import (
 	"bufio"
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/util/flog"
-	"github.com/tsundata/flowline/pkg/worker/sandbox"
+	"github.com/tsundata/flowline/pkg/worker/queue"
 	"net"
 )
 
@@ -25,20 +24,15 @@ func (w *WorkerHandler) Handle(conn net.Conn) {
 
 		codec := runtime.JsonCoder{}
 
-		obj := meta.Function{}
+		obj := meta.Stage{}
 		_, _, err = codec.Decode(message, nil, &obj)
 		if err != nil {
 			flog.Error(err)
 			continue
 		}
 
-		rt := sandbox.Factory(sandbox.RuntimeType(obj.Runtime))
-		out, err := rt.Run(obj.Code, 1000)
-		if err != nil {
-			flog.Error(err)
-			continue
-		}
-		fmt.Println(out)
+		// enqueue
+		queue.StageQueue <- &obj
 
 		_, _ = conn.Write([]byte("OK"))
 	}
