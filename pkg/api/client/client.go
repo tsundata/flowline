@@ -19,14 +19,14 @@ type Result struct {
 type RestClient struct {
 	*resty.Client
 
-	ctx              context.Context
-	req              *resty.Request
-	group            string
-	version          string
-	resource         string
-	uid              string
-	obj              runtime.Object
-	returnCollection bool
+	ctx      context.Context
+	req      *resty.Request
+	group    string
+	version  string
+	resource string
+	uid      string
+	obj      runtime.Object
+	operate  string
 }
 
 func New(baseURL string) *RestClient {
@@ -49,22 +49,67 @@ func (c *RestClient) Request(ctx context.Context) *RestClient {
 	return c
 }
 
-func (c *RestClient) setResource(resource string) *RestClient {
-	c.resource = resource
-	return c
-}
-
 func (c *RestClient) resourcePrefix() string {
 	return fmt.Sprintf("%s/%s/%s", c.group, c.version, c.resource)
 }
 
+func (c *RestClient) Connection() *RestClient {
+	c.resource = "connection"
+	return c
+}
+
+func (c *RestClient) Dag() *RestClient {
+	c.resource = "dag"
+	return c
+}
+
+func (c *RestClient) Event() *RestClient {
+	c.resource = "event"
+	return c
+}
+
+func (c *RestClient) Function() *RestClient {
+	c.resource = "function"
+	return c
+}
+
+func (c *RestClient) Job() *RestClient {
+	c.resource = "job"
+	return c
+}
+
+func (c *RestClient) Role() *RestClient {
+	c.resource = "role"
+	return c
+}
+
+func (c *RestClient) RoleBinding() *RestClient {
+	c.resource = "rolebinding"
+	return c
+}
+
+func (c *RestClient) User() *RestClient {
+	c.resource = "user"
+	return c
+}
+
+func (c *RestClient) Variable() *RestClient {
+	c.resource = "variable"
+	return c
+}
+
+func (c *RestClient) Worker() *RestClient {
+	c.resource = "worker"
+	return c
+}
+
 func (c *RestClient) Workflow() *RestClient {
-	c.setResource("workflow")
+	c.resource = "workflow"
 	return c
 }
 
 func (c *RestClient) List() *RestClient {
-	c.returnCollection = true
+	c.operate = "list"
 	return c
 }
 
@@ -103,8 +148,8 @@ func (c *RestClient) Result() *Result {
 	if len(c.uid) > 0 {
 		path = path + "/" + c.uid
 	}
-	if c.returnCollection {
-		path = path + "/list"
+	if len(c.operate) > 0 {
+		path = path + "/" + c.operate
 	}
 	res := &Result{}
 	switch c.req.Method {
