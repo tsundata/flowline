@@ -2,14 +2,14 @@ package app
 
 import (
 	"fmt"
-	"github.com/tsundata/flowline/pkg/apiserver"
+	"github.com/tsundata/flowline/pkg/manager"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/signal"
 	"github.com/tsundata/flowline/pkg/util/version"
 	"github.com/urfave/cli/v2"
 )
 
-func NewAPIServerCommand() *cli.App {
+func NewControllerManagerCommand() *cli.App {
 	cli.VersionFlag = &cli.BoolFlag{
 		Name:    "version",
 		Aliases: []string{"V"},
@@ -19,30 +19,21 @@ func NewAPIServerCommand() *cli.App {
 		fmt.Printf("version=%s\n", cCtx.App.Version)
 	}
 	return &cli.App{
-		Name:    "apiserver",
-		Usage:   "api server cli",
+		Name:    "controller-manager",
+		Usage:   "controller manager server cli",
 		Version: version.Version,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:    "host",
-				Aliases: []string{"H"},
-				Value:   "127.0.0.1",
+				Name:    "api-url",
+				Aliases: []string{"A"},
+				Value:   "http://127.0.0.1:5000/apis/",
 				Usage:   "server host",
-				EnvVars: []string{"APISERVER_HOST"},
-			},
-			&cli.IntFlag{
-				Name:    "port",
-				Aliases: []string{"P"},
-				Value:   5000,
-				Usage:   "server port",
-				EnvVars: []string{"APISERVER_PORT"},
+				EnvVars: []string{"CONTROLLER_MANAGER_HOST"},
 			},
 		},
 		Action: func(c *cli.Context) error {
-			config := apiserver.NewConfig() // todo
-			config.Host = c.String("host")
-			config.Port = c.Int("port")
-			config.EnableIndex = true
+			config := manager.NewConfig() // todo
+			config.ApiURL = c.String("api-url")
 			return Run(config, signal.SetupSignalHandler())
 		},
 		Commands: []*cli.Command{
@@ -51,7 +42,7 @@ func NewAPIServerCommand() *cli.App {
 				Aliases: []string{"I"},
 				Usage:   "print info",
 				Action: func(cCtx *cli.Context) error {
-					fmt.Println("apiserver")
+					fmt.Println("manager")
 					return nil
 				},
 			},
@@ -59,8 +50,8 @@ func NewAPIServerCommand() *cli.App {
 	}
 }
 
-func Run(c *apiserver.Config, stopCh <-chan struct{}) error {
-	flog.Info("apiserver running")
+func Run(c *manager.Config, stopCh <-chan struct{}) error {
+	flog.Info("controller-manager running")
 
 	server, err := CreateServerChain(c)
 	if err != nil {
@@ -70,6 +61,6 @@ func Run(c *apiserver.Config, stopCh <-chan struct{}) error {
 	return server.Run(stopCh)
 }
 
-func CreateServerChain(c *apiserver.Config) (*apiserver.Instance, error) {
-	return apiserver.NewInstance(c), nil
+func CreateServerChain(c *manager.Config) (*manager.Instance, error) {
+	return manager.NewInstance(c), nil
 }
