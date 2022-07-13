@@ -18,6 +18,7 @@ import (
 	"github.com/tsundata/flowline/pkg/controlplane/registry/rest/workflow"
 	"github.com/tsundata/flowline/pkg/controlplane/storage/config"
 	"github.com/tsundata/flowline/pkg/runtime"
+	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"github.com/tsundata/flowline/pkg/util/flog"
 )
@@ -136,14 +137,14 @@ func makeStoreOptions(resource string) *options.StoreOptions {
 					Codec: codec,
 				},
 				GroupResource: schema.GroupResource{
-					Group:    rest.GroupName,
+					Group:    constant.GroupName,
 					Resource: resource,
 				},
 			},
 			Decorator:               registry.StorageFactory(),
 			EnableGarbageCollection: false,
 			DeleteCollectionWorkers: 0,
-			ResourcePrefix:          fmt.Sprintf("%s/%s/%s", rest.GroupName, rest.Version, resource), //todo
+			ResourcePrefix:          fmt.Sprintf("%s/%s/%s", constant.GroupName, constant.Version, resource), //todo
 			CountMetricPollPeriod:   0,
 		},
 	}

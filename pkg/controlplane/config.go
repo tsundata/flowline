@@ -9,6 +9,7 @@ import (
 	"github.com/tsundata/flowline/pkg/controlplane/registry/rest"
 	"github.com/tsundata/flowline/pkg/controlplane/routes"
 	"github.com/tsundata/flowline/pkg/controlplane/routes/endpoints"
+	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"net/http"
 	"sort"
 )
@@ -58,7 +59,7 @@ func installAPI(s *GenericAPIServer, c *Config) error {
 }
 
 func installAPIGroup(s *GenericAPIServer, _ *Config) error {
-	ws := endpoints.NewWebService(rest.GroupName, rest.Version)
+	ws := endpoints.NewWebService(constant.GroupName, constant.Version)
 	paths := make([]string, len(s.Storage))
 	var i = 0
 	for path := range s.Storage {

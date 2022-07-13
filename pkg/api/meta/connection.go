@@ -28,8 +28,7 @@ type Connection struct {
 }
 
 func (m *Connection) GetObjectKind() schema.ObjectKind {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 func (m *Connection) DeepCopyObject() runtime.Object {

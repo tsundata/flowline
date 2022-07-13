@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	meta2 "github.com/tsundata/flowline/pkg/api/meta"
+	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/controlplane/storage"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/util/flog"
@@ -111,7 +111,7 @@ func (s *store) Get(ctx context.Context, key string, opts storage.GetOptions, ou
 	}
 	if len(getResp.Kvs) == 0 {
 		if opts.IgnoreNotFound {
-			return meta2.SetZeroValue(out)
+			return meta.SetZeroValue(out)
 		}
 		return fmt.Errorf("key not found %s", key)
 	}
@@ -124,11 +124,11 @@ func (s *store) Get(ctx context.Context, key string, opts storage.GetOptions, ou
 func (s *store) GetList(ctx context.Context, key string, opts storage.ListOptions, listObj runtime.Object) error {
 	recursive := opts.Recursive
 	pred := opts.Predicate
-	listPtr, err := meta2.GetItemsPtr(listObj)
+	listPtr, err := meta.GetItemsPtr(listObj)
 	if err != nil {
 		return err
 	}
-	v, err := meta2.EnforcePtr(listPtr)
+	v, err := meta.EnforcePtr(listPtr)
 	if err != nil || v.Kind() != reflect.Slice {
 		return fmt.Errorf("need ptr to slice: %v", err)
 	}

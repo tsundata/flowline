@@ -1,6 +1,7 @@
 package meta
 
 import (
+	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"time"
 )
 
@@ -18,6 +19,18 @@ type TypeMeta struct {
 	// Servers should convert recognized schemas to the latest internal value, and
 	// may reject unrecognized values.
 	APIVersion string `json:"apiVersion,omitempty" protobuf:"bytes,2,opt,name=apiVersion"`
+}
+
+func (t *TypeMeta) SetGroupVersionKind(kind schema.GroupVersionKind) {
+	t.Kind = kind.Kind
+}
+
+func (t *TypeMeta) GroupVersionKind() schema.GroupVersionKind { // todo
+	return schema.GroupVersionKind{
+		Group:   "apps",
+		Version: t.APIVersion,
+		Kind:    t.Kind,
+	}
 }
 
 // ObjectMeta is metadata that all persisted resources must have, which includes all objects

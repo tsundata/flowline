@@ -21,7 +21,7 @@ func TestEtcdStore(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	obj := &meta.Object{Name: "abc"}
+	obj := &meta.Workflow{Trigger: meta.TriggerCron}
 	ctx := context.Background()
 	jsonCoder := runtime.JsonCoder{}
 	s := New(cli, runtime.NewBase64Serializer(jsonCoder, jsonCoder), "", false)
