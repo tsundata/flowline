@@ -51,7 +51,7 @@ func NewSchedulerCommand() *cli.App {
 }
 
 func Run(c *scheduler.Config, stopCh <-chan struct{}) error {
-	flog.Info("controller-manager running")
+	flog.Info("scheduler running")
 
 	server, err := CreateServerChain(c)
 	if err != nil {

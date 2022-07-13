@@ -21,7 +21,7 @@ func (r *Runtime) Name() string {
 	return "javascript"
 }
 
-func (r *Runtime) Run(code []byte, input interface{}) (output interface{}, err error) {
+func (r *Runtime) Run(code string, input interface{}) (output interface{}, err error) {
 	err = r.vm.Set("input", func(call otto.FunctionCall) otto.Value {
 		val, err := r.vm.ToValue(input)
 		if err != nil {

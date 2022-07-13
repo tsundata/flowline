@@ -19,8 +19,8 @@ func NewWorkerCommand() *cli.App {
 		fmt.Printf("version=%s\n", cCtx.App.Version)
 	}
 	return &cli.App{
-		Name:    "controller-manager",
-		Usage:   "controller manager server cli",
+		Name:    "worker",
+		Usage:   "worker server cli",
 		Version: version.Version,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -67,7 +67,7 @@ func NewWorkerCommand() *cli.App {
 }
 
 func Run(c *worker.Config, stopCh <-chan struct{}) error {
-	flog.Info("controller-manager running")
+	flog.Info("worker running")
 
 	server, err := CreateServerChain(c)
 	if err != nil {
