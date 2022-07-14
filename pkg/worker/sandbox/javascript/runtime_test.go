@@ -7,9 +7,9 @@ import (
 
 func TestRuntime(t *testing.T) {
 	js := NewRuntime()
-	out, err := js.Run([]byte(`
+	out, err := js.Run(`
 parseInt(input() + 1)
-`), 1000)
+`, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
