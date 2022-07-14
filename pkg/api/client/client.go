@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/tsundata/flowline/pkg/runtime"
@@ -14,6 +15,18 @@ type Result struct {
 	body       []byte
 	err        error
 	statusCode int
+}
+
+func (r *Result) StatusCode() int {
+	return r.statusCode
+}
+
+func (r *Result) Error() error {
+	return r.err
+}
+
+func (r *Result) Data() []byte {
+	return r.body
 }
 
 type RestClient struct {
@@ -29,12 +42,12 @@ type RestClient struct {
 	operate  string
 }
 
-func New(baseURL string) *RestClient {
+func NewRestClient(baseURL string) *RestClient {
 	hc := &http.Client{
 		Timeout: 60 * time.Second, //todo
 	}
 	cli := resty.NewWithClient(hc)
-	cli.SetBaseURL(baseURL)
+	cli.SetBaseURL(baseURL + constant.ApiPrefix + "/")
 	restCli := &RestClient{Client: cli}
 	restCli.group = constant.GroupName
 	restCli.version = constant.Version
@@ -183,7 +196,96 @@ func (r *Result) Into(obj runtime.Object) error {
 	if r.err != nil {
 		return r.err
 	}
+	if r.statusCode != http.StatusOK {
+		return errors.New("not result")
+	}
 	jsonCoder := runtime.JsonCoder{}
 	_, _, err := jsonCoder.Decode(r.body, nil, obj)
 	return err
+}
+
+type ApiClient struct {
+	*resty.Client
+
+	ctx  context.Context
+	req  *resty.Request
+	path string
+	data interface{}
+}
+
+func NewApiClient(baseURL string) *ApiClient {
+	hc := &http.Client{
+		Timeout: 60 * time.Second, //todo
+	}
+	cli := resty.NewWithClient(hc)
+	cli.SetBaseURL(baseURL)
+	restCli := &ApiClient{Client: cli}
+	return restCli
+}
+
+func (c *ApiClient) Request(ctx context.Context) *ApiClient {
+	c.req = c.R()
+	c.req.SetContext(ctx)
+	c.path = ""
+	c.data = nil
+	return c
+}
+
+func (c *ApiClient) Get() *ApiClient {
+	c.req.Method = http.MethodGet
+	return c
+}
+
+func (c *ApiClient) Post() *ApiClient {
+	c.req.Method = http.MethodPost
+	return c
+}
+
+func (c *ApiClient) Put() *ApiClient {
+	c.req.Method = http.MethodPut
+	return c
+}
+
+func (c *ApiClient) Delete() *ApiClient {
+	c.req.Method = http.MethodDelete
+	return c
+}
+
+func (c *ApiClient) Path(path string) *ApiClient {
+	c.path = path
+	return c
+}
+
+func (c *ApiClient) Data(data interface{}) *ApiClient {
+	c.data = data
+	return c
+}
+
+func (c *ApiClient) Result() *Result {
+	res := &Result{}
+	switch c.req.Method {
+	case http.MethodGet:
+		resp, err := c.req.Get(c.path)
+		res.body = resp.Body()
+		res.statusCode = resp.StatusCode()
+		res.err = err
+	case http.MethodPost:
+		resp, err := c.req.SetBody(c.data).Post(c.path)
+		res.body = resp.Body()
+		res.statusCode = resp.StatusCode()
+		res.err = err
+	case http.MethodPut:
+		resp, err := c.req.SetBody(c.data).Delete(c.path)
+		res.body = resp.Body()
+		res.statusCode = resp.StatusCode()
+		res.err = err
+	case http.MethodDelete:
+		resp, err := c.req.Delete(c.path)
+		res.body = resp.Body()
+		res.statusCode = resp.StatusCode()
+		res.err = err
+	default:
+		return &Result{}
+	}
+	return res
 }

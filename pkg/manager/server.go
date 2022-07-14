@@ -13,7 +13,7 @@ type GenericControllerManagerServer struct {
 func NewGenericControllerManagerServer(name string, config *Config) *GenericControllerManagerServer {
 	flog.Infof("%s starting...", name)
 	s := &GenericControllerManagerServer{
-		client: client.New(config.ApiURL),
+		client: client.NewRestClient(config.ApiURL),
 	}
 	return s
 }

@@ -51,6 +51,9 @@ func installAPI(s *GenericAPIServer, c *Config) error {
 	if c.EnableIndex {
 		routes.Index{}.Install(s.Handler.NonRestfulMux)
 	}
+	if ss, ok := s.Storage["worker"]; ok {
+		routes.Worker{Storage: ss}.Install(s.Handler.NonRestfulMux)
+	}
 	err := installAPIGroup(s, c)
 	if err != nil {
 		return err

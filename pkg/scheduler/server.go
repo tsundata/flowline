@@ -18,7 +18,7 @@ type GenericSchedulerServer struct {
 func NewGenericSchedulerServer(name string, config *Config) *GenericSchedulerServer {
 	flog.Infof("%s starting...", name)
 	s := &GenericSchedulerServer{
-		client: client.New(config.ApiURL),
+		client: client.NewRestClient(config.ApiURL),
 	}
 	return s
 }

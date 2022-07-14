@@ -26,7 +26,7 @@ func NewSchedulerCommand() *cli.App {
 			&cli.StringFlag{
 				Name:    "api-url",
 				Aliases: []string{"A"},
-				Value:   "http://127.0.0.1:5000/apis/",
+				Value:   "http://127.0.0.1:5000/",
 				Usage:   "server host",
 				EnvVars: []string{"CONTROLLER_MANAGER_HOST"},
 			},

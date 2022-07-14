@@ -262,6 +262,8 @@ func (e *Store) Update(ctx context.Context, name string, objInfo runtime.Object,
 		return nil, false, err
 	}
 
+	// todo forceAllowCreate
+
 	out := objInfo // fixme
 	err = e.Storage.GuaranteedUpdate(ctx, key, out, true, nil, nil, false, nil)
 	if err != nil {

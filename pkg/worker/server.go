@@ -17,7 +17,7 @@ func NewGenericWorkerServer(name string, config *Config) *GenericWorkerServer {
 	flog.Infof("%s starting...", name)
 	s := &GenericWorkerServer{
 		config: config,
-		client: client.New(config.ApiURL),
+		client: client.NewRestClient(config.ApiURL),
 	}
 	return s
 }

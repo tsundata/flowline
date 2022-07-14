@@ -1,5 +1,8 @@
 package constant
 
+// ApiPrefix is api path prefix
+const ApiPrefix = "apis"
+
 // GroupName is the group name use in this package
 const GroupName = "apps"
 

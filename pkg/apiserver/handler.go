@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/emicklei/go-restful/v3"
 	"github.com/gorilla/mux"
+	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"net/http"
 	"runtime"
@@ -64,8 +65,8 @@ func (d director) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	for _, ws := range d.restfulContainer.RegisteredWebServices() {
 		switch {
-		case ws.RootPath() == "/apis":
-			if path == "/apis" || path == "/apis/" {
+		case ws.RootPath() == "/"+constant.ApiPrefix:
+			if path == "/"+constant.ApiPrefix || path == "/"+constant.ApiPrefix+"/" {
 				d.restfulContainer.Dispatch(w, req)
 				return
 			}
