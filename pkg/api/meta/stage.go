@@ -9,19 +9,19 @@ type Stage struct {
 	TypeMeta
 	ObjectMeta
 
-	JobUID string
-	DagUID string
+	JobUID string `json:"jobUID,omitempty"`
+	DagUID string `json:"dagUID,omitempty"`
 
-	State string // todo
+	State string `json:"state,omitempty"` // todo
 
-	Runtime string
-	Code    string
+	Runtime string `json:"runtime,omitempty"`
+	Code    string `json:"code,omitempty"`
 
-	Input  interface{}
-	Output interface{}
+	Input  interface{} `json:"input,omitempty"`
+	Output interface{} `json:"output,omitempty"`
 
-	Connection []Connection
-	Variable   []Variable
+	Connection []Connection `json:"connection,omitempty"`
+	Variable   []Variable   `json:"variable,omitempty"`
 }
 
 func (m *Stage) GetObjectKind() schema.ObjectKind {

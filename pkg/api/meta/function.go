@@ -9,8 +9,8 @@ type Function struct {
 	TypeMeta
 	ObjectMeta
 
-	Runtime string
-	Code    string
+	Runtime string `json:"runtime,omitempty"`
+	Code    string `json:"code,omitempty"`
 }
 
 func (m *Function) GetObjectKind() schema.ObjectKind {

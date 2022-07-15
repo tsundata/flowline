@@ -9,7 +9,7 @@ type Dag struct {
 	TypeMeta
 	ObjectMeta
 
-	WorkflowUID string `json:"workflow_uid,omitempty"`
+	WorkflowUID string `json:"workflowUID,omitempty"`
 	Nodes       []Node `json:"nodes,omitempty"`
 	Edges       []Edge `json:"edges,omitempty"`
 }

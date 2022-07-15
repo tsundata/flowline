@@ -9,8 +9,8 @@ type RoleBinding struct {
 	TypeMeta
 	ObjectMeta
 
-	UserUID string `json:"user_uid,omitempty"`
-	RoleUID string `json:"role_uid,omitempty"`
+	UserUID string `json:"userUID,omitempty"`
+	RoleUID string `json:"roleUID,omitempty"`
 }
 
 func (m *RoleBinding) GetObjectKind() schema.ObjectKind {
