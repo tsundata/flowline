@@ -19,7 +19,6 @@ type Worker struct {
 
 	State    WorkerState
 	Host     string   `json:"host,omitempty"`
-	Port     int      `json:"port,omitempty"`
 	Runtimes []string `json:"runtimes,omitempty"`
 }
 
