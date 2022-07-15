@@ -1,7 +1,11 @@
 package framework
 
 import (
+	"errors"
+	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
+	"github.com/tsundata/flowline/pkg/util/flog"
+	"sync/atomic"
 	"time"
 )
 
@@ -116,6 +120,120 @@ func (n *WorkerInfo) Worker() *meta.Worker {
 	return n.worker
 }
 
+func (n *WorkerInfo) RemoveWorker() {
+	n.worker = nil
+	n.Generation = nextGeneration()
+}
+
+func (n *WorkerInfo) AddStage(stage *meta.Stage) {
+	n.AddStageInfo(NewStageInfo(stage))
+}
+
+func (n *WorkerInfo) AddStageInfo(stageInfo *StageInfo) {
+	res, non0CPU, non0Mem := calculateResource(stageInfo.Stage)
+	n.Requested.MilliCPU += res.MilliCPU
+	n.Requested.Memory += res.Memory
+	n.Requested.EphemeralStorage += res.EphemeralStorage
+	n.NonZeroRequested.MilliCPU += non0CPU
+	n.NonZeroRequested.Memory += non0Mem
+	n.Stages = append(n.Stages, stageInfo)
+
+	n.Generation = nextGeneration()
+}
+
+func NewWorkerInfo(stages ...*meta.Stage) *WorkerInfo {
+	ni := &WorkerInfo{
+		Requested:        &Resource{},
+		NonZeroRequested: &Resource{},
+		Allocatable:      &Resource{},
+		Generation:       nextGeneration(),
+		UsedPorts:        nil,
+	}
+	for _, stage := range stages {
+		ni.AddStage(stage)
+	}
+	return ni
+}
+
+func (n *WorkerInfo) SetWorker(worker *meta.Worker) {
+	n.worker = worker
+	// n.Allocatable = NewResource(worker.Status.Allocatable)
+	n.Generation = nextGeneration()
+}
+
+func (n *WorkerInfo) Clone() *WorkerInfo {
+	clone := &WorkerInfo{
+		worker: n.worker,
+		//Requested:        n.Requested.Clone(),
+		//NonZeroRequested: n.NonZeroRequested.Clone(),
+		//Allocatable:      n.Allocatable.Clone(),
+		UsedPorts:  nil,
+		Generation: n.Generation,
+	}
+	if len(n.Stages) > 0 {
+		clone.Stages = append([]*StageInfo(nil), n.Stages...)
+	}
+	return clone
+}
+
+func (n *WorkerInfo) RemoveStage(stage *meta.Stage) error {
+	k, err := GetPodKey(stage)
+	if err != nil {
+		return err
+	}
+
+	for i := range n.Stages {
+		k2, err := GetPodKey(n.Stages[i].Stage)
+		if err != nil {
+			flog.Error(err)
+			continue
+		}
+		if k == k2 {
+			// delete the element
+			n.Stages[i] = n.Stages[len(n.Stages)-1]
+			n.Stages = n.Stages[:len(n.Stages)-1]
+			// reduce the resource data
+			res, non0CPU, non0Mem := calculateResource(stage)
+
+			n.Requested.MilliCPU -= res.MilliCPU
+			n.Requested.Memory -= res.Memory
+			n.Requested.EphemeralStorage -= res.EphemeralStorage
+			n.NonZeroRequested.MilliCPU -= non0CPU
+			n.NonZeroRequested.Memory -= non0Mem
+
+			n.Generation = nextGeneration()
+			return nil
+		}
+	}
+	return fmt.Errorf("no corresponding pod %s in pods of node %s", stage.UID, n.worker.UID)
+}
+
+func calculateResource(stage *meta.Stage) (res Resource, non0CPU int64, non0Mem int64) {
+	// todo
+	return
+}
+
+func NewStageInfo(stage *meta.Stage) *StageInfo {
+	pInfo := &StageInfo{}
+	pInfo.Update(stage)
+	return pInfo
+}
+
+func (pi *StageInfo) Update(stage *meta.Stage) {
+	if stage != nil && pi.Stage != nil && pi.Stage.UID == stage.UID {
+		// PodInfo includes immutable information, and so it is safe to update the pod in place if it is
+		// the exact same pod
+		pi.Stage = stage
+		return
+	}
+
+	pi.Stage = stage
+}
+
+func nextGeneration() int64 {
+	return atomic.AddInt64(&generation, 1)
+}
+
 // Resource is a collection of compute resource.
 type Resource struct {
 	MilliCPU         int64
@@ -132,4 +250,12 @@ type Diagnosis struct {
 	UnschedulablePlugins map[string]struct{}
 	// PostFilterMsg records the messages returned from PostFilterPlugins.
 	PostFilterMsg string
+}
+
+func GetPodKey(stage *meta.Stage) (string, error) {
+	uid := stage.UID
+	if len(uid) == 0 {
+		return "", errors.New("cannot get cache key for pod with empty UID")
+	}
+	return uid, nil
 }

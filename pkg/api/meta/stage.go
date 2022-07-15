@@ -11,6 +11,7 @@ type Stage struct {
 
 	SchedulerName string
 	WorkerHost    string
+	WorkerUID     string
 
 	JobUID string `json:"jobUID,omitempty"`
 	DagUID string `json:"dagUID,omitempty"`

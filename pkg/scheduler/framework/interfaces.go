@@ -7,9 +7,21 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/config"
+	"math"
 	"strings"
 	"sync"
 	"time"
+)
+
+const (
+	// MaxWorkerScore is the maximum score a Score plugin is expected to return.
+	MaxWorkerScore int64 = 100
+
+	// MinWorkerScore is the minimum score a Score plugin is expected to return.
+	MinWorkerScore int64 = 0
+
+	// MaxTotalScore is the maximum total score.
+	MaxTotalScore int64 = math.MaxInt64
 )
 
 // WorkerScoreList declares a list of nodes and their scores.

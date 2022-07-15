@@ -9,6 +9,7 @@ import (
 	"github.com/tsundata/flowline/pkg/scheduler/framework/config"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/plugins"
 	frameworkruntime "github.com/tsundata/flowline/pkg/scheduler/framework/runtime"
+	"github.com/tsundata/flowline/pkg/scheduler/profile"
 	"github.com/tsundata/flowline/pkg/scheduler/queue"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
@@ -244,7 +245,7 @@ var defaultSchedulerOptions = schedulerOptions{
 func New(client interface{},
 	informerFactory interface{},
 	dynInformerFactory interface{},
-	recorderFactory interface{},
+	recorderFactory profile.RecorderFactory,
 	stopCh <-chan struct{},
 	opts ...Option) (*Scheduler, error) {
 
@@ -273,7 +274,7 @@ func New(client interface{},
 		return nil, err
 	}
 
-	extender, err := buildExtenders(options.extenders, options.profiles)
+	extenders, err := buildExtenders(options.extenders, options.profiles)
 	if err != nil {
 		return nil, err
 	}
@@ -281,8 +282,54 @@ func New(client interface{},
 	// todo podLister := informerFactory.Core().V1().Pods().Lister()
 	// todo nodeLister := informerFactory.Core().V1().Nodes().Lister()
 
-	profiles, err := profile.ne
+	profiles, err := profile.NewMap(options.profiles, registry, recorderFactory, stopCh,
+		frameworkruntime.WithExtenders(extenders),
+	)
+	if err != nil {
+		return nil, err
+	}
 
+	podQueue := queue.NewSchedulingQueue(
+		profiles[options.profiles[0].SchedulerName].QueueSortFunc(),
+		informerFactory,
+	)
+
+	schedulerCache := cache.New(0, stopEverything)
+
+	sched := newScheduler(
+		schedulerCache,
+		extenders,
+		queue.MakeNextPodFunc(podQueue),
+		MakeDefaultErrorFunc(client, nil, podQueue, schedulerCache),
+		stopEverything,
+		podQueue,
+		profiles,
+		client,
+		options.percentageOfNodesToScore,
+	)
+
+	// todo addAllEventHandlers(sched, informerFactory, dynInformerFactory, unionedGVKs(clusterEventMap))
+
+	return sched, nil
+}
+
+func MakeDefaultErrorFunc(client interface{}, podLister interface{}, podQueue queue.SchedulingQueue, schedulerCache cache.Cache) func(*framework.QueuedStageInfo, error) {
+	return func(podInfo *framework.QueuedStageInfo, err error) {
+		pod := podInfo.Stage
+		if err != nil {
+			flog.Errorf("%s Error scheduling pod; retrying %v", err, pod)
+		}
+
+		// todo when isNotFound err, client get worker
+
+		cachedPod := &meta.Stage{} // todo
+
+		// As <cachedPod> is from SharedInformer, we need to do a DeepCopy() here.
+		podInfo.StageInfo = framework.NewStageInfo(cachedPod)
+		if err := podQueue.AddUnschedulableIfNotPresent(podInfo, podQueue.SchedulingCycle()); err != nil {
+			flog.Error(err)
+		}
+	}
 }
 
 func buildExtenders(extenders []config.Extender, profiles []config.Profile) ([]framework.Extender, error) {
