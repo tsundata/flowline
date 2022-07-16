@@ -193,7 +193,7 @@ type Handle interface {
 	// The return value indicates if the pod is waiting or not.
 	RejectWaitingPod(uid string) bool
 
-	// ClientSet returns a kubernetes clientSet.
+	// ClientSet returns a clientSet.
 	ClientSet() interface{}
 
 	// EventRecorder returns an event recorder.
