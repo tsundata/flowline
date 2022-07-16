@@ -1,8 +1,12 @@
 package app
 
 import (
+	"context"
 	"fmt"
+	"github.com/tsundata/flowline/cmd/scheduler/app/config"
 	"github.com/tsundata/flowline/pkg/scheduler"
+	config2 "github.com/tsundata/flowline/pkg/scheduler/framework/config"
+	"github.com/tsundata/flowline/pkg/scheduler/framework/runtime"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/signal"
 	"github.com/tsundata/flowline/pkg/util/version"
@@ -32,9 +36,9 @@ func NewSchedulerCommand() *cli.App {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			config := scheduler.NewConfig() // todo
-			config.ApiURL = c.String("api-url")
-			return Run(config, signal.SetupSignalHandler())
+			cc := &config.Config{} // todo
+			//config.ApiURL = c.String("api-url")
+			return runCommand(cc, signal.SetupSignalHandler())
 		},
 		Commands: []*cli.Command{
 			{
@@ -50,17 +54,64 @@ func NewSchedulerCommand() *cli.App {
 	}
 }
 
-func Run(c *scheduler.Config, stopCh <-chan struct{}) error {
+func runCommand(cc *config.Config, stopCh <-chan struct{}) error {
 	flog.Info("scheduler running")
 
-	server, err := CreateServerChain(c)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go func() {
+		<-stopCh
+		cancel()
+	}()
+
+	cc, sched, err := Setup(ctx, cc)
 	if err != nil {
 		return err
 	}
 
-	return server.Run(stopCh)
+	return Run(ctx, cc, sched)
 }
 
-func CreateServerChain(c *scheduler.Config) (*scheduler.Instance, error) {
-	return scheduler.NewInstance(c), nil
+// Option configures a framework.Registry.
+type Option func(runtime.Registry) error
+
+func Run(ctx context.Context, cc *config.Config, sched *scheduler.Scheduler) error {
+	flog.Info("scheduler running...")
+	sched.Run(ctx)
+	return nil
+}
+
+func Setup(ctx context.Context, cc *config.Config, outOfTreeRegistryOptions ...Option) (*config.Config, *scheduler.Scheduler, error) {
+	outOfTreeRegistry := make(runtime.Registry)
+	for _, option := range outOfTreeRegistryOptions {
+		if err := option(outOfTreeRegistry); err != nil {
+			return nil, nil, err
+		}
+	}
+
+	completedProfiles := make([]config2.Profile, 0)
+	sche, err := scheduler.New(
+		cc.Client,
+		nil,
+		nil,
+		nil,
+		ctx.Done(),
+		scheduler.WithConfig(cc.Config),
+		scheduler.WithProfiles(cc.ComponentConfig.Profiles...),
+		scheduler.WithPercentageOfNodesToScore(cc.ComponentConfig.PercentageOfNodesToScore),
+		scheduler.WithFrameworkOutOfTreeRegistry(outOfTreeRegistry),
+		scheduler.WithPodMaxBackoffSeconds(cc.ComponentConfig.PodMaxBackoffSeconds),
+		scheduler.WithPodInitialBackoffSeconds(cc.ComponentConfig.PodInitialBackoffSeconds),
+		scheduler.WithPodMaxInUnschedulablePodsDuration(cc.PodMaxInUnschedulablePodsDuration),
+		scheduler.WithExtenders(cc.ComponentConfig.Extenders...),
+		scheduler.WithParallelism(cc.ComponentConfig.Parallelism),
+		scheduler.WithBuildFrameworkCapturer(func(profile config2.Profile) {
+			completedProfiles = append(completedProfiles, profile)
+		}),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return cc, sche, nil
 }

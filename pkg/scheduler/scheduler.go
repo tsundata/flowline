@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/scheduler/cache"
@@ -29,6 +30,67 @@ type ScheduleResult struct {
 	FeasibleWorkers int
 }
 
+func WithProfiles(p ...config.Profile) Option {
+	return func(o *schedulerOptions) {
+		o.profiles = p
+		o.applyDefaultProfile = false
+	}
+}
+
+func WithConfig(cfg *Config) Option {
+	return func(o *schedulerOptions) {
+		o.config = cfg
+	}
+}
+
+func WithPercentageOfNodesToScore(percentageOfNodesToScore int32) Option {
+	return func(o *schedulerOptions) {
+		o.percentageOfNodesToScore = percentageOfNodesToScore
+	}
+}
+
+func WithFrameworkOutOfTreeRegistry(registry frameworkruntime.Registry) Option {
+	return func(o *schedulerOptions) {
+		o.frameworkOutOfTreeRegistry = registry
+	}
+}
+
+func WithPodMaxBackoffSeconds(podMaxBackoffSeconds int64) Option {
+	return func(o *schedulerOptions) {
+		o.stageMaxBackoffSeconds = podMaxBackoffSeconds
+	}
+}
+
+func WithPodInitialBackoffSeconds(podInitialBackoffSeconds int64) Option {
+	return func(o *schedulerOptions) {
+		o.stageInitialBackoffSeconds = podInitialBackoffSeconds
+	}
+}
+
+func WithPodMaxInUnschedulablePodsDuration(duration time.Duration) Option {
+	return func(o *schedulerOptions) {
+		o.stageMaxInUnschedulablePodsDuration = duration
+	}
+}
+
+func WithExtenders(e ...config.Extender) Option {
+	return func(o *schedulerOptions) {
+		o.extenders = e
+	}
+}
+
+func WithParallelism(threads int32) Option {
+	return func(o *schedulerOptions) {
+		o.parallelism = threads
+	}
+}
+
+func WithBuildFrameworkCapturer(fc FrameworkCapturer) Option {
+	return func(o *schedulerOptions) {
+		o.frameworkCapturer = fc
+	}
+}
+
 type Scheduler struct {
 	Cache cache.Cache
 
@@ -48,6 +110,8 @@ type Scheduler struct {
 	Profiles map[string]framework.Framework
 
 	client interface{}
+
+	workerInfoSnapshot *cache.Snapshot
 
 	percentageOfWorkersToScore int32
 	nextStartWorkerIndex       int
@@ -75,9 +139,54 @@ type Option func(*schedulerOptions)
 // FrameworkCapturer is used for registering a notify function in building framework.
 type FrameworkCapturer func(config.Profile)
 
-func (sched *Scheduler) scheduleStage(ctx context.Context, fwk framework.Framework, state *framework.CycleState, stage *meta.Stage) (result ScheduleResult, err error) {
+func (sched *Scheduler) Run(ctx context.Context) {
+	sched.SchedulingQueue.Run()
 
-	return ScheduleResult{}, nil
+	go parallelizer.JitterUntilWithContext(ctx, sched.scheduleOne, 0, 0.0, true)
+
+	<-ctx.Done()
+	sched.SchedulingQueue.Close()
+}
+
+func (sched *Scheduler) scheduleStage(ctx context.Context, fwk framework.Framework, state *framework.CycleState, stage *meta.Stage) (result ScheduleResult, err error) {
+	if err := sched.Cache.UpdateSnapshot(sched.workerInfoSnapshot); err != nil {
+		return result, err
+	}
+
+	if sched.workerInfoSnapshot.NumNodes() == 0 {
+		return result, errors.New("ErrNoNodesAvailable")
+	}
+
+	feasibleNodes, diagnosis, err := sched.findNodesThatFitPod(ctx, fwk, state, stage)
+	if err != nil {
+		return result, err
+	}
+
+	if len(feasibleNodes) == 0 {
+		return result, errors.New("FitError")
+	}
+
+	// When only one node after predicate, just use it.
+	if len(feasibleNodes) == 1 {
+		return ScheduleResult{
+			SuggestedHost:    feasibleNodes[0].Name,
+			EvaluatedWorkers: 1 + len(diagnosis.WorkerToStatusMap),
+			FeasibleWorkers:  1,
+		}, nil
+	}
+
+	priorityList, err := prioritizeNodes(ctx, sched.Extenders, fwk, state, stage, feasibleNodes)
+	if err != nil {
+		return result, err
+	}
+
+	host, err := selectHost(priorityList)
+
+	return ScheduleResult{
+		SuggestedHost:    host,
+		EvaluatedWorkers: len(feasibleNodes) + len(diagnosis.WorkerToStatusMap),
+		FeasibleWorkers:  len(feasibleNodes),
+	}, err
 }
 
 // Filters the nodes to find the ones that fit the pod based on the framework

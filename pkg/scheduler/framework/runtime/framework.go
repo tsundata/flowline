@@ -8,10 +8,16 @@ import (
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/config"
 	"github.com/tsundata/flowline/pkg/util/flog"
+	"github.com/tsundata/flowline/pkg/util/parallelizer"
 	"reflect"
 	"sort"
 	"sync"
 	"time"
+)
+
+const (
+	// Specifies the maximum timeout a permit plugin can return.
+	maxTimeout = 15 * time.Minute
 )
 
 type frameworkOptions struct {
@@ -25,7 +31,7 @@ type frameworkOptions struct {
 	extenders              []framework.Extender
 	captureProfile         CaptureProfile
 	clusterEventMap        map[framework.ClusterEvent]map[string]struct{}
-	parallelizer           int
+	parallelizer           parallelizer.Parallelizer
 }
 
 // Option for the frameworkImpl.
@@ -48,10 +54,10 @@ func WithExtenders(extenders []framework.Extender) Option {
 	}
 }
 
-func defaultFrameworkOptions(stopCh <-chan struct{}) frameworkOptions {
+func defaultFrameworkOptions(_ <-chan struct{}) frameworkOptions {
 	return frameworkOptions{
 		clusterEventMap: make(map[framework.ClusterEvent]map[string]struct{}),
-		parallelizer:    16,
+		parallelizer:    parallelizer.NewParallelizer(parallelizer.DefaultParallelism),
 	}
 }
 
@@ -178,12 +184,130 @@ type waitingStagesMap struct {
 	mu     sync.RWMutex
 }
 
+// newWaitingPodsMap returns a new waitingPodsMap.
+func newWaitingStagesMap() *waitingStagesMap {
+	return &waitingStagesMap{
+		stages: make(map[string]*waitingStage),
+	}
+}
+
+// add a new WaitingPod to the map.
+func (m *waitingStagesMap) add(wp *waitingStage) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.stages[wp.GetStage().UID] = wp
+}
+
+// remove a WaitingPod from the map.
+func (m *waitingStagesMap) remove(uid string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.stages, uid)
+}
+
+// get a WaitingPod from the map.
+func (m *waitingStagesMap) get(uid string) *waitingStage {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.stages[uid]
+}
+
+// iterate acquires a read lock and iterates over the WaitingPods map.
+func (m *waitingStagesMap) iterate(callback func(framework.WaitingStage)) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	for _, v := range m.stages {
+		callback(v)
+	}
+}
+
 // waitingPod represents a pod waiting in the permit phase.
 type waitingStage struct {
 	stage          *meta.Stage
 	pendingPlugins map[string]*time.Timer
 	s              chan *framework.Status
 	mu             sync.RWMutex
+}
+
+var _ framework.WaitingStage = &waitingStage{}
+
+// newWaitingPod returns a new waitingPod instance.
+func newWaitingPod(pod *meta.Stage, pluginsMaxWaitTime map[string]time.Duration) *waitingStage {
+	wp := &waitingStage{
+		stage: pod,
+		// Allow() and Reject() calls are non-blocking. This property is guaranteed
+		// by using non-blocking send to this channel. This channel has a buffer of size 1
+		// to ensure that non-blocking send will not be ignored - possible situation when
+		// receiving from this channel happens after non-blocking send.
+		s: make(chan *framework.Status, 1),
+	}
+
+	wp.pendingPlugins = make(map[string]*time.Timer, len(pluginsMaxWaitTime))
+	// The time.AfterFunc calls wp.Reject which iterates through pendingPlugins map. Acquire the
+	// lock here so that time.AfterFunc can only execute after newWaitingPod finishes.
+	wp.mu.Lock()
+	defer wp.mu.Unlock()
+	for k, v := range pluginsMaxWaitTime {
+		plugin, waitTime := k, v
+		wp.pendingPlugins[plugin] = time.AfterFunc(waitTime, func() {
+			msg := fmt.Sprintf("rejected due to timeout after waiting %v at plugin %v",
+				waitTime, plugin)
+			wp.Reject(plugin, msg)
+		})
+	}
+
+	return wp
+}
+
+func (w *waitingStage) GetStage() *meta.Stage {
+	return w.stage
+}
+
+func (w *waitingStage) GetPendingPlugins() []string {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	plugins := make([]string, 0, len(w.pendingPlugins))
+	for p := range w.pendingPlugins {
+		plugins = append(plugins, p)
+	}
+
+	return plugins
+}
+
+func (w *waitingStage) Allow(pluginName string) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if timer, exist := w.pendingPlugins[pluginName]; exist {
+		timer.Stop()
+		delete(w.pendingPlugins, pluginName)
+	}
+
+	// Only signal success status after all plugins have allowed
+	if len(w.pendingPlugins) != 0 {
+		return
+	}
+
+	// The select clause works as a non-blocking send.
+	// If there is no receiver, it's a no-op (default case).
+	select {
+	case w.s <- framework.NewStatus(framework.Success, ""):
+	default:
+	}
+}
+
+func (w *waitingStage) Reject(pluginName, msg string) {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	for _, timer := range w.pendingPlugins {
+		timer.Stop()
+	}
+
+	// The select clause works as a non-blocking send.
+	// If there is no receiver, it's a no-op (default case).
+	select {
+	case w.s <- framework.NewStatus(framework.Unschedulable, msg).WithFailedPlugin(pluginName):
+	default:
+	}
 }
 
 // frameworkImpl is the component responsible for initializing and running scheduler
@@ -208,102 +332,363 @@ type frameworkImpl struct {
 	extenders []framework.Extender
 	framework.StageNominator
 
-	parallelizer int
+	parallelizer parallelizer.Parallelizer
 }
 
 func (f *frameworkImpl) RunScorePlugins(ctx context.Context, state *framework.CycleState, stage *meta.Stage, workers []*meta.Worker) (framework.PluginToWorkerScores, *framework.Status) {
-	//TODO implement me
-	panic("implement me")
+	pluginToNodeScores := make(framework.PluginToWorkerScores, len(f.scorePlugins))
+	for _, pl := range f.scorePlugins {
+		pluginToNodeScores[pl.Name()] = make(framework.WorkerScoreList, len(workers))
+	}
+	ctx, cancel := context.WithCancel(ctx)
+	errCh := parallelizer.NewErrorChannel()
+
+	// Run Score method for each node in parallel.
+	f.Parallelizer().Until(ctx, len(workers), func(index int) {
+		for _, pl := range f.scorePlugins {
+			nodeName := workers[index].Name
+			s, ss := f.runScorePlugin(ctx, pl, state, stage, nodeName)
+			if !ss.IsSuccess() {
+				err := fmt.Errorf("plugin %q failed with: %w", pl.Name(), ss.AsError())
+				errCh.SendErrorWithCancel(err, cancel)
+				return
+			}
+			pluginToNodeScores[pl.Name()][index] = framework.WorkerScore{
+				Name:  nodeName,
+				Score: s,
+			}
+		}
+	})
+	if err := errCh.ReceiveError(); err != nil {
+		return nil, framework.AsStatus(fmt.Errorf("running Score plugins: %w", err))
+	}
+
+	// Run NormalizeScore method for each ScorePlugin in parallel.
+	f.Parallelizer().Until(ctx, len(f.scorePlugins), func(index int) {
+		pl := f.scorePlugins[index]
+		nodeScoreList := pluginToNodeScores[pl.Name()]
+		if pl.ScoreExtensions() == nil {
+			return
+		}
+		ss := f.runScoreExtension(ctx, pl, state, stage, nodeScoreList)
+		if !ss.IsSuccess() {
+			err := fmt.Errorf("plugin %q failed with: %w", pl.Name(), ss.AsError())
+			errCh.SendErrorWithCancel(err, cancel)
+			return
+		}
+	})
+	if err := errCh.ReceiveError(); err != nil {
+		return nil, framework.AsStatus(fmt.Errorf("running Normalize on Score plugins: %w", err))
+	}
+
+	// Apply score defaultWeights for each ScorePlugin in parallel.
+	f.Parallelizer().Until(ctx, len(f.scorePlugins), func(index int) {
+		pl := f.scorePlugins[index]
+		// Score plugins' weight has been checked when they are initialized.
+		weight := f.scorePluginWeight[pl.Name()]
+		nodeScoreList := pluginToNodeScores[pl.Name()]
+
+		for i, nodeScore := range nodeScoreList {
+			// return error if score plugin returns invalid score.
+			if nodeScore.Score > framework.MaxWorkerScore || nodeScore.Score < framework.MinWorkerScore {
+				err := fmt.Errorf("plugin %q returns an invalid score %v, it should in the range of [%v, %v] after normalizing", pl.Name(), nodeScore.Score, framework.MinWorkerScore, framework.MaxWorkerScore)
+				errCh.SendErrorWithCancel(err, cancel)
+				return
+			}
+			nodeScoreList[i].Score = nodeScore.Score * int64(weight)
+		}
+	})
+	if err := errCh.ReceiveError(); err != nil {
+		return nil, framework.AsStatus(fmt.Errorf("applying score defaultWeights on Score plugins: %w", err))
+	}
+
+	return pluginToNodeScores, nil
+}
+
+func (f *frameworkImpl) runScorePlugin(ctx context.Context, pl framework.ScorePlugin, state *framework.CycleState, pod *meta.Stage, nodeName string) (int64, *framework.Status) {
+	if !state.ShouldRecordPluginMetrics() {
+		return pl.Score(ctx, state, pod, nodeName)
+	}
+	s, ss := pl.Score(ctx, state, pod, nodeName)
+	return s, ss
+}
+
+func (f *frameworkImpl) runScoreExtension(ctx context.Context, pl framework.ScorePlugin, state *framework.CycleState, pod *meta.Stage, nodeScoreList framework.WorkerScoreList) *framework.Status {
+	if !state.ShouldRecordPluginMetrics() {
+		return pl.ScoreExtensions().NormalizeScore(ctx, state, pod, nodeScoreList)
+	}
+	ss := pl.ScoreExtensions().NormalizeScore(ctx, state, pod, nodeScoreList)
+	return ss
 }
 
 func (f *frameworkImpl) RunFilterPlugins(ctx context.Context, state *framework.CycleState, stage *meta.Stage, info *framework.WorkerInfo) framework.PluginToStatus {
-	//TODO implement me
-	panic("implement me")
+	statuses := make(framework.PluginToStatus)
+	for _, pl := range f.filterPlugins {
+		pluginStatus := f.runFilterPlugin(ctx, pl, state, stage, info)
+		if !pluginStatus.IsSuccess() {
+			if !pluginStatus.IsUnschedulable() {
+				// Filter plugins are not supposed to return any status other than
+				// Success or Unschedulable.
+				errStatus := framework.AsStatus(fmt.Errorf("running %q filter plugin: %w", pl.Name(), pluginStatus.AsError())).WithFailedPlugin(pl.Name())
+				return map[string]*framework.Status{pl.Name(): errStatus}
+			}
+			pluginStatus.SetFailedPlugin(pl.Name())
+			statuses[pl.Name()] = pluginStatus
+		}
+	}
+
+	return statuses
+}
+
+func (f *frameworkImpl) runFilterPlugin(ctx context.Context, pl framework.FilterPlugin, state *framework.CycleState, pod *meta.Stage, nodeInfo *framework.WorkerInfo) *framework.Status {
+	if !state.ShouldRecordPluginMetrics() {
+		return pl.Filter(ctx, state, pod, nodeInfo)
+	}
+	ss := pl.Filter(ctx, state, pod, nodeInfo)
+	return ss
 }
 
 func (f *frameworkImpl) IterateOverWaitingPods(callback func(framework.WaitingStage)) {
-	//TODO implement me
-	panic("implement me")
+	f.waitingPods.iterate(callback)
 }
 
 func (f *frameworkImpl) GetWaitingPod(uid string) framework.WaitingStage {
-	//TODO implement me
-	panic("implement me")
+	if wp := f.waitingPods.get(uid); wp != nil {
+		return wp
+	}
+	return nil // Returning nil instead of *waitingPod(nil).
 }
 
 func (f *frameworkImpl) RejectWaitingPod(uid string) bool {
-	//TODO implement me
-	panic("implement me")
+	if waitingPod := f.waitingPods.get(uid); waitingPod != nil {
+		waitingPod.Reject("", "removed")
+		return true
+	}
+	return false
 }
 
 func (f *frameworkImpl) ClientSet() interface{} {
-	//TODO implement me
-	panic("implement me")
+	return f.clientSet
 }
 
 func (f *frameworkImpl) EventRecorder() interface{} {
-	//TODO implement me
-	panic("implement me")
+	return f.eventRecorder
 }
 
 func (f *frameworkImpl) RunFilterPluginsWithNominatedPods(ctx context.Context, state *framework.CycleState, stage *meta.Stage, info *framework.WorkerInfo) *framework.Status {
-	//TODO implement me
-	panic("implement me")
+	var status *framework.Status
+
+	podsAdded := false
+
+	for i := 0; i < 2; i++ {
+		stateToUse := state
+		nodeInfoToUse := info
+		if i == 0 {
+			var err error
+			podsAdded, stateToUse, nodeInfoToUse, err = addNominatedStages(ctx, f, stage, state, info)
+			if err != nil {
+				return framework.AsStatus(err)
+			}
+		} else if !podsAdded || !status.IsSuccess() {
+			break
+		}
+
+		statusMap := f.RunFilterPlugins(ctx, stateToUse, stage, nodeInfoToUse)
+		status = statusMap.Merge()
+		if !status.IsSuccess() && !status.IsUnschedulable() {
+			return status
+		}
+	}
+
+	return status
+}
+
+// addNominatedStages adds pods with equal or greater priority which are nominated
+// to run on the node. It returns 1) whether any pod was added, 2) augmented cycleState,
+// 3) augmented nodeInfo.
+func addNominatedStages(_ context.Context, fh framework.Handle, pod *meta.Stage, state *framework.CycleState, nodeInfo *framework.WorkerInfo) (bool, *framework.CycleState, *framework.WorkerInfo, error) {
+	if fh == nil || nodeInfo.Worker() == nil {
+		// This may happen only in tests.
+		return false, state, nodeInfo, nil
+	}
+	nominatedPodInfos := fh.NominatedStagesForNode(nodeInfo.Worker().Name)
+	if len(nominatedPodInfos) == 0 {
+		return false, state, nodeInfo, nil
+	}
+	nodeInfoOut := nodeInfo.Clone()
+	stateOut := state.Clone()
+	podsAdded := false
+	for _, pi := range nominatedPodInfos {
+		if PodPriority(pi.Stage) >= PodPriority(pod) && pi.Stage.UID != pod.UID {
+			nodeInfoOut.AddStageInfo(pi)
+			podsAdded = true
+		}
+	}
+	return podsAdded, stateOut, nodeInfoOut, nil
+}
+
+func PodPriority(pod *meta.Stage) int {
+	if pod.Priority != 0 {
+		return pod.Priority
+	}
+	// When priority of a running pod is nil, it means it was created at a time
+	// that there was no global default priority class and the priority class
+	// name of the pod was empty. So, we resolve to the static default priority.
+	return 0
 }
 
 func (f *frameworkImpl) Extenders() []framework.Extender {
-	//TODO implement me
-	panic("implement me")
+	return f.extenders
 }
 
-func (f *frameworkImpl) Parallelizer() interface{} {
-	//TODO implement me
-	panic("implement me")
+func (f *frameworkImpl) Parallelizer() parallelizer.Parallelizer {
+	return f.parallelizer
 }
 
 func (f *frameworkImpl) QueueSortFunc() framework.LessFunc {
-	//TODO implement me
-	panic("implement me")
+	if f == nil {
+		return func(_, _ *framework.QueuedStageInfo) bool {
+			return false
+		}
+	}
+
+	if len(f.queueSortPlugins) == 0 {
+		panic("No QueueSort plugin is registered in the frameworkImpl.")
+	}
+
+	return f.queueSortPlugins[0].Less
 }
 
 func (f *frameworkImpl) RunPermitPlugins(ctx context.Context, state *framework.CycleState, stage *meta.Stage, workerName string) *framework.Status {
-	//TODO implement me
-	panic("implement me")
+	pluginsWaitTime := make(map[string]time.Duration)
+	statusCode := framework.Success
+	for _, pl := range f.permitPlugins {
+		status, timeout := f.runPermitPlugin(ctx, pl, state, stage, workerName)
+		if !status.IsSuccess() {
+			if status.IsUnschedulable() {
+				flog.Infof("Pod rejected by permit plugin", stage, pl.Name(), status.Message())
+				status.SetFailedPlugin(pl.Name())
+				return status
+			}
+			if status.IsWait() {
+				// Not allowed to be greater than maxTimeout.
+				if timeout > maxTimeout {
+					timeout = maxTimeout
+				}
+				pluginsWaitTime[pl.Name()] = timeout
+				statusCode = framework.Wait
+			} else {
+				err := status.AsError()
+				flog.Error(err)
+				flog.Errorf("Failed running Permit plugin %s %v", pl.Name(), stage)
+				return framework.AsStatus(fmt.Errorf("running Permit plugin %q: %w", pl.Name(), err)).WithFailedPlugin(pl.Name())
+			}
+		}
+	}
+	if statusCode == framework.Wait {
+		waitingPod := newWaitingPod(stage, pluginsWaitTime)
+		f.waitingPods.add(waitingPod)
+		msg := fmt.Sprintf("one or more plugins asked to wait and no plugin rejected pod %q", stage.Name)
+		flog.Infof("One or more plugins asked to wait and no plugin rejected pod %v", stage)
+		return framework.NewStatus(framework.Wait, msg)
+	}
+	return nil
 }
 
-func (f *frameworkImpl) WaitOnPermit(ctx context.Context, stage *meta.Stage) *framework.Status {
-	//TODO implement me
-	panic("implement me")
+func (f *frameworkImpl) runPermitPlugin(ctx context.Context, pl framework.PermitPlugin, state *framework.CycleState, pod *meta.Stage, nodeName string) (*framework.Status, time.Duration) {
+	if !state.ShouldRecordPluginMetrics() {
+		return pl.Permit(ctx, state, pod, nodeName)
+	}
+	ss, timeout := pl.Permit(ctx, state, pod, nodeName)
+	return ss, timeout
+}
+
+func (f *frameworkImpl) WaitOnPermit(_ context.Context, stage *meta.Stage) *framework.Status {
+	waitingPod := f.waitingPods.get(stage.UID)
+	if waitingPod == nil {
+		return nil
+	}
+	defer f.waitingPods.remove(stage.UID)
+	flog.Infof("Pod waiting on permit %v", stage)
+
+	s := <-waitingPod.s
+
+	if !s.IsSuccess() {
+		if s.IsUnschedulable() {
+			flog.Infof("Pod rejected while waiting on permit, %v %s", stage, s.Message())
+			s.SetFailedPlugin(s.FailedPlugin())
+			return s
+		}
+		err := s.AsError()
+		flog.Error(err)
+		flog.Errorf("Failed waiting on permit for pod, %v", stage)
+		return framework.AsStatus(fmt.Errorf("waiting on permit for pod: %w", err)).WithFailedPlugin(s.FailedPlugin())
+	}
+	return nil
 }
 
 func (f *frameworkImpl) RunBindPlugins(ctx context.Context, state *framework.CycleState, stage *meta.Stage, workerName string) *framework.Status {
-	//TODO implement me
-	panic("implement me")
+	if len(f.bindPlugins) == 0 {
+		return framework.NewStatus(framework.Skip, "")
+	}
+	var status *framework.Status
+	for _, bp := range f.bindPlugins {
+		status = f.runBindPlugin(ctx, bp, state, stage, workerName)
+		if status.IsSkip() {
+			continue
+		}
+		if !status.IsSuccess() {
+			err := status.AsError()
+			flog.Error(err)
+			flog.Errorf("Failed running Bind plugin, %s %v", bp.Name(), stage)
+			return framework.AsStatus(fmt.Errorf("running Bind plugin %q: %w", bp.Name(), err))
+		}
+		return status
+	}
+	return status
+}
+
+func (f *frameworkImpl) runBindPlugin(ctx context.Context, bp framework.BindPlugin, state *framework.CycleState, pod *meta.Stage, nodeName string) *framework.Status {
+	if !state.ShouldRecordPluginMetrics() {
+		return bp.Bind(ctx, state, pod, nodeName)
+	}
+	ss := bp.Bind(ctx, state, pod, nodeName)
+	return ss
 }
 
 func (f *frameworkImpl) HasFilterPlugins() bool {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (f *frameworkImpl) HasPostFilterPlugins() bool {
-	//TODO implement me
-	panic("implement me")
+	return len(f.filterPlugins) > 0
 }
 
 func (f *frameworkImpl) HasScorePlugins() bool {
-	//TODO implement me
-	panic("implement me")
+	return len(f.scorePlugins) > 0
 }
 
 func (f *frameworkImpl) ListPlugins() *config.Plugins {
-	//TODO implement me
-	panic("implement me")
+	m := config.Plugins{}
+
+	for _, e := range f.getExtensionPoints(&m) {
+		plugins := reflect.ValueOf(e.slicePtr).Elem()
+		extName := plugins.Type().Elem().Name()
+		var cfgs []config.Plugin
+		for i := 0; i < plugins.Len(); i++ {
+			name := plugins.Index(i).Interface().(framework.Plugin).Name()
+			p := config.Plugin{Name: name}
+			if extName == "ScorePlugin" {
+				// Weights apply only to score plugins.
+				p.Weight = int32(f.scorePluginWeight[name])
+			}
+			cfgs = append(cfgs, p)
+		}
+		if len(cfgs) > 0 {
+			e.plugins.Enabled = cfgs
+		}
+	}
+	return &m
 }
 
 func (f *frameworkImpl) ProfileName() string {
-	//TODO implement me
-	panic("implement me")
+	return f.profileName
 }
 
 func (f *frameworkImpl) pluginsNeeded(plugins *config.Plugins) map[string]struct{} {

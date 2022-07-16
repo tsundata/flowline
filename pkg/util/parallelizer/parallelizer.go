@@ -13,14 +13,37 @@ import (
 
 type DoWorkPieceFunc func(piece int)
 
+type options struct {
+	chunkSize int
+}
+
+type Options func(*options)
+
+// WithChunkSize allows to set chunks of work items to the workers, rather than
+// processing one by one.
+// It is recommended to use this option if the number of pieces significantly
+// higher than the number of workers and the work done for each item is small.
+func WithChunkSize(c int) func(*options) {
+	return func(o *options) {
+		o.chunkSize = c
+	}
+}
+
 // ParallelizeUntil is a framework that allows for parallelizing N
 // independent pieces of work until done or the context is canceled.
-func ParallelizeUntil(ctx context.Context, workers, pieces int, doWorkPiece DoWorkPieceFunc) {
+func ParallelizeUntil(ctx context.Context, workers, pieces int, doWorkPiece DoWorkPieceFunc, opts ...Options) {
 	if pieces == 0 {
 		return
 	}
+	o := options{}
+	for _, opt := range opts {
+		opt(&o)
+	}
+	chunkSize := o.chunkSize
+	if chunkSize < 1 {
+		chunkSize = 10 // default value
+	}
 
-	chunkSize := 10 //fixme
 	chunks := ceilDiv(pieces, chunkSize)
 	toProcess := make(chan int, chunks)
 	for i := 0; i < chunks; i++ {
@@ -113,6 +136,10 @@ type jitteredBackoffManagerImpl struct {
 	duration     time.Duration
 	jitter       float64
 	backoffTimer clock.Timer
+}
+
+func JitterUntilWithContext(ctx context.Context, f func(context.Context), period time.Duration, jitterFactor float64, sliding bool) {
+	JitterUntil(func() { f(ctx) }, period, jitterFactor, sliding, ctx.Done())
 }
 
 // Jitter returns a time.Duration between duration and duration + maxFactor *

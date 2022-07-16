@@ -7,6 +7,8 @@ import (
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
 	"github.com/tsundata/flowline/pkg/scheduler/queue"
 	"github.com/tsundata/flowline/pkg/util/flog"
+	"math/rand"
+	"sync"
 )
 
 var clearNominatedNode = &framework.NominatingInfo{NominatingMode: framework.ModeOverride, NominatedNodeName: ""}
@@ -211,4 +213,116 @@ func updateStage(ctx context.Context, client interface{}, stage *meta.Stage, con
 	// todo  	_, err = cs.CoreV1().Pods(old.Namespace).Patch(ctx, old.Name, types.StrategicMergePatchType, patchBytes, metav1.PatchOptions{}, "status")
 
 	return nil
+}
+
+func prioritizeNodes(
+	ctx context.Context,
+	extenders []framework.Extender,
+	fwk framework.Framework,
+	state *framework.CycleState,
+	pod *meta.Stage,
+	nodes []*meta.Worker,
+) (framework.WorkerScoreList, error) {
+	// If no priority configs are provided, then all nodes will have a score of one.
+	// This is required to generate the priority list in the required format
+	if len(extenders) == 0 && !fwk.HasScorePlugins() {
+		result := make(framework.WorkerScoreList, 0, len(nodes))
+		for i := range nodes {
+			result = append(result, framework.WorkerScore{
+				Name:  nodes[i].Name,
+				Score: 1,
+			})
+		}
+		return result, nil
+	}
+
+	// Run the Score plugins.
+	scoresMap, scoreStatus := fwk.RunScorePlugins(ctx, state, pod, nodes)
+	if !scoreStatus.IsSuccess() {
+		return nil, scoreStatus.AsError()
+	}
+
+	// Additional details logged at level 10 if enabled.
+	for plugin, nodeScoreList := range scoresMap {
+		for _, nodeScore := range nodeScoreList {
+			flog.Infof("Plugin scored node for pod %v %v %v %v", pod, plugin, nodeScore.Name, nodeScore.Score)
+		}
+	}
+
+	// Summarize all scores.
+	result := make(framework.WorkerScoreList, 0, len(nodes))
+
+	for i := range nodes {
+		result = append(result, framework.WorkerScore{Name: nodes[i].Name, Score: 0})
+		for j := range scoresMap {
+			result[i].Score += scoresMap[j][i].Score
+		}
+	}
+
+	if len(extenders) != 0 && nodes != nil {
+		var mu sync.Mutex
+		var wg sync.WaitGroup
+		combinedScores := make(map[string]int64, len(nodes))
+		for i := range extenders {
+			if !extenders[i].IsInterested(pod) {
+				continue
+			}
+			wg.Add(1)
+			go func(extIndex int) {
+				prioritizedList, weight, err := extenders[extIndex].Prioritize(pod, nodes)
+				if err != nil {
+					// Prioritization errors from extender can be ignored, let k8s/other extenders determine the priorities
+					flog.Infof("Failed to run extender's priority function. No score given by this extender. %s %v %s", err, pod, extenders[extIndex].Name())
+					return
+				}
+				mu.Lock()
+				for i := range *prioritizedList {
+					host, score := (*prioritizedList)[i].Host, (*prioritizedList)[i].Score
+					flog.Infof("Extender scored node for pod, %v %s %v %v", pod, extenders[extIndex].Name(), host, score)
+					combinedScores[host] += score * weight
+				}
+				mu.Unlock()
+			}(i)
+		}
+		// wait for all go routines to finish
+		wg.Wait()
+		for i := range result {
+			// MaxExtenderPriority may diverge from the max priority used in the scheduler and defined by MaxNodeScore,
+			// therefore we need to scale the score returned by extenders to the score range used by the scheduler.
+			result[i].Score += combinedScores[result[i].Name] * (framework.MaxWorkerScore / MaxExtenderPriority)
+		}
+	}
+
+	for i := range result {
+		flog.Infof("Calculated node's final score for pod, %v %s %v", pod, result[i].Name, result[i].Score)
+	}
+
+	return result, nil
+}
+
+const MaxExtenderPriority = 10
+
+// selectHost takes a prioritized list of nodes and then picks one
+// in a reservoir sampling manner from the nodes that had the highest score.
+func selectHost(nodeScoreList framework.WorkerScoreList) (string, error) {
+	if len(nodeScoreList) == 0 {
+		return "", fmt.Errorf("empty priorityList")
+	}
+	maxScore := nodeScoreList[0].Score
+	selected := nodeScoreList[0].Name
+	cntOfMaxScore := 1
+	for _, ns := range nodeScoreList[1:] {
+		if ns.Score > maxScore {
+			maxScore = ns.Score
+			selected = ns.Name
+			cntOfMaxScore = 1
+		} else if ns.Score == maxScore {
+			cntOfMaxScore++
+			if rand.Intn(cntOfMaxScore) == 0 {
+				// Replace the candidate with probability of 1/cntOfMaxScore
+				selected = ns.Name
+			}
+		}
+	}
+	return selected, nil
 }

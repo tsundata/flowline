@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/config"
+	"github.com/tsundata/flowline/pkg/util/parallelizer"
 	"math"
 	"strings"
 	"sync"
@@ -161,9 +162,6 @@ type Framework interface {
 	// HasFilterPlugins returns true if at least one Filter plugin is defined.
 	HasFilterPlugins() bool
 
-	// HasPostFilterPlugins returns true if at least one PostFilter plugin is defined.
-	HasPostFilterPlugins() bool
-
 	// HasScorePlugins returns true if at least one Score plugin is defined.
 	HasScorePlugins() bool
 
@@ -206,7 +204,7 @@ type Handle interface {
 	Extenders() []Extender
 
 	// Parallelizer returns a parallelizer holding parallelism for scheduler.
-	Parallelizer() interface{}
+	Parallelizer() parallelizer.Parallelizer
 }
 
 // WaitingPod represents a pod currently waiting in the permit phase.
