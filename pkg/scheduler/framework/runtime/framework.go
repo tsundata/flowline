@@ -47,6 +47,13 @@ func WithEventRecorder(recorder interface{}) Option {
 	}
 }
 
+// WithStageNominator sets podNominator for the scheduling frameworkImpl.
+func WithStageNominator(nominator framework.StageNominator) Option {
+	return func(o *frameworkOptions) {
+		o.stageNominator = nominator
+	}
+}
+
 // WithExtenders sets extenders for the scheduling frameworkImpl.
 func WithExtenders(extenders []framework.Extender) Option {
 	return func(o *frameworkOptions) {
@@ -346,15 +353,15 @@ func (f *frameworkImpl) RunScorePlugins(ctx context.Context, state *framework.Cy
 	// Run Score method for each node in parallel.
 	f.Parallelizer().Until(ctx, len(workers), func(index int) {
 		for _, pl := range f.scorePlugins {
-			nodeName := workers[index].Name
-			s, ss := f.runScorePlugin(ctx, pl, state, stage, nodeName)
+			workerName := workers[index].UID
+			s, ss := f.runScorePlugin(ctx, pl, state, stage, workerName)
 			if !ss.IsSuccess() {
 				err := fmt.Errorf("plugin %q failed with: %w", pl.Name(), ss.AsError())
 				errCh.SendErrorWithCancel(err, cancel)
 				return
 			}
 			pluginToNodeScores[pl.Name()][index] = framework.WorkerScore{
-				Name:  nodeName,
+				UID:   workerName,
 				Score: s,
 			}
 		}
@@ -405,11 +412,11 @@ func (f *frameworkImpl) RunScorePlugins(ctx context.Context, state *framework.Cy
 	return pluginToNodeScores, nil
 }
 
-func (f *frameworkImpl) runScorePlugin(ctx context.Context, pl framework.ScorePlugin, state *framework.CycleState, pod *meta.Stage, nodeName string) (int64, *framework.Status) {
+func (f *frameworkImpl) runScorePlugin(ctx context.Context, pl framework.ScorePlugin, state *framework.CycleState, pod *meta.Stage, workerName string) (int64, *framework.Status) {
 	if !state.ShouldRecordPluginMetrics() {
-		return pl.Score(ctx, state, pod, nodeName)
+		return pl.Score(ctx, state, pod, workerName)
 	}
-	s, ss := pl.Score(ctx, state, pod, nodeName)
+	s, ss := pl.Score(ctx, state, pod, workerName)
 	return s, ss
 }
 
@@ -559,11 +566,11 @@ func (f *frameworkImpl) QueueSortFunc() framework.LessFunc {
 	return f.queueSortPlugins[0].Less
 }
 
-func (f *frameworkImpl) RunPermitPlugins(ctx context.Context, state *framework.CycleState, stage *meta.Stage, workerName string) *framework.Status {
+func (f *frameworkImpl) RunPermitPlugins(ctx context.Context, state *framework.CycleState, stage *meta.Stage, workerUID string) *framework.Status {
 	pluginsWaitTime := make(map[string]time.Duration)
 	statusCode := framework.Success
 	for _, pl := range f.permitPlugins {
-		status, timeout := f.runPermitPlugin(ctx, pl, state, stage, workerName)
+		status, timeout := f.runPermitPlugin(ctx, pl, state, stage, workerUID)
 		if !status.IsSuccess() {
 			if status.IsUnschedulable() {
 				flog.Infof("Pod rejected by permit plugin", stage, pl.Name(), status.Message())
@@ -595,11 +602,11 @@ func (f *frameworkImpl) RunPermitPlugins(ctx context.Context, state *framework.C
 	return nil
 }
 
-func (f *frameworkImpl) runPermitPlugin(ctx context.Context, pl framework.PermitPlugin, state *framework.CycleState, pod *meta.Stage, nodeName string) (*framework.Status, time.Duration) {
+func (f *frameworkImpl) runPermitPlugin(ctx context.Context, pl framework.PermitPlugin, state *framework.CycleState, pod *meta.Stage, workerUID string) (*framework.Status, time.Duration) {
 	if !state.ShouldRecordPluginMetrics() {
-		return pl.Permit(ctx, state, pod, nodeName)
+		return pl.Permit(ctx, state, pod, workerUID)
 	}
-	ss, timeout := pl.Permit(ctx, state, pod, nodeName)
+	ss, timeout := pl.Permit(ctx, state, pod, workerUID)
 	return ss, timeout
 }
 
@@ -627,13 +634,13 @@ func (f *frameworkImpl) WaitOnPermit(_ context.Context, stage *meta.Stage) *fram
 	return nil
 }
 
-func (f *frameworkImpl) RunBindPlugins(ctx context.Context, state *framework.CycleState, stage *meta.Stage, workerName string) *framework.Status {
+func (f *frameworkImpl) RunBindPlugins(ctx context.Context, state *framework.CycleState, stage *meta.Stage, workerUID string) *framework.Status {
 	if len(f.bindPlugins) == 0 {
 		return framework.NewStatus(framework.Skip, "")
 	}
 	var status *framework.Status
 	for _, bp := range f.bindPlugins {
-		status = f.runBindPlugin(ctx, bp, state, stage, workerName)
+		status = f.runBindPlugin(ctx, bp, state, stage, workerUID)
 		if status.IsSkip() {
 			continue
 		}
@@ -648,11 +655,11 @@ func (f *frameworkImpl) RunBindPlugins(ctx context.Context, state *framework.Cyc
 	return status
 }
 
-func (f *frameworkImpl) runBindPlugin(ctx context.Context, bp framework.BindPlugin, state *framework.CycleState, pod *meta.Stage, nodeName string) *framework.Status {
+func (f *frameworkImpl) runBindPlugin(ctx context.Context, bp framework.BindPlugin, state *framework.CycleState, pod *meta.Stage, workerUID string) *framework.Status {
 	if !state.ShouldRecordPluginMetrics() {
-		return bp.Bind(ctx, state, pod, nodeName)
+		return bp.Bind(ctx, state, pod, workerUID)
 	}
-	ss := bp.Bind(ctx, state, pod, nodeName)
+	ss := bp.Bind(ctx, state, pod, workerUID)
 	return ss
 }
 

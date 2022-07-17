@@ -118,10 +118,10 @@ func MakeNextPodFunc(queue SchedulingQueue) func() *framework.QueuedStageInfo {
 	return func() *framework.QueuedStageInfo {
 		stageInfo, err := queue.Pop()
 		if err == nil {
-			flog.Infof("About to try and schedule pod %v", stageInfo.Stage)
+			flog.Infof("About to try and schedule stage %s %s", stageInfo.Stage.Name, stageInfo.Stage.UID)
 			return stageInfo
 		}
-		flog.Errorf("%s Error while retrieving next pod from scheduling queue", err)
+		flog.Errorf("%s Error while retrieving next stage from scheduling queue", err)
 		return nil
 	}
 }
@@ -285,7 +285,7 @@ func (p *PriorityQueue) AddUnschedulableIfNotPresent(pInfo *framework.QueuedStag
 
 	stage := pInfo.Stage
 	if p.unschedulableStages.get(stage) != nil {
-		return fmt.Errorf("stage %v is already present in unschedulable queue", stage)
+		return fmt.Errorf("stage %v %s is already present in unschedulable queue", stage.Name, stage.UID)
 	}
 
 	if _, exists, _ := p.activeQ.Get(pInfo); exists {
@@ -616,6 +616,139 @@ func (p *PriorityQueue) flushUnschedulablePodsLeftover() {
 	}
 }
 
+// NewStageNominator creates a nominator as a backing of framework.PodNominator.
+// A podLister is passed in so as to check if the pod exists
+// before adding its nominatedNode info.
+func NewStageNominator(podLister interface{}) framework.StageNominator {
+	return &nominator{
+		podLister:          podLister,
+		nominatedPods:      make(map[string][]*framework.StageInfo),
+		nominatedPodToNode: make(map[string]string),
+	}
+}
+
+type nominator struct {
+	// podLister is used to verify if the given pod is alive.
+	podLister interface{}
+	// nominatedPods is a map keyed by a node name and the value is a list of
+	// pods which are nominated to run on the node. These are pods which can be in
+	// the activeQ or unschedulablePods.
+	nominatedPods map[string][]*framework.StageInfo
+	// nominatedPodToNode is map keyed by a Pod UID to the node name where it is
+	// nominated.
+	nominatedPodToNode map[string]string
+
+	sync.RWMutex
+}
+
+func (npm *nominator) AddNominatedStage(stage *framework.StageInfo, nominatingInfo *framework.NominatingInfo) {
+	npm.Lock()
+	npm.add(stage, nominatingInfo)
+	npm.Unlock()
+}
+
+func (npm *nominator) delete(p *meta.Stage) {
+	nnn, ok := npm.nominatedPodToNode[p.UID]
+	if !ok {
+		return
+	}
+	for i, np := range npm.nominatedPods[nnn] {
+		if np.Stage.UID == p.UID {
+			npm.nominatedPods[nnn] = append(npm.nominatedPods[nnn][:i], npm.nominatedPods[nnn][i+1:]...)
+			if len(npm.nominatedPods[nnn]) == 0 {
+				delete(npm.nominatedPods, nnn)
+			}
+			break
+		}
+	}
+	delete(npm.nominatedPodToNode, p.UID)
+}
+
+func (npm *nominator) add(pi *framework.StageInfo, nominatingInfo *framework.NominatingInfo) {
+	// Always delete the pod if it already exists, to ensure we never store more than
+	// one instance of the pod.
+	npm.delete(pi.Stage)
+
+	var nodeName string
+	if nominatingInfo.Mode() == framework.ModeOverride {
+		nodeName = nominatingInfo.NominatedNodeName
+	} else if nominatingInfo.Mode() == framework.ModeNoop {
+		//if pi.Stage.Status.NominatedNodeName == "" {
+		//	return
+		//}
+		//nodeName = pi.Stage.Status.NominatedNodeName
+	}
+
+	if npm.podLister != nil {
+		// If the pod was removed or if it was already scheduled, don't nominate it.
+		//updatedPod, err := npm.podLister.Pods(pi.Pod.Namespace).Get(pi.Pod.Name)
+		//if err != nil {
+		//	klog.V(4).InfoS("Pod doesn't exist in podLister, aborted adding it to the nominator", "pod", klog.KObj(pi.Pod))
+		//	return
+		//}
+		//if updatedPod.NodeName != "" {
+		//	klog.V(4).InfoS("Pod is already scheduled to a node, aborted adding it to the nominator", "pod", klog.KObj(pi.Pod), "node", updatedPod.Spec.NodeName)
+		//	return
+		//}
+	}
+
+	npm.nominatedPodToNode[pi.Stage.UID] = nodeName
+	for _, npi := range npm.nominatedPods[nodeName] {
+		if npi.Stage.UID == pi.Stage.UID {
+			flog.Infof("Pod already exists in the nominator, %v", npi.Stage)
+			return
+		}
+	}
+	npm.nominatedPods[nodeName] = append(npm.nominatedPods[nodeName], pi)
+}
+
+func (npm *nominator) DeleteNominatedStageIfExists(stage *meta.Stage) {
+	npm.Lock()
+	npm.delete(stage)
+	npm.Unlock()
+}
+
+func NominatedStageName(pod *meta.Stage) string {
+	return pod.Name // fixme pod.Status.NominatedNodeName
+}
+
+func (npm *nominator) UpdateNominatedStage(oldStage *meta.Stage, newStageInfo *framework.StageInfo) {
+	npm.Lock()
+	defer npm.Unlock()
+	// In some cases, an Update event with no "NominatedNode" present is received right
+	// after a node("NominatedNode") is reserved for this pod in memory.
+	// In this case, we need to keep reserving the NominatedNode when updating the pod pointer.
+	var nominatingInfo *framework.NominatingInfo
+	// We won't fall into below `if` block if the Update event represents:
+	// (1) NominatedNode info is added
+	// (2) NominatedNode info is updated
+	// (3) NominatedNode info is removed
+	if NominatedStageName(oldStage) == "" && NominatedStageName(newStageInfo.Stage) == "" {
+		if nnn, ok := npm.nominatedPodToNode[oldStage.UID]; ok {
+			// This is the only case we should continue reserving the NominatedNode
+			nominatingInfo = &framework.NominatingInfo{
+				NominatingMode:    framework.ModeOverride,
+				NominatedNodeName: nnn,
+			}
+		}
+	}
+	// We update irrespective of the nominatedNodeName changed or not, to ensure
+	// that pod pointer is updated.
+	npm.delete(oldStage)
+	npm.add(newStageInfo, nominatingInfo)
+}
+
+func (npm *nominator) NominatedStagesForNode(nodeName string) []*framework.StageInfo {
+	npm.RLock()
+	defer npm.RUnlock()
+	// Make a copy of the nominated Pods so the caller can mutate safely.
+	pods := make([]*framework.StageInfo, len(npm.nominatedPods[nodeName]))
+	for i := 0; i < len(pods); i++ {
+		pods[i] = npm.nominatedPods[nodeName][i] // todo DeepCopy()
+	}
+	return pods
+}
+
 func (p *PriorityQueue) Run() {
 	go parallelizer.JitterUntil(p.flushBackoffQCompleted, 1.0*time.Second, 0.0, true, p.stop)
 	go parallelizer.JitterUntil(p.flushUnschedulablePodsLeftover, 30*time.Second, 0.0, true, p.stop)
@@ -639,7 +772,7 @@ func NewPriorityQueue(
 	}
 
 	if options.podNominator == nil {
-		// todo options.podNominator = NewStageNominator(informerFactory.Core().V1().Pods().Lister())
+		options.podNominator = NewStageNominator(nil)
 	}
 
 	pq := &PriorityQueue{
@@ -742,14 +875,12 @@ func MetaNamespaceKeyFunc(obj interface{}) (string, error) {
 func newUnschedulableStages() *UnschedulableStages {
 	return &UnschedulableStages{
 		stageInfoMap: make(map[string]*framework.QueuedStageInfo),
-		keyFunc:      GetPodFullName,
+		keyFunc:      GetStageFullName,
 	}
 }
 
-func GetPodFullName(stage *meta.Stage) string {
-	// Use underscore as the delimiter because it is not allowed in pod name
-	// (DNS subdomain format).
-	return stage.Name
+func GetStageFullName(stage *meta.Stage) string {
+	return stage.UID
 }
 
 func intersect(x, y map[string]struct{}) bool {

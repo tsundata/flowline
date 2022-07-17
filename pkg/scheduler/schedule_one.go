@@ -111,10 +111,11 @@ func (sched *Scheduler) scheduleOne(ctx context.Context) {
 			sched.SchedulingQueue.Activate(stagesToActivate.Map)
 		}
 	}()
+	flog.Info("scheduleOne end")
 }
 
-func (sched *Scheduler) assume(assumed *meta.Stage, host string) error {
-	assumed.WorkerHost = host
+func (sched *Scheduler) assume(assumed *meta.Stage, uid string) error {
+	assumed.WorkerUID = uid
 
 	if err := sched.Cache.AssumeStage(assumed); err != nil {
 		flog.Error(err)
@@ -163,7 +164,7 @@ func (sched *Scheduler) extendersBinding(stage *meta.Stage, worker string) (bool
 	return false, nil
 }
 
-func (sched *Scheduler) finishBinding(fwk framework.Framework, assumed *meta.Stage, targetNode string, err error) {
+func (sched *Scheduler) finishBinding(fwk framework.Framework, assumed *meta.Stage, targetWorker string, err error) {
 	if finErr := sched.Cache.FinishBinding(assumed); finErr != nil {
 		flog.Error(finErr)
 	}
@@ -220,16 +221,16 @@ func prioritizeNodes(
 	extenders []framework.Extender,
 	fwk framework.Framework,
 	state *framework.CycleState,
-	pod *meta.Stage,
-	nodes []*meta.Worker,
+	stage *meta.Stage,
+	workers []*meta.Worker,
 ) (framework.WorkerScoreList, error) {
 	// If no priority configs are provided, then all nodes will have a score of one.
 	// This is required to generate the priority list in the required format
 	if len(extenders) == 0 && !fwk.HasScorePlugins() {
-		result := make(framework.WorkerScoreList, 0, len(nodes))
-		for i := range nodes {
+		result := make(framework.WorkerScoreList, 0, len(workers))
+		for i := range workers {
 			result = append(result, framework.WorkerScore{
-				Name:  nodes[i].Name,
+				UID:   workers[i].UID,
 				Score: 1,
 			})
 		}
@@ -237,7 +238,7 @@ func prioritizeNodes(
 	}
 
 	// Run the Score plugins.
-	scoresMap, scoreStatus := fwk.RunScorePlugins(ctx, state, pod, nodes)
+	scoresMap, scoreStatus := fwk.RunScorePlugins(ctx, state, stage, workers)
 	if !scoreStatus.IsSuccess() {
 		return nil, scoreStatus.AsError()
 	}
@@ -245,40 +246,40 @@ func prioritizeNodes(
 	// Additional details logged at level 10 if enabled.
 	for plugin, nodeScoreList := range scoresMap {
 		for _, nodeScore := range nodeScoreList {
-			flog.Infof("Plugin scored node for pod %v %v %v %v", pod, plugin, nodeScore.Name, nodeScore.Score)
+			flog.Infof("Plugin scored node for stage %s %s, %s %v %v", stage.Name, stage.UID, plugin, nodeScore.UID, nodeScore.Score)
 		}
 	}
 
 	// Summarize all scores.
-	result := make(framework.WorkerScoreList, 0, len(nodes))
+	result := make(framework.WorkerScoreList, 0, len(workers))
 
-	for i := range nodes {
-		result = append(result, framework.WorkerScore{Name: nodes[i].Name, Score: 0})
+	for i := range workers {
+		result = append(result, framework.WorkerScore{UID: workers[i].UID, Score: 0})
 		for j := range scoresMap {
 			result[i].Score += scoresMap[j][i].Score
 		}
 	}
 
-	if len(extenders) != 0 && nodes != nil {
+	if len(extenders) != 0 && workers != nil {
 		var mu sync.Mutex
 		var wg sync.WaitGroup
-		combinedScores := make(map[string]int64, len(nodes))
+		combinedScores := make(map[string]int64, len(workers))
 		for i := range extenders {
-			if !extenders[i].IsInterested(pod) {
+			if !extenders[i].IsInterested(stage) {
 				continue
 			}
 			wg.Add(1)
 			go func(extIndex int) {
-				prioritizedList, weight, err := extenders[extIndex].Prioritize(pod, nodes)
+				prioritizedList, weight, err := extenders[extIndex].Prioritize(stage, workers)
 				if err != nil {
 					// Prioritization errors from extender can be ignored, let k8s/other extenders determine the priorities
-					flog.Infof("Failed to run extender's priority function. No score given by this extender. %s %v %s", err, pod, extenders[extIndex].Name())
+					flog.Infof("Failed to run extender's priority function. No score given by this extender. %s %v %s", err, stage, extenders[extIndex].Name())
 					return
 				}
 				mu.Lock()
 				for i := range *prioritizedList {
 					host, score := (*prioritizedList)[i].Host, (*prioritizedList)[i].Score
-					flog.Infof("Extender scored node for pod, %v %s %v %v", pod, extenders[extIndex].Name(), host, score)
+					flog.Infof("Extender scored node for pod, %v %s %v %v", stage, extenders[extIndex].Name(), host, score)
 					combinedScores[host] += score * weight
 				}
 				mu.Unlock()
@@ -289,12 +290,12 @@ func prioritizeNodes(
 		for i := range result {
 			// MaxExtenderPriority may diverge from the max priority used in the scheduler and defined by MaxNodeScore,
 			// therefore we need to scale the score returned by extenders to the score range used by the scheduler.
-			result[i].Score += combinedScores[result[i].Name] * (framework.MaxWorkerScore / MaxExtenderPriority)
+			result[i].Score += combinedScores[result[i].UID] * (framework.MaxWorkerScore / MaxExtenderPriority)
 		}
 	}
 
 	for i := range result {
-		flog.Infof("Calculated node's final score for pod, %v %s %v", pod, result[i].Name, result[i].Score)
+		flog.Infof("Calculated node's final score for stage %s %s, %s %v", stage.Name, stage.UID, result[i].UID, result[i].Score)
 	}
 
 	return result, nil
@@ -309,18 +310,18 @@ func selectHost(nodeScoreList framework.WorkerScoreList) (string, error) {
 		return "", fmt.Errorf("empty priorityList")
 	}
 	maxScore := nodeScoreList[0].Score
-	selected := nodeScoreList[0].Name
+	selected := nodeScoreList[0].UID
 	cntOfMaxScore := 1
 	for _, ns := range nodeScoreList[1:] {
 		if ns.Score > maxScore {
 			maxScore = ns.Score
-			selected = ns.Name
+			selected = ns.UID
 			cntOfMaxScore = 1
 		} else if ns.Score == maxScore {
 			cntOfMaxScore++
 			if rand.Intn(cntOfMaxScore) == 0 {
 				// Replace the candidate with probability of 1/cntOfMaxScore
-				selected = ns.Name
+				selected = ns.UID
 			}
 		}
 	}

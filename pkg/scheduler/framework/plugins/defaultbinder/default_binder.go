@@ -2,7 +2,6 @@ package defaultbinder
 
 import (
 	"context"
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
@@ -31,13 +30,13 @@ func (b DefaultBinder) Name() string {
 }
 
 // Bind binds pods to nodes using the k8s client.
-func (b DefaultBinder) Bind(ctx context.Context, state *framework.CycleState, p *meta.Stage, nodeName string) *framework.Status {
-	flog.Infof("Attempting to bind pod to node, %v, %s", p, nodeName)
+func (b DefaultBinder) Bind(ctx context.Context, state *framework.CycleState, p *meta.Stage, workerUID string) *framework.Status {
+	flog.Infof("Attempting to bind pod to node, %s %s : %s", p.Name, p.UID, workerUID)
 	binding := &meta.Binding{
 		ObjectMeta: meta.ObjectMeta{Name: p.Name, UID: p.UID},
-		Target:     &meta.Worker{ObjectMeta: meta.ObjectMeta{UID: nodeName}},
+		Target:     &meta.Worker{ObjectMeta: meta.ObjectMeta{UID: workerUID}},
 	}
-	fmt.Println(binding)
+	flog.Infof("api send binging info ----> %s %s : %s", binding.Name, binding.UID, binding.Target.UID)
 	//err := b.handle.ClientSet().CoreV1().Pods(binding.Namespace).Bind(ctx, binding, metav1.CreateOptions{}) fixme
 	//if err != nil {
 	//		return framework.AsStatus(err)

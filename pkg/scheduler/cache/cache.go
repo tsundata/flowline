@@ -103,7 +103,7 @@ func (c *cacheImpl) finishBinding(stage *meta.Stage, now time.Time) error {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	flog.Infof("Finished binding for pod, can be expired, %v", stage)
+	flog.Infof("Finished binding for pod, can be expired, %s %s, worker %s %s", stage.Name, stage.UID, stage.WorkerUID, stage.WorkerHost)
 	currState, ok := c.stageStates[key]
 	_, has := c.assumedPods[key]
 	if ok && has {
@@ -413,14 +413,127 @@ func (c *cacheImpl) moveNodeInfoToHead(name string) {
 	c.headWorker = ni
 }
 
-func (c *cacheImpl) UpdateSnapshot(workerSnapshot interface{}) error {
-	//TODO implement me
-	panic("implement me")
+func (c *cacheImpl) UpdateSnapshot(workerSnapshot *Snapshot) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Get the last generation of the snapshot.
+	snapshotGeneration := workerSnapshot.generation
+
+	// NodeInfoList and HavePodsWithAffinityNodeInfoList must be re-created if a node was added
+	// or removed from the cache.
+	updateAllLists := false
+
+	// Start from the head of the NodeInfo doubly linked list and update snapshot
+	// of NodeInfos updated after the last snapshot.
+	for node := c.headWorker; node != nil; node = node.next {
+		if node.info.Generation <= snapshotGeneration {
+			// all the nodes are updated before the existing snapshot. We are done.
+			break
+		}
+		if np := node.info.Worker(); np != nil {
+			existing, ok := workerSnapshot.nodeInfoMap[np.Name]
+			if !ok {
+				updateAllLists = true
+				existing = &framework.WorkerInfo{}
+				workerSnapshot.nodeInfoMap[np.Name] = existing
+			}
+			clone := node.info.Clone()
+			// We need to preserve the original pointer of the NodeInfo struct since it
+			// is used in the NodeInfoList, which we may not update.
+			*existing = *clone
+		}
+	}
+	// Update the snapshot generation with the latest NodeInfo generation.
+	if c.headWorker != nil {
+		workerSnapshot.generation = c.headWorker.info.Generation
+	}
+
+	// Comparing to pods in nodeTree.
+	// Deleted nodes get removed from the tree, but they might remain in the nodes map
+	// if they still have non-deleted Pods.
+	if len(workerSnapshot.nodeInfoMap) > c.workerTree.numNodes {
+		//c.removeDeletedWorkersFromSnapshot(workerSnapshot) fixme
+		updateAllLists = true
+	}
+
+	if updateAllLists {
+		//c.updateWorkerInfoSnapshotList(workerSnapshot, updateAllLists) fixme
+		return nil // fixme
+	}
+
+	if len(workerSnapshot.nodeInfoList) != c.workerTree.numNodes {
+		errMsg := fmt.Sprintf("snapshot state is not consistent, length of NodeInfoList=%v not equal to length of nodes in tree=%v "+
+			", length of NodeInfoMap=%v, length of nodes in cache=%v"+
+			", trying to recover",
+			len(workerSnapshot.nodeInfoList), c.workerTree.numNodes,
+			len(workerSnapshot.nodeInfoMap), len(c.workers))
+		flog.Errorf(errMsg)
+		// We will try to recover by re-creating the lists for the next scheduling cycle, but still return an
+		// error to surface the problem, the error will likely cause a failure to the current scheduling cycle.
+		c.updateWorkerInfoSnapshotList(workerSnapshot, true)
+		return fmt.Errorf(errMsg)
+	}
+
+	return nil
+}
+
+func (c *cacheImpl) removeDeletedWorkersFromSnapshot(snapshot *Snapshot) {
+	toDelete := len(snapshot.nodeInfoMap) - c.workerTree.numNodes
+	for name := range snapshot.nodeInfoMap {
+		if toDelete <= 0 {
+			break
+		}
+		if n, ok := c.workers[name]; !ok || n.info.Worker() == nil {
+			delete(snapshot.nodeInfoMap, name)
+			toDelete--
+		}
+	}
+}
+
+func (c *cacheImpl) updateWorkerInfoSnapshotList(snapshot *Snapshot, updateAll bool) {
+	if updateAll {
+		// Take a snapshot of the nodes order in the tree
+		snapshot.nodeInfoList = make([]*framework.WorkerInfo, 0, c.workerTree.numNodes)
+		nodesList, err := c.workerTree.list()
+		if err != nil {
+			flog.Error(err)
+			flog.Errorf("Error occurred while retrieving the list of names of the nodes from node tree")
+		}
+		for _, nodeName := range nodesList {
+			if nodeInfo := snapshot.nodeInfoMap[nodeName]; nodeInfo != nil {
+				snapshot.nodeInfoList = append(snapshot.nodeInfoList, nodeInfo)
+			} else {
+				flog.Errorf("Node exists in nodeTree but not in NodeInfoMap, this should not happen, %s", nodeName)
+			}
+		}
+	}
 }
 
 func (c *cacheImpl) Dump() *Dump {
-	//TODO implement me
-	panic("implement me")
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	nodes := make(map[string]*framework.WorkerInfo, len(c.workers))
+	for k, v := range c.workers {
+		nodes[k] = v.info.Clone()
+	}
+
+	return &Dump{
+		Workers:       nodes,
+		AssumedStages: Union(c.assumedPods, nil),
+	}
+}
+
+func Union(s1, s2 map[string]struct{}) map[string]struct{} {
+	result := make(map[string]struct{})
+	for key := range s1 {
+		result[key] = struct{}{}
+	}
+	for key := range s2 {
+		result[key] = struct{}{}
+	}
+	return result
 }
 
 func (c *cacheImpl) run() {

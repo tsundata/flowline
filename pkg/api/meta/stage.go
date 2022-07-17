@@ -10,9 +10,9 @@ type Stage struct {
 	ObjectMeta
 
 	SchedulerName string
-	WorkerHost    string
-	WorkerUID     string
 	Priority      int
+	WorkerUID     string
+	WorkerHost    string
 
 	JobUID string `json:"jobUID,omitempty"`
 	DagUID string `json:"dagUID,omitempty"`

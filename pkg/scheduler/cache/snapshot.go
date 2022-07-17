@@ -32,8 +32,8 @@ func NewEmptySnapshot() *Snapshot {
 }
 
 // NewSnapshot initializes a Snapshot struct and returns it.
-func NewSnapshot(pods []*meta.Stage, nodes []*meta.Worker) *Snapshot {
-	nodeInfoMap := createNodeInfoMap(pods, nodes)
+func NewSnapshot(stages []*meta.Stage, workers []*meta.Worker) *Snapshot {
+	nodeInfoMap := createNodeInfoMap(stages, workers)
 	nodeInfoList := make([]*framework.WorkerInfo, 0, len(nodeInfoMap))
 	havePodsWithAffinityNodeInfoList := make([]*framework.WorkerInfo, 0, len(nodeInfoMap))
 	havePodsWithRequiredAntiAffinityNodeInfoList := make([]*framework.WorkerInfo, 0, len(nodeInfoMap))
@@ -53,22 +53,22 @@ func NewSnapshot(pods []*meta.Stage, nodes []*meta.Worker) *Snapshot {
 // createNodeInfoMap obtains a list of pods and pivots that list into a map
 // where the keys are node names and the values are the aggregated information
 // for that node.
-func createNodeInfoMap(pods []*meta.Stage, nodes []*meta.Worker) map[string]*framework.WorkerInfo {
+func createNodeInfoMap(stages []*meta.Stage, workers []*meta.Worker) map[string]*framework.WorkerInfo {
 	nodeNameToInfo := make(map[string]*framework.WorkerInfo)
-	for _, pod := range pods {
-		nodeName := pod.WorkerUID
+	for _, stage := range stages {
+		nodeName := stage.WorkerUID
 		if _, ok := nodeNameToInfo[nodeName]; !ok {
 			nodeNameToInfo[nodeName] = framework.NewWorkerInfo()
 		}
-		nodeNameToInfo[nodeName].AddStage(pod)
+		nodeNameToInfo[nodeName].AddStage(stage)
 	}
 
-	for _, node := range nodes {
-		if _, ok := nodeNameToInfo[node.Name]; !ok {
-			nodeNameToInfo[node.Name] = framework.NewWorkerInfo()
+	for _, worker := range workers {
+		if _, ok := nodeNameToInfo[worker.UID]; !ok {
+			nodeNameToInfo[worker.UID] = framework.NewWorkerInfo()
 		}
-		nodeInfo := nodeNameToInfo[node.Name]
-		nodeInfo.SetWorker(node)
+		nodeInfo := nodeNameToInfo[worker.UID]
+		nodeInfo.SetWorker(worker)
 	}
 	return nodeNameToInfo
 }

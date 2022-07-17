@@ -53,17 +53,6 @@ type ExtenderArgs struct {
 	WorkerNames *[]string
 }
 
-// HostPriority represents the priority of scheduling to a particular host, higher priority is better.
-type HostPriority struct {
-	// Name of the host
-	Host string
-	// Score associated with the host
-	Score int64
-}
-
-// HostPriorityList declares a []HostPriority type.
-type HostPriorityList []HostPriority
-
 // ExtenderPreemptionResult represents the result returned by preemption phase of extender.
 type ExtenderPreemptionResult struct {
 	NodeNameToMetaVictims map[string]interface{}
@@ -195,18 +184,18 @@ func (h *HTTPExtender) Filter(stage *meta.Stage, workers []*meta.Worker) (filter
 	return workerResult, result.FailedWorkers, result.FailedAndUnresolvableWorkers, nil
 }
 
-func (h *HTTPExtender) Prioritize(stage *meta.Stage, workers []*meta.Worker) (hostPriorities *HostPriorityList, weight int64, err error) {
+func (h *HTTPExtender) Prioritize(stage *meta.Stage, workers []*meta.Worker) (hostPriorities *framework.HostPriorityList, weight int64, err error) {
 	var (
-		result      HostPriorityList
+		result      framework.HostPriorityList
 		workerList  *meta.WorkerList
 		workerNames *[]string
 		args        *ExtenderArgs
 	)
 
 	if h.prioritizeVerb == "" {
-		result := HostPriorityList{}
+		result := framework.HostPriorityList{}
 		for _, worker := range workers {
-			result = append(result, HostPriority{Host: worker.Host, Score: 0})
+			result = append(result, framework.HostPriority{Host: worker.Host, Score: 0})
 		}
 		return &result, 0, nil
 	}

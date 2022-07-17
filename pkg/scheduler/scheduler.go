@@ -9,11 +9,14 @@ import (
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/config"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/plugins"
+	"github.com/tsundata/flowline/pkg/scheduler/framework/plugins/names"
 	frameworkruntime "github.com/tsundata/flowline/pkg/scheduler/framework/runtime"
 	"github.com/tsundata/flowline/pkg/scheduler/profile"
 	"github.com/tsundata/flowline/pkg/scheduler/queue"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
+	"github.com/tsundata/flowline/pkg/util/uid"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -21,7 +24,7 @@ import (
 
 // ScheduleResult represents the result of scheduling a pod.
 type ScheduleResult struct {
-	// Name of the selected node.
+	// UID of the selected node.
 	SuggestedHost string
 	// The number of nodes the scheduler evaluated the pod against in the filtering
 	// phase and beyond.
@@ -144,17 +147,48 @@ func (sched *Scheduler) Run(ctx context.Context) {
 
 	go parallelizer.JitterUntilWithContext(ctx, sched.scheduleOne, 0, 0.0, true)
 
+	go func() { // fixme
+		for i := 1; i <= 1; i++ {
+			err := sched.SchedulingQueue.Add(&meta.Stage{
+				TypeMeta: meta.TypeMeta{},
+				ObjectMeta: meta.ObjectMeta{
+					Name: "stage-" + strconv.Itoa(i),
+					UID:  uid.New(),
+				},
+				SchedulerName: "default-scheduler",
+				Priority:      1,
+				WorkerUID:     "",
+				WorkerHost:    "",
+				JobUID:        "93693ac6-1a9b-4c14-974c-78a6b5ce8f17",
+				DagUID:        "a5c88ab6-b521-48bc-b816-3b208117890b",
+				State:         "",
+				Runtime:       "javascript",
+				Code:          "input() + 1",
+				Input:         1000,
+				Output:        nil,
+				Connection:    nil,
+				Variable:      nil,
+			})
+			if err != nil {
+				flog.Error(err)
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}()
+
 	<-ctx.Done()
+	flog.Info("SchedulingQueue close")
 	sched.SchedulingQueue.Close()
 }
 
 func (sched *Scheduler) scheduleStage(ctx context.Context, fwk framework.Framework, state *framework.CycleState, stage *meta.Stage) (result ScheduleResult, err error) {
+	flog.Infof("scheduleStage %s %s", stage.Name, stage.UID)
 	if err := sched.Cache.UpdateSnapshot(sched.workerInfoSnapshot); err != nil {
 		return result, err
 	}
 
 	if sched.workerInfoSnapshot.NumNodes() == 0 {
-		return result, errors.New("ErrNoNodesAvailable")
+		return result, errors.New("ErrNoWorkersAvailable")
 	}
 
 	feasibleNodes, diagnosis, err := sched.findNodesThatFitPod(ctx, fwk, state, stage)
@@ -169,7 +203,7 @@ func (sched *Scheduler) scheduleStage(ctx context.Context, fwk framework.Framewo
 	// When only one node after predicate, just use it.
 	if len(feasibleNodes) == 1 {
 		return ScheduleResult{
-			SuggestedHost:    feasibleNodes[0].Name,
+			SuggestedHost:    feasibleNodes[0].UID,
 			EvaluatedWorkers: 1 + len(diagnosis.WorkerToStatusMap),
 			FeasibleWorkers:  1,
 		}, nil
@@ -200,6 +234,7 @@ func (sched *Scheduler) findNodesThatFitPod(ctx context.Context, fwk framework.F
 	var allWorkers []*framework.WorkerInfo //fixme get all workers
 
 	workers := allWorkers
+	workers, err := sched.workerInfoSnapshot.List()
 	feasibleWorkers, err := sched.findWorkersThatPassFilters(ctx, fwk, state, stage, diagnosis, workers)
 	processedWorkers := len(feasibleWorkers) + len(diagnosis.WorkerToStatusMap)
 	sched.nextStartWorkerIndex = (sched.nextStartWorkerIndex + processedWorkers) % len(workers)
@@ -318,6 +353,7 @@ func newScheduler(
 	schedulingQueue queue.SchedulingQueue,
 	profiles map[string]framework.Framework,
 	client interface{},
+	workerInfoSnapshot *cache.Snapshot,
 	percentageOfNodesToScore int32) *Scheduler {
 	sched := Scheduler{
 		Cache:                      cache,
@@ -328,6 +364,7 @@ func newScheduler(
 		SchedulingQueue:            schedulingQueue,
 		Profiles:                   profiles,
 		client:                     client,
+		workerInfoSnapshot:         workerInfoSnapshot,
 		percentageOfWorkersToScore: percentageOfNodesToScore,
 	}
 	sched.ScheduleStage = sched.scheduleStage
@@ -369,11 +406,42 @@ func New(client interface{},
 	}
 
 	if options.applyDefaultProfile {
-		options.profiles = []config.Profile{
-			config.Profile{
+		options.profiles = []config.Profile{ // fixme
+			{
 				SchedulerName: "default-scheduler",
-				Plugins:       nil, // todo
-				PluginConfig:  nil, // todo
+				Plugins: &config.Plugins{
+					QueueSort: config.PluginSet{
+						Enabled: []config.Plugin{
+							{Name: names.PrioritySort, Weight: 1},
+						},
+						Disabled: nil,
+					},
+					Filter: config.PluginSet{
+						Enabled: []config.Plugin{
+							{Name: names.WorkerRuntime, Weight: 1},
+						},
+						Disabled: nil,
+					},
+					Score: config.PluginSet{
+						Enabled: []config.Plugin{
+							{Name: names.DefaultScore, Weight: 1},
+						},
+						Disabled: nil,
+					},
+					Permit: config.PluginSet{
+						Enabled: []config.Plugin{
+							{Name: names.DefaultPermit, Weight: 1},
+						},
+						Disabled: nil,
+					},
+					Bind: config.PluginSet{
+						Enabled: []config.Plugin{
+							{Name: names.DefaultBinder, Weight: 1},
+						},
+						Disabled: nil,
+					},
+				},
+				PluginConfig: nil,
 			},
 		}
 	}
@@ -390,6 +458,33 @@ func New(client interface{},
 
 	// todo podLister := informerFactory.Core().V1().Pods().Lister()
 	// todo nodeLister := informerFactory.Core().V1().Nodes().Lister()
+
+	snapshot := cache.NewSnapshot([]*meta.Stage{}, []*meta.Worker{ // fixme
+		&meta.Worker{
+			TypeMeta: meta.TypeMeta{},
+			ObjectMeta: meta.ObjectMeta{
+				Name:            "worker1",
+				UID:             uid.New(),
+				ResourceVersion: "",
+				Generation:      0,
+			},
+			State:    meta.WorkerReady,
+			Host:     "127.0.0.1:6789",
+			Runtimes: []string{"javascript"},
+		},
+		&meta.Worker{
+			TypeMeta: meta.TypeMeta{},
+			ObjectMeta: meta.ObjectMeta{
+				Name:            "worker2",
+				UID:             uid.New(),
+				ResourceVersion: "",
+				Generation:      0,
+			},
+			State:    meta.WorkerReady,
+			Host:     "127.0.0.1:6780",
+			Runtimes: []string{"go", "javascript"},
+		},
+	})
 
 	profiles, err := profile.NewMap(options.profiles, registry, recorderFactory, stopCh,
 		frameworkruntime.WithExtenders(extenders),
@@ -414,6 +509,7 @@ func New(client interface{},
 		podQueue,
 		profiles,
 		client,
+		snapshot,
 		options.percentageOfNodesToScore,
 	)
 
@@ -426,7 +522,7 @@ func MakeDefaultErrorFunc(client interface{}, podLister interface{}, podQueue qu
 	return func(podInfo *framework.QueuedStageInfo, err error) {
 		pod := podInfo.Stage
 		if err != nil {
-			flog.Errorf("%s Error scheduling pod; retrying %v", err, pod)
+			flog.Errorf("%s Error scheduling pod; retrying %s %s", err, pod.Name, pod.UID)
 		}
 
 		// todo when isNotFound err, client get worker

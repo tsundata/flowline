@@ -30,7 +30,7 @@ type WorkerScoreList []WorkerScore
 
 // WorkerScore is a struct with node name and score.
 type WorkerScore struct {
-	Name  string
+	UID   string
 	Score int64
 }
 
@@ -99,7 +99,7 @@ type ScorePlugin interface {
 	// Score is called on each filtered node. It must return success and an integer
 	// indicating the rank of the node. All scoring plugins must return success or
 	// the pod will be rejected.
-	Score(ctx context.Context, state *CycleState, p *meta.Stage, workerName string) (int64, *Status)
+	Score(ctx context.Context, state *CycleState, p *meta.Stage, workerUID string) (int64, *Status)
 
 	// ScoreExtensions returns a ScoreExtensions interface if it implements one, or nil if does not.
 	ScoreExtensions() ScoreExtensions
@@ -115,7 +115,7 @@ type PermitPlugin interface {
 	// The pod will also be rejected if the wait timeout or the pod is rejected while
 	// waiting. Note that if the plugin returns "wait", the framework will wait only
 	// after running the remaining plugins given that no other plugin rejects the pod.
-	Permit(ctx context.Context, state *CycleState, p *meta.Stage, nodeName string) (*Status, time.Duration)
+	Permit(ctx context.Context, state *CycleState, p *meta.Stage, workerUID string) (*Status, time.Duration)
 }
 
 // BindPlugin is an interface that must be implemented by "Bind" plugins. Bind
@@ -128,7 +128,7 @@ type BindPlugin interface {
 	// remaining bind plugins are skipped. When a bind plugin does not handle a pod,
 	// it must return Skip in its Status code. If a bind plugin returns an Error, the
 	// pod is rejected and will not be bound.
-	Bind(ctx context.Context, state *CycleState, p *meta.Stage, nodeName string) *Status
+	Bind(ctx context.Context, state *CycleState, p *meta.Stage, workerUID string) *Status
 }
 
 // LessFunc is the function to sort pod info
@@ -147,7 +147,7 @@ type Framework interface {
 	// plugins returns "Wait", then this function will create and add waiting pod
 	// to a map of currently waiting pods and return status with "Wait" code.
 	// Pod will remain waiting pod for the minimum duration returned by the Permit plugins.
-	RunPermitPlugins(ctx context.Context, state *CycleState, stage *meta.Stage, workerName string) *Status
+	RunPermitPlugins(ctx context.Context, state *CycleState, stage *meta.Stage, workerUID string) *Status
 
 	// WaitOnPermit will block, if the pod is a waiting pod, until the waiting pod is rejected or allowed.
 	WaitOnPermit(ctx context.Context, stage *meta.Stage) *Status
@@ -157,7 +157,7 @@ type Framework interface {
 	// binding, it should return code=5("skip") status. Otherwise, it should return "Error"
 	// or "Success". If none of the plugins handled binding, RunBindPlugins returns
 	// code=5("skip") status.
-	RunBindPlugins(ctx context.Context, state *CycleState, stage *meta.Stage, workerName string) *Status
+	RunBindPlugins(ctx context.Context, state *CycleState, stage *meta.Stage, workerUID string) *Status
 
 	// HasFilterPlugins returns true if at least one Filter plugin is defined.
 	HasFilterPlugins() bool
@@ -244,6 +244,13 @@ const (
 type NominatingInfo struct {
 	NominatedNodeName string
 	NominatingMode    NominatingMode
+}
+
+func (ni *NominatingInfo) Mode() NominatingMode {
+	if ni == nil {
+		return ModeNoop
+	}
+	return ni.NominatingMode
 }
 
 // PluginsRunner abstracts operations to run some plugins.

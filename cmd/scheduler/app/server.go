@@ -55,8 +55,6 @@ func NewSchedulerCommand() *cli.App {
 }
 
 func runCommand(cc *config.Config, stopCh <-chan struct{}) error {
-	flog.Info("scheduler running")
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go func() {
@@ -76,7 +74,7 @@ func runCommand(cc *config.Config, stopCh <-chan struct{}) error {
 type Option func(runtime.Registry) error
 
 func Run(ctx context.Context, cc *config.Config, sched *scheduler.Scheduler) error {
-	flog.Info("scheduler running...")
+	flog.Info("scheduler running")
 	sched.Run(ctx)
 	return nil
 }
@@ -97,7 +95,7 @@ func Setup(ctx context.Context, cc *config.Config, outOfTreeRegistryOptions ...O
 		nil,
 		ctx.Done(),
 		scheduler.WithConfig(cc.Config),
-		scheduler.WithProfiles(cc.ComponentConfig.Profiles...),
+		//scheduler.WithProfiles(cc.ComponentConfig.Profiles...),
 		scheduler.WithPercentageOfNodesToScore(cc.ComponentConfig.PercentageOfNodesToScore),
 		scheduler.WithFrameworkOutOfTreeRegistry(outOfTreeRegistry),
 		scheduler.WithPodMaxBackoffSeconds(cc.ComponentConfig.PodMaxBackoffSeconds),

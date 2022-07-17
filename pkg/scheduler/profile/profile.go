@@ -8,6 +8,7 @@ import (
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/config"
 	frameworkruntime "github.com/tsundata/flowline/pkg/scheduler/framework/runtime"
+	"github.com/tsundata/flowline/pkg/scheduler/queue"
 )
 
 // RecorderFactory builds an EventRecorder for a given scheduler name.
@@ -16,8 +17,12 @@ type RecorderFactory func(string) interface{}
 // newProfile builds a Profile for the given configuration.
 func newProfile(cfg config.Profile, r frameworkruntime.Registry, recorderFact RecorderFactory,
 	stopCh <-chan struct{}, opts ...frameworkruntime.Option) (framework.Framework, error) {
-	recorder := recorderFact(cfg.SchedulerName)
-	opts = append(opts, frameworkruntime.WithEventRecorder(recorder))
+	//recorder := recorderFact(cfg.SchedulerName)
+	recorder := ""
+	opts = append(opts,
+		frameworkruntime.WithEventRecorder(recorder),
+		frameworkruntime.WithStageNominator(queue.NewStageNominator(nil)),
+	)
 	return frameworkruntime.NewFramework(r, &cfg, stopCh, opts...)
 }
 

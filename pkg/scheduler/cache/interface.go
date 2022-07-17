@@ -92,7 +92,7 @@ type Cache interface {
 	// on this node.
 	// The snapshot only includes Workers that are not deleted at the time this function is called.
 	// nodeinfo.Worker() is guaranteed to be not nil for all the nodes in the snapshot.
-	UpdateSnapshot(workerSnapshot interface{}) error
+	UpdateSnapshot(workerSnapshot *Snapshot) error
 
 	// Dump produces a dump of the current cache.
 	Dump() *Dump

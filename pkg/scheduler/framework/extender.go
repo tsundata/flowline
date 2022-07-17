@@ -2,8 +2,18 @@ package framework
 
 import (
 	"github.com/tsundata/flowline/pkg/api/meta"
-	"github.com/tsundata/flowline/pkg/scheduler"
 )
+
+// HostPriority represents the priority of scheduling to a particular host, higher priority is better.
+type HostPriority struct {
+	// Name of the host
+	Host string
+	// Score associated with the host
+	Score int64
+}
+
+// HostPriorityList declares a []HostPriority type.
+type HostPriorityList []HostPriority
 
 // Extender is an interface for external processes to influence scheduling
 // decisions made by Kubernetes. This is typically needed for resources not directly
@@ -22,7 +32,7 @@ type Extender interface {
 	// Prioritize based on extender-implemented priority functions. The returned scores & weight
 	// are used to compute the weighted score for an extender. The weighted scores are added to
 	// the scores computed by Kubernetes scheduler. The total scores are used to do the host selection.
-	Prioritize(stage *meta.Stage, workers []*meta.Worker) (hostPriorities *scheduler.HostPriorityList, weight int64, err error)
+	Prioritize(stage *meta.Stage, workers []*meta.Worker) (hostPriorities *HostPriorityList, weight int64, err error)
 
 	// Bind delegates the action of binding a pod to a node to the extender.
 	Bind(binding *meta.Binding) error

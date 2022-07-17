@@ -19,7 +19,7 @@ func (d *DefaultPermit) Name() string {
 	return Name
 }
 
-func (d *DefaultPermit) Permit(ctx context.Context, state *framework.CycleState, p *meta.Stage, nodeName string) (*framework.Status, time.Duration) {
+func (d *DefaultPermit) Permit(ctx context.Context, state *framework.CycleState, p *meta.Stage, workerUID string) (*framework.Status, time.Duration) {
 	return nil, 0
 }
 
