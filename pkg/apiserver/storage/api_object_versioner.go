@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-// APIObjectVersioner implements versioning and extracting etcd node information
+// APIObjectVersioner implements versioning and extracting etcd worker information
 // for objects that have an embedded ObjectMeta or ListMeta field.
 // source: staging/src/k8s.io/apiserver/pkg/storage/api_object_versioner.go
 type APIObjectVersioner struct{}

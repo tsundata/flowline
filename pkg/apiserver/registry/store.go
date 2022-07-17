@@ -71,7 +71,7 @@ type Store struct {
 
 	// Decorator is an optional exit hook on an object returned from the
 	// underlying storage. The returned object could be an individual object
-	// (e.g. Pod) or a list type (e.g. PodList). Decorator is intended for
+	// (e.g. Stage) or a list type (e.g. StageList). Decorator is intended for
 	// integrations that are above storage and should only be used for
 	// specific cases where storage of the value is not appropriate, since
 	// they cannot be watched.
@@ -343,7 +343,7 @@ func (e *Store) ListPredicate(ctx context.Context, p storage.SelectionPredicate,
 // returning an error if the TTL cannot be calculated. The defaultTTL is
 // changed to 1 if less than zero. Zero means no TTL, not expire immediately.
 func (e *Store) calculateTTL(obj runtime.Object, defaultTTL int64, update bool) (ttl uint64, err error) {
-	// etcd may return a negative TTL for a node if the expiration has not
+	// etcd may return a negative TTL for a worker if the expiration has not
 	// occurred due to server lag - we will ensure that the value is at least
 	// set.
 	if defaultTTL < 0 {

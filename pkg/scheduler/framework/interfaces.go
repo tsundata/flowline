@@ -25,10 +25,10 @@ const (
 	MaxTotalScore int64 = math.MaxInt64
 )
 
-// WorkerScoreList declares a list of nodes and their scores.
+// WorkerScoreList declares a list of workers and their scores.
 type WorkerScoreList []WorkerScore
 
-// WorkerScore is a struct with node name and score.
+// WorkerScore is a struct with worker name and score.
 type WorkerScore struct {
 	UID   string
 	Score int64
@@ -40,19 +40,19 @@ type Plugin interface {
 }
 
 // QueueSortPlugin is an interface that must be implemented by "QueueSort" plugins.
-// These plugins are used to sort pods in the scheduling queue. Only one queue sort
+// These plugins are used to sort stages in the scheduling queue. Only one queue sort
 // plugin may be enabled at a time.
 type QueueSortPlugin interface {
 	Plugin
-	// Less are used to sort pods in the scheduling queue.
+	// Less are used to sort stages in the scheduling queue.
 	Less(*QueuedStageInfo, *QueuedStageInfo) bool
 }
 
 // EnqueueExtensions is an optional interface that plugins can implement to efficiently
-// move unschedulable Pods in internal scheduling queues. Plugins
-// that fail pod scheduling (e.g., Filter plugins) are expected to implement this interface.
+// move unschedulable Stages in internal scheduling queues. Plugins
+// that fail stage scheduling (e.g., Filter plugins) are expected to implement this interface.
 type EnqueueExtensions interface {
-	// EventsToRegister returns a series of possible events that may cause a Pod
+	// EventsToRegister returns a series of possible events that may cause a Stage
 	// failed by this plugin schedulable.
 	// The events will be registered when instantiating the internal scheduling queue,
 	// and leveraged to build event handlers dynamically.
@@ -62,43 +62,43 @@ type EnqueueExtensions interface {
 }
 
 // FilterPlugin is an interface for Filter plugins. These plugins are called at the
-// filter extension point for filtering out hosts that cannot run a pod.
+// filter extension point for filtering out hosts that cannot run a stage.
 // This concept used to be called 'predicate' in the original scheduler.
 // These plugins should return "Success", "Unschedulable" or "Error" in Status.code.
 // However, the scheduler accepts other valid codes as well.
 // Anything other than "Success" will lead to exclusion of the given host from
-// running the pod.
+// running the stage.
 type FilterPlugin interface {
 	Plugin
 	// Filter is called by the scheduling framework.
 	// All FilterPlugins should return "Success" to declare that
-	// the given node fits the pod. If Filter doesn't return "Success",
+	// the given worker fits the stage. If Filter doesn't return "Success",
 	// it will return "Unschedulable", "UnschedulableAndUnresolvable" or "Error".
-	// For the node being evaluated, Filter plugins should look at the passed
-	// nodeInfo reference for this particular node's information (e.g., pods
-	// considered to be running on the node) instead of looking it up in the
-	// NodeInfoSnapshot because we don't guarantee that they will be the same.
+	// For the worker being evaluated, Filter plugins should look at the passed
+	// workerInfo reference for this particular worker's information (e.g., stages
+	// considered to be running on the worker) instead of looking it up in the
+	// WorkerInfoSnapshot because we don't guarantee that they will be the same.
 	// For example, during preemption, we may pass a copy of the original
-	// nodeInfo object that has some pods removed from it to evaluate the
-	// possibility of preempting them to schedule the target pod.
+	// workerInfo object that has some stages removed from it to evaluate the
+	// possibility of preempting them to schedule the target stage.
 	Filter(ctx context.Context, state *CycleState, stage *meta.Stage, workerInfo *WorkerInfo) *Status
 }
 
 // ScoreExtensions is an interface for Score extended functionality.
 type ScoreExtensions interface {
-	// NormalizeScore is called for all node scores produced by the same plugin's "Score"
+	// NormalizeScore is called for all worker scores produced by the same plugin's "Score"
 	// method. A successful run of NormalizeScore will update the scores list and return
 	// a success status.
 	NormalizeScore(ctx context.Context, state *CycleState, p *meta.Stage, scores WorkerScoreList) *Status
 }
 
 // ScorePlugin is an interface that must be implemented by "Score" plugins to rank
-// nodes that passed the filtering phase.
+// workers that passed the filtering phase.
 type ScorePlugin interface {
 	Plugin
-	// Score is called on each filtered node. It must return success and an integer
-	// indicating the rank of the node. All scoring plugins must return success or
-	// the pod will be rejected.
+	// Score is called on each filtered worker. It must return success and an integer
+	// indicating the rank of the worker. All scoring plugins must return success or
+	// the stage will be rejected.
 	Score(ctx context.Context, state *CycleState, p *meta.Stage, workerUID string) (int64, *Status)
 
 	// ScoreExtensions returns a ScoreExtensions interface if it implements one, or nil if does not.
@@ -106,54 +106,54 @@ type ScorePlugin interface {
 }
 
 // PermitPlugin is an interface that must be implemented by "Permit" plugins.
-// These plugins are called before a pod is bound to a node.
+// These plugins are called before a stage is bound to a worker.
 type PermitPlugin interface {
 	Plugin
-	// Permit is called before binding a pod (and before prebind plugins). Permit
-	// plugins are used to prevent or delay the binding of a Pod. A permit plugin
-	// must return success or wait with timeout duration, or the pod will be rejected.
-	// The pod will also be rejected if the wait timeout or the pod is rejected while
+	// Permit is called before binding a stage (and before prebind plugins). Permit
+	// plugins are used to prevent or delay the binding of a Stage. A permit plugin
+	// must return success or wait with timeout duration, or the stage will be rejected.
+	// The stage will also be rejected if the wait timeout or the stage is rejected while
 	// waiting. Note that if the plugin returns "wait", the framework will wait only
-	// after running the remaining plugins given that no other plugin rejects the pod.
+	// after running the remaining plugins given that no other plugin rejects the stage.
 	Permit(ctx context.Context, state *CycleState, p *meta.Stage, workerUID string) (*Status, time.Duration)
 }
 
 // BindPlugin is an interface that must be implemented by "Bind" plugins. Bind
-// plugins are used to bind a pod to a Node.
+// plugins are used to bind a stage to a Worker.
 type BindPlugin interface {
 	Plugin
 	// Bind plugins will not be called until all pre-bind plugins have completed. Each
 	// bind plugin is called in the configured order. A bind plugin may choose whether
-	// or not to handle the given Pod. If a bind plugin chooses to handle a Pod, the
-	// remaining bind plugins are skipped. When a bind plugin does not handle a pod,
+	// or not to handle the given Stage. If a bind plugin chooses to handle a Stage, the
+	// remaining bind plugins are skipped. When a bind plugin does not handle a stage,
 	// it must return Skip in its Status code. If a bind plugin returns an Error, the
-	// pod is rejected and will not be bound.
+	// stage is rejected and will not be bound.
 	Bind(ctx context.Context, state *CycleState, p *meta.Stage, workerUID string) *Status
 }
 
-// LessFunc is the function to sort pod info
+// LessFunc is the function to sort stage info
 type LessFunc func(stageInfo1, stageInfo2 *QueuedStageInfo) bool
 
 // Framework manages the set of plugins in use by the scheduling framework.
 // Configured plugins are called at specified points in a scheduling context.
 type Framework interface {
 	Handle
-	// QueueSortFunc returns the function to sort pods in scheduling queue
+	// QueueSortFunc returns the function to sort stages in scheduling queue
 	QueueSortFunc() LessFunc
 
 	// RunPermitPlugins runs the set of configured Permit plugins. If any of these
 	// plugins returns a status other than "Success" or "Wait", it does not continue
 	// running the remaining plugins and returns an error. Otherwise, if any of the
-	// plugins returns "Wait", then this function will create and add waiting pod
-	// to a map of currently waiting pods and return status with "Wait" code.
-	// Pod will remain waiting pod for the minimum duration returned by the Permit plugins.
+	// plugins returns "Wait", then this function will create and add waiting stage
+	// to a map of currently waiting stages and return status with "Wait" code.
+	// Stage will remain waiting stage for the minimum duration returned by the Permit plugins.
 	RunPermitPlugins(ctx context.Context, state *CycleState, stage *meta.Stage, workerUID string) *Status
 
-	// WaitOnPermit will block, if the pod is a waiting pod, until the waiting pod is rejected or allowed.
+	// WaitOnPermit will block, if the stage is a waiting stage, until the waiting stage is rejected or allowed.
 	WaitOnPermit(ctx context.Context, stage *meta.Stage) *Status
 
 	// RunBindPlugins runs the set of configured Bind plugins. A Bind plugin may choose
-	// whether or not to handle the given Pod. If a Bind plugin chooses to skip the
+	// whether or not to handle the given Stage. If a Bind plugin chooses to skip the
 	// binding, it should return code=5("skip") status. Otherwise, it should return "Error"
 	// or "Success". If none of the plugins handled binding, RunBindPlugins returns
 	// code=5("skip") status.
@@ -176,20 +176,20 @@ type Framework interface {
 // passed to the plugin factories at the time of plugin initialization. Plugins
 // must store and use this handle to call framework functions.
 type Handle interface {
-	// StageNominator abstracts operations to maintain nominated Pods.
+	// StageNominator abstracts operations to maintain nominated Stages.
 	StageNominator
 	// PluginsRunner abstracts operations to run some plugins.
 	PluginsRunner
 
-	// IterateOverWaitingPods acquires a read lock and iterates over the WaitingPods map.
-	IterateOverWaitingPods(callback func(WaitingStage))
+	// IterateOverWaitingStages acquires a read lock and iterates over the WaitingStages map.
+	IterateOverWaitingStages(callback func(WaitingStage))
 
-	// GetWaitingPod returns a waiting pod given its UID.
-	GetWaitingPod(uid string) WaitingStage
+	// GetWaitingStage returns a waiting stage given its UID.
+	GetWaitingStage(uid string) WaitingStage
 
-	// RejectWaitingPod rejects a waiting pod given its UID.
-	// The return value indicates if the pod is waiting or not.
-	RejectWaitingPod(uid string) bool
+	// RejectWaitingStage rejects a waiting stage given its UID.
+	// The return value indicates if the stage is waiting or not.
+	RejectWaitingStage(uid string) bool
 
 	// ClientSet returns a clientSet.
 	ClientSet() interface{}
@@ -197,8 +197,8 @@ type Handle interface {
 	// EventRecorder returns an event recorder.
 	EventRecorder() interface{}
 
-	// RunFilterPluginsWithNominatedPods runs the set of configured filter plugins for nominated pod on the given node.
-	RunFilterPluginsWithNominatedPods(ctx context.Context, state *CycleState, stage *meta.Stage, info *WorkerInfo) *Status
+	// RunFilterPluginsWithNominatedStages runs the set of configured filter plugins for nominated stage on the given worker.
+	RunFilterPluginsWithNominatedStages(ctx context.Context, state *CycleState, stage *meta.Stage, info *WorkerInfo) *Status
 
 	// Extenders returns registered scheduler extenders.
 	Extenders() []Extender
@@ -207,31 +207,31 @@ type Handle interface {
 	Parallelizer() parallelizer.Parallelizer
 }
 
-// WaitingPod represents a pod currently waiting in the permit phase.
+// WaitingStage represents a stage currently waiting in the permit phase.
 type WaitingStage interface {
-	// GetPod returns a reference to the waiting pod.
+	// GetStage returns a reference to the waiting stage.
 	GetStage() *meta.Stage
 	// GetPendingPlugins returns a list of pending Permit plugin's name.
 	GetPendingPlugins() []string
-	// Allow declares the waiting pod is allowed to be scheduled by the plugin named as "pluginName".
+	// Allow declares the waiting stage is allowed to be scheduled by the plugin named as "pluginName".
 	// If this is the last remaining plugin to allow, then a success signal is delivered
-	// to unblock the pod.
+	// to unblock the stage.
 	Allow(pluginName string)
-	// Reject declares the waiting pod unschedulable.
+	// Reject declares the waiting stage unschedulable.
 	Reject(pluginName, msg string)
 }
 
-// StageNominator abstracts operations to maintain nominated Pods.
+// StageNominator abstracts operations to maintain nominated Stages.
 type StageNominator interface {
-	// AddNominatedStage adds the given pod to the nominator or
+	// AddNominatedStage adds the given stage to the nominator or
 	// updates it if it already exists.
 	AddNominatedStage(stage *StageInfo, nominatingInfo *NominatingInfo)
-	// DeleteNominatedStageIfExists deletes nominatedPod from internal cache. It's a no-op if it doesn't exist.
+	// DeleteNominatedStageIfExists deletes nominatedStage from internal cache. It's a no-op if it doesn't exist.
 	DeleteNominatedStageIfExists(stage *meta.Stage)
-	// UpdateNominatedStage updates the <oldPod> with <newPod>.
+	// UpdateNominatedStage updates the <oldStage> with <newStage>.
 	UpdateNominatedStage(oldStage *meta.Stage, newStageInfo *StageInfo)
-	// NominatedStagesForNode returns nominatedPods on the given node.
-	NominatedStagesForNode(nodeName string) []*StageInfo
+	// NominatedStagesForWorker returns nominatedStages on the given worker.
+	NominatedStagesForWorker(workerName string) []*StageInfo
 }
 
 type NominatingMode int
@@ -242,8 +242,8 @@ const (
 )
 
 type NominatingInfo struct {
-	NominatedNodeName string
-	NominatingMode    NominatingMode
+	NominatedWorkerName string
+	NominatingMode      NominatingMode
 }
 
 func (ni *NominatingInfo) Mode() NominatingMode {
@@ -255,27 +255,27 @@ func (ni *NominatingInfo) Mode() NominatingMode {
 
 // PluginsRunner abstracts operations to run some plugins.
 // This is used by preemption PostFilter plugins when evaluating the feasibility of
-// scheduling the pod on nodes when certain running pods get evicted.
+// scheduling the stage on workers when certain running stages get evicted.
 type PluginsRunner interface {
 	// RunScorePlugins runs the set of configured Score plugins. It returns a map that
-	// stores for each Score plugin name the corresponding NodeScoreList(s).
+	// stores for each Score plugin name the corresponding WorkerScoreList(s).
 	// It also returns *Status, which is set to non-success if any of the plugins returns
 	// a non-success status.
 	RunScorePlugins(context.Context, *CycleState, *meta.Stage, []*meta.Worker) (PluginToWorkerScores, *Status)
-	// RunFilterPlugins runs the set of configured Filter plugins for pod on
-	// the given node. Note that for the node being evaluated, the passed nodeInfo
-	// reference could be different from the one in NodeInfoSnapshot map (e.g., pods
-	// considered to be running on the node could be different). For example, during
-	// preemption, we may pass a copy of the original nodeInfo object that has some pods
+	// RunFilterPlugins runs the set of configured Filter plugins for stage on
+	// the given worker. Note that for the worker being evaluated, the passed workerInfo
+	// reference could be different from the one in WorkerInfoSnapshot map (e.g., stages
+	// considered to be running on the worker could be different). For example, during
+	// preemption, we may pass a copy of the original workerInfo object that has some stages
 	// removed from it to evaluate the possibility of preempting them to
-	// schedule the target pod.
+	// schedule the target stage.
 	RunFilterPlugins(context.Context, *CycleState, *meta.Stage, *WorkerInfo) PluginToStatus
 }
 
-// PluginToWorkerScores declares a map from plugin name to its NodeScoreList.
+// PluginToWorkerScores declares a map from plugin name to its WorkerScoreList.
 type PluginToWorkerScores map[string]WorkerScoreList
 
-// WorkerToStatusMap declares map from node name to its status.
+// WorkerToStatusMap declares map from worker name to its status.
 type WorkerToStatusMap map[string]*Status
 
 // PluginToStatus maps plugin name to status. Currently used to identify which Filter plugin
@@ -313,22 +313,22 @@ type Code int
 
 // These are predefined codes used in a Status.
 const (
-	// Success means that plugin ran correctly and found pod schedulable.
+	// Success means that plugin ran correctly and found stage schedulable.
 	// NOTE: A nil status is also considered as "Success".
 	Success Code = iota
 	// Error is used for internal plugin errors, unexpected input, etc.
 	Error
-	// Unschedulable is used when a plugin finds a pod unschedulable. The scheduler might attempt to
-	// preempt other pods to get this pod scheduled. Use UnschedulableAndUnresolvable to make the
+	// Unschedulable is used when a plugin finds a stage unschedulable. The scheduler might attempt to
+	// preempt other stages to get this stage scheduled. Use UnschedulableAndUnresolvable to make the
 	// scheduler skip preemption.
-	// The accompanying status message should explain why the pod is unschedulable.
+	// The accompanying status message should explain why the stage is unschedulable.
 	Unschedulable
-	// UnschedulableAndUnresolvable is used when a plugin finds a pod unschedulable and
+	// UnschedulableAndUnresolvable is used when a plugin finds a stage unschedulable and
 	// preemption would not change anything. Plugins should return Unschedulable if it is possible
-	// that the pod can get scheduled with preemption.
-	// The accompanying status message should explain why the pod is unschedulable.
+	// that the stage can get scheduled with preemption.
+	// The accompanying status message should explain why the stage is unschedulable.
 	UnschedulableAndUnresolvable
-	// Wait is used when a Permit plugin finds a pod scheduling should wait.
+	// Wait is used when a Permit plugin finds a stage scheduling should wait.
 	Wait
 	// Skip is used when a Bind plugin chooses to skip binding.
 	Skip
@@ -352,7 +352,7 @@ type Status struct {
 	code    Code
 	reasons []string
 	err     error
-	// failedPlugin is an optional field that records the plugin name a Pod failed by.
+	// failedPlugin is an optional field that records the plugin name a Stage failed by.
 	// It's set by the framework when code is Error, Unschedulable or UnschedulableAndUnresolvable.
 	failedPlugin string
 }
@@ -469,17 +469,17 @@ func AsStatus(err error) *Status {
 	}
 }
 
-// StageToActivateKey is a reserved state key for stashing pods.
-// If the stashed pods are present in unschedulablePods or backoffQ，they will be
+// StageToActivateKey is a reserved state key for stashing stages.
+// If the stashed stages are present in unschedulableStages or backoffQ，they will be
 // activated (i.e., moved to activeQ) in two phases:
-// - end of a scheduling cycle if it succeeds (will be cleared from `PodsToActivate` if activated)
+// - end of a scheduling cycle if it succeeds (will be cleared from `StagesToActivate` if activated)
 // - end of a binding cycle if it succeeds
 var StageToActivateKey StateKey = "apps/stages-to-activate"
 
-// PodsToActivate stores pods to be activated.
+// StageToActivate stores stages to be activated.
 type StageToActivate struct {
 	sync.Mutex
-	// Map is keyed with namespaced pod name, and valued with the pod.
+	// Map is keyed with namespaced stage name, and valued with the stage.
 	Map map[string]*meta.Stage
 }
 

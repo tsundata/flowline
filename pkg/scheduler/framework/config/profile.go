@@ -3,7 +3,7 @@ package config
 // Profile is a scheduling profile.
 type Profile struct {
 	// SchedulerName is the name of the scheduler associated to this profile.
-	// If SchedulerName matches with the pod's "spec.schedulerName", then the pod
+	// If SchedulerName matches with the stage's "spec.schedulerName", then the stage
 	// is scheduled with this profile.
 	SchedulerName string
 

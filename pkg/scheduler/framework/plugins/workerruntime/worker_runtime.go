@@ -17,7 +17,7 @@ const (
 	// Name is the name of the plugin used in the plugin registry and configurations.
 	Name = names.WorkerRuntime
 
-	// ErrReason returned when node name doesn't match.
+	// ErrReason returned when worker name doesn't match.
 	ErrReason = "worker(s) didn't match the requested worker runtime"
 )
 
@@ -33,7 +33,7 @@ func (pl *WorkerRuntime) Name() string {
 
 func (pl *WorkerRuntime) Filter(_ context.Context, _ *framework.CycleState, stage *meta.Stage, workerInfo *framework.WorkerInfo) *framework.Status {
 	if workerInfo.Worker() == nil {
-		return framework.NewStatus(framework.Error, "node not found")
+		return framework.NewStatus(framework.Error, "worker not found")
 	}
 	if !Fits(stage, workerInfo) {
 		return framework.NewStatus(framework.UnschedulableAndUnresolvable, ErrReason)
@@ -41,7 +41,7 @@ func (pl *WorkerRuntime) Filter(_ context.Context, _ *framework.CycleState, stag
 	return nil
 }
 
-// Fits actually checks if the pod fits the node.
+// Fits actually checks if the stage fits the worker.
 func Fits(stage *meta.Stage, workerInfo *framework.WorkerInfo) bool {
 	if len(stage.Runtime) == 0 {
 		return false

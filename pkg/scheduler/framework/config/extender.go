@@ -13,29 +13,29 @@ type Extender struct {
 	PreemptVerb string
 	// Verb for the prioritize call, empty if not supported. This verb is appended to the URLPrefix when issuing the prioritize call to extender.
 	PrioritizeVerb string
-	// The numeric multiplier for the node scores that the prioritize call generates.
+	// The numeric multiplier for the worker scores that the prioritize call generates.
 	// The weight should be a positive integer
 	Weight int64
 	// Verb for the bind call, empty if not supported. This verb is appended to the URLPrefix when issuing the bind call to extender.
-	// If this method is implemented by the extender, it is the extender's responsibility to bind the pod to apiserver. Only one extender
+	// If this method is implemented by the extender, it is the extender's responsibility to bind the stage to apiserver. Only one extender
 	// can implement this function.
 	BindVerb string
 	// EnableHTTPS specifies whether https should be used to communicate with the extender
 	EnableHTTPS bool
 
-	// HTTPTimeout specifies the timeout duration for a call to the extender. Filter timeout fails the scheduling of the pod. Prioritize
-	// timeout is ignored, k8s/other extenders priorities are used to select the node.
+	// HTTPTimeout specifies the timeout duration for a call to the extender. Filter timeout fails the scheduling of the stage. Prioritize
+	// timeout is ignored, k8s/other extenders priorities are used to select the worker.
 	HTTPTimeout time.Duration
-	// NodeCacheCapable specifies that the extender is capable of caching node information,
-	// so the scheduler should only send minimal information about the eligible nodes
-	// assuming that the extender already cached full details of all nodes in the cluster
-	NodeCacheCapable bool
+	// WorkerCacheCapable specifies that the extender is capable of caching worker information,
+	// so the scheduler should only send minimal information about the eligible workers
+	// assuming that the extender already cached full details of all workers in the cluster
+	WorkerCacheCapable bool
 	// ManagedResources is a list of extended resources that are managed by
 	// this extender.
-	// - A pod will be sent to the extender on the Filter, Prioritize and Bind
-	//   (if the extender is the binder) phases iff the pod requests at least
+	// - A stage will be sent to the extender on the Filter, Prioritize and Bind
+	//   (if the extender is the binder) phases iff the stage requests at least
 	//   one of the extended resources in this list. If empty or unspecified,
-	//   all pods will be sent to this extender.
+	//   all stages will be sent to this extender.
 	// - If IgnoredByScheduler is set to true for a resource, kube-scheduler
 	//   will skip checking the resource in predicates.
 	// +optional

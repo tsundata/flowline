@@ -11,11 +11,11 @@ import (
 	"sync"
 )
 
-var clearNominatedNode = &framework.NominatingInfo{NominatingMode: framework.ModeOverride, NominatedNodeName: ""}
+var clearNominatedWorker = &framework.NominatingInfo{NominatingMode: framework.ModeOverride, NominatedWorkerName: ""}
 
 func (sched *Scheduler) scheduleOne(ctx context.Context) {
 	stageInfo := sched.NextStage()
-	// pod could be nil when schedulerQueue is closed
+	// stage could be nil when schedulerQueue is closed
 	if stageInfo == nil || stageInfo.Stage == nil {
 		return
 	}
@@ -40,7 +40,7 @@ func (sched *Scheduler) scheduleOne(ctx context.Context) {
 	scheduleResult, err := sched.ScheduleStage(schedulingCycleCtx, fwk, state, stage)
 	if err != nil {
 		var nominatingInfo *framework.NominatingInfo
-		nominatingInfo = clearNominatedNode
+		nominatingInfo = clearNominatedWorker
 		sched.handleSchedulingFailure(ctx, fwk, stageInfo, err, "Unschedulable", nominatingInfo)
 		return
 	}
@@ -49,7 +49,7 @@ func (sched *Scheduler) scheduleOne(ctx context.Context) {
 	assumedStage := assumedStageInfo.Stage
 	err = sched.assume(assumedStage, scheduleResult.SuggestedHost)
 	if err != nil {
-		sched.handleSchedulingFailure(ctx, fwk, stageInfo, err, "SchedulerError", clearNominatedNode)
+		sched.handleSchedulingFailure(ctx, fwk, stageInfo, err, "SchedulerError", clearNominatedWorker)
 		return
 	}
 
@@ -65,7 +65,7 @@ func (sched *Scheduler) scheduleOne(ctx context.Context) {
 		if forgetErr := sched.Cache.ForgetStage(assumedStage); forgetErr != nil {
 			flog.Error(forgetErr)
 		}
-		sched.handleSchedulingFailure(ctx, fwk, assumedStageInfo, runPermitStatus.AsError(), reason, clearNominatedNode)
+		sched.handleSchedulingFailure(ctx, fwk, assumedStageInfo, runPermitStatus.AsError(), reason, clearNominatedWorker)
 		return
 	}
 
@@ -90,11 +90,11 @@ func (sched *Scheduler) scheduleOne(ctx context.Context) {
 			if forgetErr := sched.Cache.ForgetStage(assumedStage); forgetErr != nil {
 				flog.Error(forgetErr)
 			} else {
-				defer sched.SchedulingQueue.MoveAllToActiveOrBackoffQueue(queue.AssignedPodDelete, func(stage *meta.Stage) bool {
+				defer sched.SchedulingQueue.MoveAllToActiveOrBackoffQueue(queue.AssignedStageDelete, func(stage *meta.Stage) bool {
 					return assumedStage.UID != stage.UID
 				})
 			}
-			sched.handleSchedulingFailure(ctx, fwk, assumedStageInfo, waitOnPermitStatus.AsError(), reason, clearNominatedNode)
+			sched.handleSchedulingFailure(ctx, fwk, assumedStageInfo, waitOnPermitStatus.AsError(), reason, clearNominatedWorker)
 			return
 		}
 
@@ -103,7 +103,7 @@ func (sched *Scheduler) scheduleOne(ctx context.Context) {
 			if forgetErr := sched.Cache.ForgetStage(assumedStage); forgetErr != nil {
 				flog.Error(forgetErr)
 			} else {
-				sched.SchedulingQueue.MoveAllToActiveOrBackoffQueue(queue.AssignedPodDelete, nil)
+				sched.SchedulingQueue.MoveAllToActiveOrBackoffQueue(queue.AssignedStageDelete, nil)
 			}
 		}
 
@@ -129,7 +129,7 @@ func (sched *Scheduler) assume(assumed *meta.Stage, uid string) error {
 	return nil
 }
 
-// bind binds a pod to a given node defined in a binding object.
+// bind binds a stage to a given worker defined in a binding object.
 // The precedence for binding is: (1) extenders and (2) framework plugins.
 // We expect this to run asynchronously, so we handle binding metrics internally.
 func (sched *Scheduler) bind(ctx context.Context, fwk framework.Framework, assumed *meta.Stage, targetWorker string, state *framework.CycleState) (err error) {
@@ -184,7 +184,7 @@ func (sched *Scheduler) handleSchedulingFailure(ctx context.Context, fwk framewo
 	stage := stageInfo.Stage
 	// todo fwk.EventRecorder "FailedScheduling"
 	if err := updateStage(ctx, sched.client, stage, map[string]interface{}{
-		"Type":    "PodScheduled",
+		"Type":    "StageScheduled",
 		"Status":  "ConditionFalse",
 		"Reason":  reason,
 		"Message": err.Error(),
@@ -211,12 +211,12 @@ func (sched *Scheduler) skipStageSchedule(fwk framework.Framework, stage *meta.S
 }
 
 func updateStage(ctx context.Context, client interface{}, stage *meta.Stage, condition interface{}, nominatingInfo *framework.NominatingInfo) error {
-	// todo  	_, err = cs.CoreV1().Pods(old.Namespace).Patch(ctx, old.Name, types.StrategicMergePatchType, patchBytes, metav1.PatchOptions{}, "status")
+	// todo  	_, err = cs.CoreV1().Stages(old.Namespace).Patch(ctx, old.Name, types.StrategicMergePatchType, patchBytes, metav1.PatchOptions{}, "status")
 
 	return nil
 }
 
-func prioritizeNodes(
+func prioritizeWorkers(
 	ctx context.Context,
 	extenders []framework.Extender,
 	fwk framework.Framework,
@@ -224,7 +224,7 @@ func prioritizeNodes(
 	stage *meta.Stage,
 	workers []*meta.Worker,
 ) (framework.WorkerScoreList, error) {
-	// If no priority configs are provided, then all nodes will have a score of one.
+	// If no priority configs are provided, then all workers will have a score of one.
 	// This is required to generate the priority list in the required format
 	if len(extenders) == 0 && !fwk.HasScorePlugins() {
 		result := make(framework.WorkerScoreList, 0, len(workers))
@@ -244,9 +244,9 @@ func prioritizeNodes(
 	}
 
 	// Additional details logged at level 10 if enabled.
-	for plugin, nodeScoreList := range scoresMap {
-		for _, nodeScore := range nodeScoreList {
-			flog.Infof("Plugin scored node for stage %s %s, %s %v %v", stage.Name, stage.UID, plugin, nodeScore.UID, nodeScore.Score)
+	for plugin, workerScoreList := range scoresMap {
+		for _, workerScore := range workerScoreList {
+			flog.Infof("Plugin scored worker for stage %s %s, %s %v %v", stage.Name, stage.UID, plugin, workerScore.UID, workerScore.Score)
 		}
 	}
 
@@ -279,7 +279,7 @@ func prioritizeNodes(
 				mu.Lock()
 				for i := range *prioritizedList {
 					host, score := (*prioritizedList)[i].Host, (*prioritizedList)[i].Score
-					flog.Infof("Extender scored node for pod, %v %s %v %v", stage, extenders[extIndex].Name(), host, score)
+					flog.Infof("Extender scored worker for stage, %v %s %v %v", stage, extenders[extIndex].Name(), host, score)
 					combinedScores[host] += score * weight
 				}
 				mu.Unlock()
@@ -288,14 +288,14 @@ func prioritizeNodes(
 		// wait for all go routines to finish
 		wg.Wait()
 		for i := range result {
-			// MaxExtenderPriority may diverge from the max priority used in the scheduler and defined by MaxNodeScore,
+			// MaxExtenderPriority may diverge from the max priority used in the scheduler and defined by MaxWorkerScore,
 			// therefore we need to scale the score returned by extenders to the score range used by the scheduler.
 			result[i].Score += combinedScores[result[i].UID] * (framework.MaxWorkerScore / MaxExtenderPriority)
 		}
 	}
 
 	for i := range result {
-		flog.Infof("Calculated node's final score for stage %s %s, %s %v", stage.Name, stage.UID, result[i].UID, result[i].Score)
+		flog.Infof("Calculated worker's final score for stage %s %s, %s %v", stage.Name, stage.UID, result[i].UID, result[i].Score)
 	}
 
 	return result, nil
@@ -303,16 +303,16 @@ func prioritizeNodes(
 
 const MaxExtenderPriority = 10
 
-// selectHost takes a prioritized list of nodes and then picks one
-// in a reservoir sampling manner from the nodes that had the highest score.
-func selectHost(nodeScoreList framework.WorkerScoreList) (string, error) {
-	if len(nodeScoreList) == 0 {
+// selectHost takes a prioritized list of workers and then picks one
+// in a reservoir sampling manner from the workers that had the highest score.
+func selectHost(workerScoreList framework.WorkerScoreList) (string, error) {
+	if len(workerScoreList) == 0 {
 		return "", fmt.Errorf("empty priorityList")
 	}
-	maxScore := nodeScoreList[0].Score
-	selected := nodeScoreList[0].UID
+	maxScore := workerScoreList[0].Score
+	selected := workerScoreList[0].UID
 	cntOfMaxScore := 1
-	for _, ns := range nodeScoreList[1:] {
+	for _, ns := range workerScoreList[1:] {
 		if ns.Score > maxScore {
 			maxScore = ns.Score
 			selected = ns.UID

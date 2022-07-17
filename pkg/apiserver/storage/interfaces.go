@@ -36,7 +36,7 @@ type Interface interface {
 
 	// Get unmarshals object found at key into objPtr. On a not found error, will either
 	// return a zero object of the requested type, or an error, depending on 'opts.ignoreNotFound'.
-	// Treats empty responses and nil response nodes exactly like a not found error.
+	// Treats empty responses and nil response workers exactly like a not found error.
 	// The returned contents may be delayed, but it is guaranteed that they will
 	// match 'opts.ResourceVersion' according 'opts.ResourceVersionMatch'.
 	Get(ctx context.Context, key string, opts GetOptions, objPtr runtime.Object) error
@@ -173,11 +173,11 @@ type Versioner interface {
 // an object. It abstracts the actual underlying objects to prevent coupling with concrete
 // database and to improve testability.
 type ResponseMeta struct {
-	// TTL is the time to live of the node that contained the returned object. It may be
+	// TTL is the time to live of the worker that contained the returned object. It may be
 	// zero or negative in some cases (objects may be expired after the requested
 	// expiration time due to server lag).
 	TTL int64
-	// The resource version of the node that contained the returned object.
+	// The resource version of the worker that contained the returned object.
 	ResourceVersion uint64
 }
 

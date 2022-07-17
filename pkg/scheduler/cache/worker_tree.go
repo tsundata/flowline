@@ -7,17 +7,17 @@ import (
 	"github.com/tsundata/flowline/pkg/util/flog"
 )
 
-// workerTree is a tree-like data structure that holds node names in each zone. Zone names are
-// keys to "NodeTree.tree" and values of "NodeTree.tree" are arrays of node names.
-// NodeTree is NOT thread-safe, any concurrent updates/reads from it must be synchronized by the caller.
+// workerTree is a tree-like data structure that holds worker names in each zone. Zone names are
+// keys to "WorkerTree.tree" and values of "WorkerTree.tree" are arrays of worker names.
+// WorkerTree is NOT thread-safe, any concurrent updates/reads from it must be synchronized by the caller.
 // It is used only by schedulerCache, and should stay as such.
 type workerTree struct {
-	tree     map[string][]string // a map from zone (region-zone) to an array of nodes in the zone.
-	zones    []string            // a list of all the zones in the tree (keys)
-	numNodes int
+	tree       map[string][]string // a map from zone (region-zone) to an array of workers in the zone.
+	zones      []string            // a list of all the zones in the tree (keys)
+	numWorkers int
 }
 
-// newWorkerTree creates a NodeTree from nodes.
+// newWorkerTree creates a WorkerTree from workers.
 func newWorkerTree(workers []*meta.Worker) *workerTree {
 	nt := &workerTree{
 		tree: make(map[string][]string),
@@ -28,14 +28,14 @@ func newWorkerTree(workers []*meta.Worker) *workerTree {
 	return nt
 }
 
-// addNode adds a node and its corresponding zone to the tree. If the zone already exists, the node
-// is added to the array of nodes in that zone.
+// addWorker adds a worker and its corresponding zone to the tree. If the zone already exists, the worker
+// is added to the array of workers in that zone.
 func (nt *workerTree) addWorker(n *meta.Worker) {
 	zone := GetZoneKey(n)
 	if na, ok := nt.tree[zone]; ok {
-		for _, nodeName := range na {
-			if nodeName == n.Name {
-				flog.Infof("Node already exists in the NodeTree")
+		for _, workerName := range na {
+			if workerName == n.Name {
+				flog.Infof("Worker already exists in the WorkerTree")
 				return
 			}
 		}
@@ -44,28 +44,28 @@ func (nt *workerTree) addWorker(n *meta.Worker) {
 		nt.zones = append(nt.zones, zone)
 		nt.tree[zone] = []string{n.Name}
 	}
-	flog.Infof("Added node in listed group to NodeTree %v", zone)
-	nt.numNodes++
+	flog.Infof("Added worker in listed group to WorkerTree %v", zone)
+	nt.numWorkers++
 }
 
-// removeNode removes a node from the NodeTree.
+// removeWorker removes a worker from the WorkerTree.
 func (nt *workerTree) removeWorker(n *meta.Worker) error {
 	zone := GetZoneKey(n)
 	if na, ok := nt.tree[zone]; ok {
-		for i, nodeName := range na {
-			if nodeName == n.Name {
+		for i, workerName := range na {
+			if workerName == n.Name {
 				nt.tree[zone] = append(na[:i], na[i+1:]...)
 				if len(nt.tree[zone]) == 0 {
 					nt.removeZone(zone)
 				}
-				flog.Infof("Removed node in listed group from NodeTree %v", zone)
-				nt.numNodes--
+				flog.Infof("Removed worker in listed group from WorkerTree %v", zone)
+				nt.numWorkers--
 				return nil
 			}
 		}
 	}
-	flog.Errorf("Node in listed group was not found %v", zone)
-	return fmt.Errorf("node %q in group %q was not found", n.Name, zone)
+	flog.Errorf("Worker in listed group was not found %v", zone)
+	return fmt.Errorf("worker %q in group %q was not found", n.Name, zone)
 }
 
 // removeZone removes a zone from tree.
@@ -80,48 +80,48 @@ func (nt *workerTree) removeZone(zone string) {
 	}
 }
 
-// updateNode updates a node in the NodeTree.
+// updateWorker updates a worker in the WorkerTree.
 func (nt *workerTree) updateWorker(old, new *meta.Worker) {
 	var oldZone string
 	if old != nil {
 		oldZone = GetZoneKey(old)
 	}
 	newZone := GetZoneKey(new)
-	// If the zone ID of the node has not changed, we don't need to do anything. Name of the node
+	// If the zone ID of the worker has not changed, we don't need to do anything. Name of the worker
 	// cannot be changed in an update.
 	if oldZone == newZone {
 		return
 	}
-	nt.removeWorker(old) // No error checking. We ignore whether the old node exists or not.
+	nt.removeWorker(old) // No error checking. We ignore whether the old worker exists or not.
 	nt.addWorker(new)
 }
 
-// list returns the list of names of the node. NodeTree iterates over zones and in each zone iterates
-// over nodes in a round robin fashion.
+// list returns the list of names of the worker. WorkerTree iterates over zones and in each zone iterates
+// over workers in a round robin fashion.
 func (nt *workerTree) list() ([]string, error) {
 	if len(nt.zones) == 0 {
 		return nil, nil
 	}
-	nodesList := make([]string, 0, nt.numNodes)
+	workersList := make([]string, 0, nt.numWorkers)
 	numExhaustedZones := 0
-	nodeIndex := 0
-	for len(nodesList) < nt.numNodes {
+	workerIndex := 0
+	for len(workersList) < nt.numWorkers {
 		if numExhaustedZones >= len(nt.zones) { // all zones are exhausted.
-			return nodesList, errors.New("all zones exhausted before reaching count of nodes expected")
+			return workersList, errors.New("all zones exhausted before reaching count of workers expected")
 		}
 		for zoneIndex := 0; zoneIndex < len(nt.zones); zoneIndex++ {
 			na := nt.tree[nt.zones[zoneIndex]]
-			if nodeIndex >= len(na) { // If the zone is exhausted, continue
-				if nodeIndex == len(na) { // If it is the first time the zone is exhausted
+			if workerIndex >= len(na) { // If the zone is exhausted, continue
+				if workerIndex == len(na) { // If it is the first time the zone is exhausted
 					numExhaustedZones++
 				}
 				continue
 			}
-			nodesList = append(nodesList, na[nodeIndex])
+			workersList = append(workersList, na[workerIndex])
 		}
-		nodeIndex++
+		workerIndex++
 	}
-	return nodesList, nil
+	return workersList, nil
 }
 
 const (
@@ -129,8 +129,8 @@ const (
 	LabelTopologyRegion = "region"
 )
 
-func GetZoneKey(node *meta.Worker) string {
-	labels := node.Labels
+func GetZoneKey(worker *meta.Worker) string {
+	labels := worker.Labels
 	if labels == nil {
 		return ""
 	}

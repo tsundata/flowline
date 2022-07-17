@@ -8,16 +8,16 @@ import "github.com/tsundata/flowline/pkg/runtime"
 // Enabled plugins are called in the order specified here, after default plugins. If they need to
 // be invoked before default plugins, default plugins must be disabled and re-enabled here in desired order.
 type Plugins struct {
-	// QueueSort is a list of plugins that should be invoked when sorting pods in the scheduling queue.
+	// QueueSort is a list of plugins that should be invoked when sorting stages in the scheduling queue.
 	QueueSort PluginSet
 
-	// Filter is a list of plugins that should be invoked when filtering out nodes that cannot run the Pod.
+	// Filter is a list of plugins that should be invoked when filtering out workers that cannot run the Stage.
 	Filter PluginSet
 
-	// Score is a list of plugins that should be invoked when ranking nodes that have passed the filtering phase.
+	// Score is a list of plugins that should be invoked when ranking workers that have passed the filtering phase.
 	Score PluginSet
 
-	// Permit is a list of plugins that control binding of a Pod. These plugins can prevent or delay binding of a Pod.
+	// Permit is a list of plugins that control binding of a Stage. These plugins can prevent or delay binding of a Stage.
 	Permit PluginSet
 
 	// Bind is a list of plugins that should be invoked at "Bind" extension point of the scheduling framework.

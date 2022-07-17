@@ -12,7 +12,7 @@ import (
 // Name of the plugin used in the plugin registry and configurations.
 const Name = names.DefaultBinder
 
-// DefaultBinder binds pods to nodes using a k8s client.
+// DefaultBinder binds stages to workers using a k8s client.
 type DefaultBinder struct {
 	handle framework.Handle
 }
@@ -29,15 +29,15 @@ func (b DefaultBinder) Name() string {
 	return Name
 }
 
-// Bind binds pods to nodes using the k8s client.
+// Bind binds stages to workers using the k8s client.
 func (b DefaultBinder) Bind(ctx context.Context, state *framework.CycleState, p *meta.Stage, workerUID string) *framework.Status {
-	flog.Infof("Attempting to bind pod to node, %s %s : %s", p.Name, p.UID, workerUID)
+	flog.Infof("Attempting to bind stage to worker, %s %s : %s", p.Name, p.UID, workerUID)
 	binding := &meta.Binding{
 		ObjectMeta: meta.ObjectMeta{Name: p.Name, UID: p.UID},
 		Target:     &meta.Worker{ObjectMeta: meta.ObjectMeta{UID: workerUID}},
 	}
 	flog.Infof("api send binging info ----> %s %s : %s", binding.Name, binding.UID, binding.Target.UID)
-	//err := b.handle.ClientSet().CoreV1().Pods(binding.Namespace).Bind(ctx, binding, metav1.CreateOptions{}) fixme
+	//err := b.handle.ClientSet().CoreV1().Stages(binding.Namespace).Bind(ctx, binding, metav1.CreateOptions{}) fixme
 	//if err != nil {
 	//		return framework.AsStatus(err)
 	//	}

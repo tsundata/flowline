@@ -1,18 +1,14 @@
 package framework
 
-// NodeInfoLister interface represents anything that can list/get NodeInfo objects from node name.
+// WorkerInfoLister interface represents anything that can list/get WorkerInfo objects from worker name.
 type WorkerInfoLister interface {
-	// List returns the list of NodeInfos.
+	// List returns the list of WorkerInfos.
 	List() ([]*WorkerInfo, error)
-	// HavePodsWithAffinityList returns the list of NodeInfos of nodes with pods with affinity terms.
-	HavePodsWithAffinityList() ([]*WorkerInfo, error)
-	// HavePodsWithRequiredAntiAffinityList returns the list of NodeInfos of nodes with pods with required anti-affinity terms.
-	HavePodsWithRequiredAntiAffinityList() ([]*WorkerInfo, error)
-	// Get returns the NodeInfo of the given node name.
-	Get(nodeName string) (*WorkerInfo, error)
+	// Get returns the WorkerInfo of the given worker name.
+	Get(workerUID string) (*WorkerInfo, error)
 }
 
 // SharedLister groups scheduler-specific listers.
 type SharedLister interface {
-	NodeInfos() WorkerInfoLister
+	WorkerInfos() WorkerInfoLister
 }

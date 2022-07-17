@@ -22,14 +22,14 @@ import (
 	"time"
 )
 
-// ScheduleResult represents the result of scheduling a pod.
+// ScheduleResult represents the result of scheduling a stage.
 type ScheduleResult struct {
-	// UID of the selected node.
+	// UID of the selected worker.
 	SuggestedHost string
-	// The number of nodes the scheduler evaluated the pod against in the filtering
+	// The number of workers the scheduler evaluated the stage against in the filtering
 	// phase and beyond.
 	EvaluatedWorkers int
-	// The number of nodes out of the evaluated ones that fit the pod.
+	// The number of workers out of the evaluated ones that fit the stage.
 	FeasibleWorkers int
 }
 
@@ -46,9 +46,9 @@ func WithConfig(cfg *Config) Option {
 	}
 }
 
-func WithPercentageOfNodesToScore(percentageOfNodesToScore int32) Option {
+func WithPercentageOfWorkersToScore(percentageOfWorkersToScore int32) Option {
 	return func(o *schedulerOptions) {
-		o.percentageOfNodesToScore = percentageOfNodesToScore
+		o.percentageOfWorkersToScore = percentageOfWorkersToScore
 	}
 }
 
@@ -58,21 +58,21 @@ func WithFrameworkOutOfTreeRegistry(registry frameworkruntime.Registry) Option {
 	}
 }
 
-func WithPodMaxBackoffSeconds(podMaxBackoffSeconds int64) Option {
+func WithStageMaxBackoffSeconds(stageMaxBackoffSeconds int64) Option {
 	return func(o *schedulerOptions) {
-		o.stageMaxBackoffSeconds = podMaxBackoffSeconds
+		o.stageMaxBackoffSeconds = stageMaxBackoffSeconds
 	}
 }
 
-func WithPodInitialBackoffSeconds(podInitialBackoffSeconds int64) Option {
+func WithStageInitialBackoffSeconds(stageInitialBackoffSeconds int64) Option {
 	return func(o *schedulerOptions) {
-		o.stageInitialBackoffSeconds = podInitialBackoffSeconds
+		o.stageInitialBackoffSeconds = stageInitialBackoffSeconds
 	}
 }
 
-func WithPodMaxInUnschedulablePodsDuration(duration time.Duration) Option {
+func WithStageMaxInUnschedulableStagesDuration(duration time.Duration) Option {
 	return func(o *schedulerOptions) {
-		o.stageMaxInUnschedulablePodsDuration = duration
+		o.stageMaxInUnschedulableStagesDuration = duration
 	}
 }
 
@@ -121,12 +121,12 @@ type Scheduler struct {
 }
 
 type schedulerOptions struct {
-	componentConfigVersion              string
-	config                              interface{} //*restclient.Config
-	percentageOfNodesToScore            int32
-	stageInitialBackoffSeconds          int64
-	stageMaxBackoffSeconds              int64
-	stageMaxInUnschedulablePodsDuration time.Duration
+	componentConfigVersion                string
+	config                                interface{} //*restclient.Config
+	percentageOfWorkersToScore            int32
+	stageInitialBackoffSeconds            int64
+	stageMaxBackoffSeconds                int64
+	stageMaxInUnschedulableStagesDuration time.Duration
 	// Contains out-of-tree plugins to be merged with the in-tree registry.
 	frameworkOutOfTreeRegistry frameworkruntime.Registry
 	profiles                   []config.Profile
@@ -187,29 +187,29 @@ func (sched *Scheduler) scheduleStage(ctx context.Context, fwk framework.Framewo
 		return result, err
 	}
 
-	if sched.workerInfoSnapshot.NumNodes() == 0 {
+	if sched.workerInfoSnapshot.NumWorkers() == 0 {
 		return result, errors.New("ErrNoWorkersAvailable")
 	}
 
-	feasibleNodes, diagnosis, err := sched.findNodesThatFitPod(ctx, fwk, state, stage)
+	feasibleWorkers, diagnosis, err := sched.findWorkersThatFitStage(ctx, fwk, state, stage)
 	if err != nil {
 		return result, err
 	}
 
-	if len(feasibleNodes) == 0 {
+	if len(feasibleWorkers) == 0 {
 		return result, errors.New("FitError")
 	}
 
-	// When only one node after predicate, just use it.
-	if len(feasibleNodes) == 1 {
+	// When only one worker after predicate, just use it.
+	if len(feasibleWorkers) == 1 {
 		return ScheduleResult{
-			SuggestedHost:    feasibleNodes[0].UID,
+			SuggestedHost:    feasibleWorkers[0].UID,
 			EvaluatedWorkers: 1 + len(diagnosis.WorkerToStatusMap),
 			FeasibleWorkers:  1,
 		}, nil
 	}
 
-	priorityList, err := prioritizeNodes(ctx, sched.Extenders, fwk, state, stage, feasibleNodes)
+	priorityList, err := prioritizeWorkers(ctx, sched.Extenders, fwk, state, stage, feasibleWorkers)
 	if err != nil {
 		return result, err
 	}
@@ -218,14 +218,14 @@ func (sched *Scheduler) scheduleStage(ctx context.Context, fwk framework.Framewo
 
 	return ScheduleResult{
 		SuggestedHost:    host,
-		EvaluatedWorkers: len(feasibleNodes) + len(diagnosis.WorkerToStatusMap),
-		FeasibleWorkers:  len(feasibleNodes),
+		EvaluatedWorkers: len(feasibleWorkers) + len(diagnosis.WorkerToStatusMap),
+		FeasibleWorkers:  len(feasibleWorkers),
 	}, err
 }
 
-// Filters the nodes to find the ones that fit the pod based on the framework
+// Filters the workers to find the ones that fit the stage based on the framework
 // filter plugins and filter extenders.
-func (sched *Scheduler) findNodesThatFitPod(ctx context.Context, fwk framework.Framework, state *framework.CycleState, stage *meta.Stage) ([]*meta.Worker, framework.Diagnosis, error) {
+func (sched *Scheduler) findWorkersThatFitStage(ctx context.Context, fwk framework.Framework, state *framework.CycleState, stage *meta.Stage) ([]*meta.Worker, framework.Diagnosis, error) {
 	diagnosis := framework.Diagnosis{
 		WorkerToStatusMap:    make(framework.WorkerToStatusMap),
 		UnschedulablePlugins: make(map[string]struct{}),
@@ -242,14 +242,14 @@ func (sched *Scheduler) findNodesThatFitPod(ctx context.Context, fwk framework.F
 		return nil, diagnosis, err
 	}
 
-	feasibleWorkers, err = findNodesThatPassExtenders(sched.Extenders, stage, feasibleWorkers, diagnosis.WorkerToStatusMap)
+	feasibleWorkers, err = findWorkersThatPassExtenders(sched.Extenders, stage, feasibleWorkers, diagnosis.WorkerToStatusMap)
 	if err != nil {
 		return nil, diagnosis, err
 	}
 	return feasibleWorkers, diagnosis, nil
 }
 
-// findNodesThatPassFilters finds the nodes that fit the filter plugins.
+// findWorkersThatPassFilters finds the workers that fit the filter plugins.
 func (sched *Scheduler) findWorkersThatPassFilters(
 	ctx context.Context,
 	fwk framework.Framework,
@@ -275,7 +275,7 @@ func (sched *Scheduler) findWorkersThatPassFilters(
 	ctx, cancel := context.WithCancel(ctx)
 	checkWorker := func(i int) {
 		workerInfo := workers[(sched.nextStartWorkerIndex+i)%numAllWorkers]
-		status := fwk.RunFilterPluginsWithNominatedPods(ctx, state, stage, workerInfo)
+		status := fwk.RunFilterPluginsWithNominatedStages(ctx, state, stage, workerInfo)
 		if status.Code() == framework.Error {
 			errCh.SendErrorWithCancel(status.AsError(), cancel)
 			return
@@ -300,7 +300,7 @@ func (sched *Scheduler) findWorkersThatPassFilters(
 	return feasibleWorkers, nil
 }
 
-func findNodesThatPassExtenders(extenders []framework.Extender, stage *meta.Stage, feasibleWorkers []*meta.Worker, statuses framework.WorkerToStatusMap) ([]*meta.Worker, error) {
+func findWorkersThatPassExtenders(extenders []framework.Extender, stage *meta.Stage, feasibleWorkers []*meta.Worker, statuses framework.WorkerToStatusMap) ([]*meta.Worker, error) {
 	for _, extender := range extenders {
 		if len(feasibleWorkers) == 0 {
 			break
@@ -354,7 +354,7 @@ func newScheduler(
 	profiles map[string]framework.Framework,
 	client interface{},
 	workerInfoSnapshot *cache.Snapshot,
-	percentageOfNodesToScore int32) *Scheduler {
+	percentageOfWorkersToScore int32) *Scheduler {
 	sched := Scheduler{
 		Cache:                      cache,
 		Extenders:                  extenders,
@@ -365,7 +365,7 @@ func newScheduler(
 		Profiles:                   profiles,
 		client:                     client,
 		workerInfoSnapshot:         workerInfoSnapshot,
-		percentageOfWorkersToScore: percentageOfNodesToScore,
+		percentageOfWorkersToScore: percentageOfWorkersToScore,
 	}
 	sched.ScheduleStage = sched.scheduleStage
 	return &sched
@@ -375,11 +375,11 @@ func newScheduler(
 var NeverStop <-chan struct{} = make(chan struct{})
 
 var defaultSchedulerOptions = schedulerOptions{
-	percentageOfNodesToScore:            0,
-	stageInitialBackoffSeconds:          int64((1 * time.Second).Seconds()),
-	stageMaxBackoffSeconds:              int64((10 * time.Second).Seconds()),
-	stageMaxInUnschedulablePodsDuration: 5 * time.Minute,
-	parallelism:                         int32(16),
+	percentageOfWorkersToScore:            0,
+	stageInitialBackoffSeconds:            int64((1 * time.Second).Seconds()),
+	stageMaxBackoffSeconds:                int64((10 * time.Second).Seconds()),
+	stageMaxInUnschedulableStagesDuration: 5 * time.Minute,
+	parallelism:                           int32(16),
 	// Ideally we would statically set the default profile here, but we can't because
 	// creating the default profile may require testing feature gates, which may get
 	// set dynamically in tests. Therefore, we delay creating it until New is actually
@@ -456,8 +456,8 @@ func New(client interface{},
 		return nil, err
 	}
 
-	// todo podLister := informerFactory.Core().V1().Pods().Lister()
-	// todo nodeLister := informerFactory.Core().V1().Nodes().Lister()
+	// todo stageLister := informerFactory.Core().V1().Stages().Lister()
+	// todo workerLister := informerFactory.Core().V1().Workers().Lister()
 
 	snapshot := cache.NewSnapshot([]*meta.Stage{}, []*meta.Worker{ // fixme
 		&meta.Worker{
@@ -493,7 +493,7 @@ func New(client interface{},
 		return nil, err
 	}
 
-	podQueue := queue.NewSchedulingQueue(
+	stageQueue := queue.NewSchedulingQueue(
 		profiles[options.profiles[0].SchedulerName].QueueSortFunc(),
 		informerFactory,
 	)
@@ -503,14 +503,14 @@ func New(client interface{},
 	sched := newScheduler(
 		schedulerCache,
 		extenders,
-		queue.MakeNextPodFunc(podQueue),
-		MakeDefaultErrorFunc(client, nil, podQueue, schedulerCache),
+		queue.MakeNextStageFunc(stageQueue),
+		MakeDefaultErrorFunc(client, nil, stageQueue, schedulerCache),
 		stopEverything,
-		podQueue,
+		stageQueue,
 		profiles,
 		client,
 		snapshot,
-		options.percentageOfNodesToScore,
+		options.percentageOfWorkersToScore,
 	)
 
 	// todo addAllEventHandlers(sched, informerFactory, dynInformerFactory, unionedGVKs(clusterEventMap))
@@ -518,20 +518,20 @@ func New(client interface{},
 	return sched, nil
 }
 
-func MakeDefaultErrorFunc(client interface{}, podLister interface{}, podQueue queue.SchedulingQueue, schedulerCache cache.Cache) func(*framework.QueuedStageInfo, error) {
-	return func(podInfo *framework.QueuedStageInfo, err error) {
-		pod := podInfo.Stage
+func MakeDefaultErrorFunc(client interface{}, stageLister interface{}, stageQueue queue.SchedulingQueue, schedulerCache cache.Cache) func(*framework.QueuedStageInfo, error) {
+	return func(stageInfo *framework.QueuedStageInfo, err error) {
+		stage := stageInfo.Stage
 		if err != nil {
-			flog.Errorf("%s Error scheduling pod; retrying %s %s", err, pod.Name, pod.UID)
+			flog.Errorf("%s Error scheduling stage; retrying %s %s", err, stage.Name, stage.UID)
 		}
 
 		// todo when isNotFound err, client get worker
 
-		cachedPod := &meta.Stage{} // todo
+		cachedStage := &meta.Stage{} // todo
 
-		// As <cachedPod> is from SharedInformer, we need to do a DeepCopy() here.
-		podInfo.StageInfo = framework.NewStageInfo(cachedPod)
-		if err := podQueue.AddUnschedulableIfNotPresent(podInfo, podQueue.SchedulingCycle()); err != nil {
+		// As <cachedStage> is from SharedInformer, we need to do a DeepCopy() here.
+		stageInfo.StageInfo = framework.NewStageInfo(cachedStage)
+		if err := stageQueue.AddUnschedulableIfNotPresent(stageInfo, stageQueue.SchedulingCycle()); err != nil {
 			flog.Error(err)
 		}
 	}
@@ -580,7 +580,7 @@ func buildExtenders(extenders []config.Extender, profiles []config.Profile) ([]f
 			}
 		}
 		if !found {
-			return nil, fmt.Errorf("can't find NodeResourcesFitArgs in plugin config")
+			return nil, fmt.Errorf("can't find WorkerResourcesFitArgs in plugin config")
 		}
 	}
 	return fExtenders, nil

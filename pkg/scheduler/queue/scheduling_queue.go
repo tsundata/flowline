@@ -14,40 +14,40 @@ import (
 )
 
 var (
-	// AssignedStageAdd is the event when a pod is added that causes pods with matching affinity terms
+	// AssignedStageAdd is the event when a stage is added that causes stages with matching affinity terms
 	// to be more schedulable.
-	AssignedStageAdd = framework.ClusterEvent{Resource: framework.Stage, ActionType: framework.Add, Label: "AssignedPodAdd"}
-	// WorkerAdd is the event when a new node is added to the cluster.
-	WorkerAdd = framework.ClusterEvent{Resource: framework.Worker, ActionType: framework.Add, Label: "NodeAdd"}
-	// AssignedStageUpdate is the event when a pod is updated that causes pods with matching affinity
+	AssignedStageAdd = framework.ClusterEvent{Resource: framework.Stage, ActionType: framework.Add, Label: "AssignedStageAdd"}
+	// WorkerAdd is the event when a new worker is added to the cluster.
+	WorkerAdd = framework.ClusterEvent{Resource: framework.Worker, ActionType: framework.Add, Label: "WorkerAdd"}
+	// AssignedStageUpdate is the event when a stage is updated that causes stages with matching affinity
 	// terms to be more schedulable.
-	AssignedStageUpdate = framework.ClusterEvent{Resource: framework.Stage, ActionType: framework.Update, Label: "AssignedPodUpdate"}
-	// AssignedPodDelete is the event when a pod is deleted that causes pods with matching affinity
+	AssignedStageUpdate = framework.ClusterEvent{Resource: framework.Stage, ActionType: framework.Update, Label: "AssignedStageUpdate"}
+	// AssignedStageDelete is the event when a stage is deleted that causes stages with matching affinity
 	// terms to be more schedulable.
-	AssignedPodDelete = framework.ClusterEvent{Resource: framework.Stage, ActionType: framework.Delete, Label: "AssignedPodDelete"}
-	// UnschedulableTimeout is the event when a pod stays in unschedulable for longer than timeout.
+	AssignedStageDelete = framework.ClusterEvent{Resource: framework.Stage, ActionType: framework.Delete, Label: "AssignedStageDelete"}
+	// UnschedulableTimeout is the event when a stage stays in unschedulable for longer than timeout.
 	UnschedulableTimeout = framework.ClusterEvent{Resource: framework.WildCard, ActionType: framework.All, Label: "UnschedulableTimeout"}
 )
 
 // PreEnqueueCheck is a function type. It's used to build functions that
-// run against a Pod and the caller can choose to enqueue or skip the Pod
+// run against a Stage and the caller can choose to enqueue or skip the Stage
 // by the checking result.
 type PreEnqueueCheck func(stage *meta.Stage) bool
 
 type SchedulingQueue interface {
 	framework.StageNominator
 	Add(stage *meta.Stage) error
-	// Activate moves the given pods to activeQ iff they're in unschedulablePods or backoffQ.
-	// The passed-in pods are originally compiled from plugins that want to activate Pods,
-	// by injecting the pods through a reserved CycleState struct (PodsToActivate).
+	// Activate moves the given stages to activeQ iff they're in unschedulableStages or backoffQ.
+	// The passed-in stages are originally compiled from plugins that want to activate Stages,
+	// by injecting the stages through a reserved CycleState struct (StagesToActivate).
 	Activate(stages map[string]*meta.Stage)
-	// AddUnschedulableIfNotPresent adds an unschedulable pod back to scheduling queue.
-	// The podSchedulingCycle represents the current scheduling cycle number which can be
+	// AddUnschedulableIfNotPresent adds an unschedulable stage back to scheduling queue.
+	// The stageSchedulingCycle represents the current scheduling cycle number which can be
 	// returned by calling SchedulingCycle().
 	AddUnschedulableIfNotPresent(stage *framework.QueuedStageInfo, stageSchedulingCycle int64) error
 	// SchedulingCycle returns the current number of scheduling cycle which is
 	// cached by scheduling queue. Normally, incrementing this number whenever
-	// a pod is popped (e.g. called Pop()) is enough.
+	// a stage is popped (e.g. called Pop()) is enough.
 	SchedulingCycle() int64
 	// Pop removes the head of the queue and returns it. It blocks if the
 	// queue is empty and waits until a new item is added to the queue.
@@ -55,9 +55,9 @@ type SchedulingQueue interface {
 	Update(oldStage, newStage *meta.Stage) error
 	Delete(stage *meta.Stage) error
 	MoveAllToActiveOrBackoffQueue(event framework.ClusterEvent, preCheck PreEnqueueCheck)
-	AssignedPodAdded(stage *meta.Stage)
-	AssignedPodUpdated(stage *meta.Stage)
-	PendingPods() []*meta.Stage
+	AssignedStageAdded(stage *meta.Stage)
+	AssignedStageUpdated(stage *meta.Stage)
+	PendingStages() []*meta.Stage
 	// Close closes the SchedulingQueue so that the goroutine which is
 	// waiting to pop items can exit gracefully.
 	Close()
@@ -66,41 +66,41 @@ type SchedulingQueue interface {
 }
 
 type priorityQueueOptions struct {
-	clock                             clock.Clock
-	podInitialBackoffDuration         time.Duration
-	podMaxBackoffDuration             time.Duration
-	podMaxInUnschedulablePodsDuration time.Duration
-	podNominator                      framework.StageNominator
-	clusterEventMap                   map[framework.ClusterEvent]map[string]struct{}
+	clock                                 clock.Clock
+	stageInitialBackoffDuration           time.Duration
+	stageMaxBackoffDuration               time.Duration
+	stageMaxInUnschedulableStagesDuration time.Duration
+	stageNominator                        framework.StageNominator
+	clusterEventMap                       map[framework.ClusterEvent]map[string]struct{}
 }
 
 const (
-	// DefaultPodMaxInUnschedulablePodsDuration is the default value for the maximum
-	// time a pod can stay in unschedulablePods. If a pod stays in unschedulablePods
-	// for longer than this value, the pod will be moved from unschedulablePods to
+	// DefaultStageMaxInUnschedulableStagesDuration is the default value for the maximum
+	// time a stage can stay in unschedulableStages. If a stage stays in unschedulableStages
+	// for longer than this value, the stage will be moved from unschedulableStages to
 	// backoffQ or activeQ. If this value is empty, the default value (5min)
 	// will be used.
-	DefaultPodMaxInUnschedulablePodsDuration time.Duration = 5 * time.Minute
+	DefaultStageMaxInUnschedulableStagesDuration time.Duration = 5 * time.Minute
 
 	queueClosed = "scheduling queue is closed"
 )
 
 const (
-	// DefaultPodInitialBackoffDuration is the default value for the initial backoff duration
-	// for unschedulable pods. To change the default podInitialBackoffDurationSeconds used by the
+	// DefaultStageInitialBackoffDuration is the default value for the initial backoff duration
+	// for unschedulable stages. To change the default stageInitialBackoffDurationSeconds used by the
 	// scheduler, update the ComponentConfig value in defaults.go
-	DefaultPodInitialBackoffDuration time.Duration = 1 * time.Second
-	// DefaultPodMaxBackoffDuration is the default value for the max backoff duration
-	// for unschedulable pods. To change the default podMaxBackoffDurationSeconds used by the
+	DefaultStageInitialBackoffDuration time.Duration = 1 * time.Second
+	// DefaultStageMaxBackoffDuration is the default value for the max backoff duration
+	// for unschedulable stages. To change the default stageMaxBackoffDurationSeconds used by the
 	// scheduler, update the ComponentConfig value in defaults.go
-	DefaultPodMaxBackoffDuration time.Duration = 10 * time.Second
+	DefaultStageMaxBackoffDuration time.Duration = 10 * time.Second
 )
 
 var defaultPriorityQueueOptions = priorityQueueOptions{
-	clock:                             clock.RealClock{},
-	podInitialBackoffDuration:         DefaultPodInitialBackoffDuration,
-	podMaxBackoffDuration:             DefaultPodMaxBackoffDuration,
-	podMaxInUnschedulablePodsDuration: DefaultPodMaxInUnschedulablePodsDuration,
+	clock:                                 clock.RealClock{},
+	stageInitialBackoffDuration:           DefaultStageInitialBackoffDuration,
+	stageMaxBackoffDuration:               DefaultStageMaxBackoffDuration,
+	stageMaxInUnschedulableStagesDuration: DefaultStageMaxInUnschedulableStagesDuration,
 }
 
 // Option configures a PriorityQueue
@@ -114,7 +114,7 @@ func NewSchedulingQueue(
 	return NewPriorityQueue(lessFn, informerFactory, opts...)
 }
 
-func MakeNextPodFunc(queue SchedulingQueue) func() *framework.QueuedStageInfo {
+func MakeNextStageFunc(queue SchedulingQueue) func() *framework.QueuedStageInfo {
 	return func() *framework.QueuedStageInfo {
 		stageInfo, err := queue.Pop()
 		if err == nil {
@@ -126,14 +126,14 @@ func MakeNextPodFunc(queue SchedulingQueue) func() *framework.QueuedStageInfo {
 	}
 }
 
-// newQueuedStageInfoForLookup builds a QueuedPodInfo object for a lookup in the queue.
+// newQueuedStageInfoForLookup builds a QueuedStageInfo object for a lookup in the queue.
 func newQueuedStageInfoForLookup(stage *meta.Stage, plugins ...string) *framework.QueuedStageInfo {
 	sets := make(map[string]struct{})
 	for _, plugin := range plugins {
 		sets[plugin] = struct{}{}
 	}
-	// Since this is only used for a lookup in the queue, we only need to set the Pod,
-	// and so we avoid creating a full PodInfo, which is expensive to instantiate frequently.
+	// Since this is only used for a lookup in the queue, we only need to set the Stage,
+	// and so we avoid creating a full StageInfo, which is expensive to instantiate frequently.
 	return &framework.QueuedStageInfo{
 		StageInfo:            &framework.StageInfo{Stage: stage},
 		UnschedulablePlugins: sets,
@@ -141,44 +141,44 @@ func newQueuedStageInfoForLookup(stage *meta.Stage, plugins ...string) *framewor
 }
 
 // PriorityQueue implements a scheduling queue.
-// The head of PriorityQueue is the highest priority pending pod. This structure
+// The head of PriorityQueue is the highest priority pending stage. This structure
 // has two sub queues and a additional data structure, namely: activeQ,
-// backoffQ and unschedulablePods.
-// - activeQ holds pods that are being considered for scheduling.
-// - backoffQ holds pods that moved from unschedulablePods and will move to
+// backoffQ and unschedulableStages.
+// - activeQ holds stages that are being considered for scheduling.
+// - backoffQ holds stages that moved from unschedulableStages and will move to
 //   activeQ when their backoff periods complete.
-// - unschedulablePods holds pods that were already attempted for scheduling and
+// - unschedulableStages holds stages that were already attempted for scheduling and
 //   are currently determined to be unschedulable.
 type PriorityQueue struct {
-	// PodNominator abstracts the operations to maintain nominated Pods.
+	// StageNominator abstracts the operations to maintain nominated Stages.
 	framework.StageNominator
 
 	stop  chan struct{}
 	clock clock.Clock
 
-	// pod initial backoff duration.
-	podInitialBackoffDuration time.Duration
-	// pod maximum backoff duration.
-	podMaxBackoffDuration time.Duration
-	// the maximum time a pod can stay in the unschedulablePods.
-	podMaxInUnschedulablePodsDuration time.Duration
+	// stage initial backoff duration.
+	stageInitialBackoffDuration time.Duration
+	// stage maximum backoff duration.
+	stageMaxBackoffDuration time.Duration
+	// the maximum time a stage can stay in the unschedulableStages.
+	stageMaxInUnschedulableStagesDuration time.Duration
 
 	lock sync.RWMutex
 	cond sync.Cond
 
-	// activeQ is heap structure that scheduler actively looks at to find pods to
-	// schedule. Head of heap is the highest priority pod.
+	// activeQ is heap structure that scheduler actively looks at to find stages to
+	// schedule. Head of heap is the highest priority stage.
 	activeQ *heap.Heap
-	// podBackoffQ is a heap ordered by backoff expiry. Pods which have completed backoff
+	// stageBackoffQ is a heap ordered by backoff expiry. Stages which have completed backoff
 	// are popped from this heap before the scheduler looks at activeQ
-	podBackoffQ *heap.Heap
-	// unschedulablePods holds pods that have been tried and determined unschedulable.
+	stageBackoffQ *heap.Heap
+	// unschedulableStages holds stages that have been tried and determined unschedulable.
 	unschedulableStages *UnschedulableStages
 	// schedulingCycle represents sequence number of scheduling cycle and is incremented
-	// when a pod is popped.
+	// when a stage is popped.
 	schedulingCycle int64
 	// moveRequestCycle caches the sequence number of scheduling cycle when we
-	// received a move request. Unschedulable pods in and before this scheduling
+	// received a move request. Unschedulable stages in and before this scheduling
 	// cycle will be put back to activeQueue if we were trying to schedule them
 	// when we received move request.
 	moveRequestCycle int64
@@ -192,7 +192,7 @@ type PriorityQueue struct {
 	nsLister interface{}
 }
 
-// newQueuedPodInfo builds a QueuedPodInfo object.
+// newQueuedStageInfo builds a QueuedStageInfo object.
 func (p *PriorityQueue) newQueuedStageInfo(stage *meta.Stage, plugins ...string) *framework.QueuedStageInfo {
 	sets := make(map[string]struct{})
 	for _, plugin := range plugins {
@@ -208,17 +208,17 @@ func (p *PriorityQueue) newQueuedStageInfo(stage *meta.Stage, plugins ...string)
 }
 
 func (p *PriorityQueue) activate(stage *meta.Stage) bool {
-	// Verify if the pod is present in activeQ.
+	// Verify if the stage is present in activeQ.
 	if _, exists, _ := p.activeQ.Get(newQueuedStageInfoForLookup(stage)); exists {
 		// No need to activate if it's already present in activeQ.
 		return false
 	}
 	var pInfo *framework.QueuedStageInfo
-	// Verify if the pod is present in unschedulablePods or backoffQ.
+	// Verify if the stage is present in unschedulableStages or backoffQ.
 	if pInfo = p.unschedulableStages.get(stage); pInfo == nil {
-		// If the pod doesn't belong to unschedulablePods or backoffQ, don't activate it.
-		if obj, exists, _ := p.podBackoffQ.Get(newQueuedStageInfoForLookup(stage)); !exists {
-			flog.Errorf("To-activate pod does not exist in unschedulablePods or backoffQ, %v", stage)
+		// If the stage doesn't belong to unschedulableStages or backoffQ, don't activate it.
+		if obj, exists, _ := p.stageBackoffQ.Get(newQueuedStageInfoForLookup(stage)); !exists {
+			flog.Errorf("To-activate stage does not exist in unschedulableStages or backoffQ, %v", stage)
 			return false
 		} else {
 			pInfo = obj.(*framework.QueuedStageInfo)
@@ -232,11 +232,11 @@ func (p *PriorityQueue) activate(stage *meta.Stage) bool {
 	}
 
 	if err := p.activeQ.Add(pInfo); err != nil {
-		flog.Errorf("Error adding pod to the scheduling queue, %v", stage)
+		flog.Errorf("Error adding stage to the scheduling queue, %v", stage)
 		return false
 	}
 	p.unschedulableStages.delete(stage)
-	p.podBackoffQ.Delete(pInfo)
+	p.stageBackoffQ.Delete(pInfo)
 	p.StageNominator.AddNominatedStage(pInfo.StageInfo, nil)
 	return true
 }
@@ -253,9 +253,9 @@ func (p *PriorityQueue) Add(stage *meta.Stage) error {
 		flog.Errorf("Error: stage is already in the unschedulable queue, %v", stage)
 		p.unschedulableStages.delete(stage)
 	}
-	// Delete pod from backoffQ if it is backing off
-	if err := p.podBackoffQ.Delete(pInfo); err == nil {
-		flog.Errorf("Error: stage is already in the podBackoff queue, %v", stage)
+	// Delete stage from backoffQ if it is backing off
+	if err := p.stageBackoffQ.Delete(pInfo); err == nil {
+		flog.Errorf("Error: stage is already in the stageBackoff queue, %v", stage)
 	}
 	p.StageNominator.AddNominatedStage(pInfo.StageInfo, nil)
 	p.cond.Broadcast()
@@ -268,8 +268,8 @@ func (p *PriorityQueue) Activate(stages map[string]*meta.Stage) {
 	defer p.lock.Unlock()
 
 	activated := false
-	for _, pod := range stages {
-		if p.activate(pod) {
+	for _, stage := range stages {
+		if p.activate(stage) {
 			activated = true
 		}
 	}
@@ -291,17 +291,17 @@ func (p *PriorityQueue) AddUnschedulableIfNotPresent(pInfo *framework.QueuedStag
 	if _, exists, _ := p.activeQ.Get(pInfo); exists {
 		return fmt.Errorf("stage %v is already present in the active queue", stage)
 	}
-	if _, exists, _ := p.podBackoffQ.Get(pInfo); exists {
+	if _, exists, _ := p.stageBackoffQ.Get(pInfo); exists {
 		return fmt.Errorf("stage %v is already present in the backoff queue", stage)
 	}
 
-	// Refresh the timestamp since the pod is re-added.
+	// Refresh the timestamp since the stage is re-added.
 	pInfo.Timestamp = p.clock.Now()
 
 	// If a move request has been received, move it to the BackoffQ, otherwise move
 	// it to unschedulableStages.
 	if p.moveRequestCycle >= stageSchedulingCycle {
-		if err := p.podBackoffQ.Add(pInfo); err != nil {
+		if err := p.stageBackoffQ.Add(pInfo); err != nil {
 			return fmt.Errorf("error adding stage %v to the backoff queue: %v", stage.Name, err)
 		}
 	} else {
@@ -342,20 +342,20 @@ func (p *PriorityQueue) Pop() (*framework.QueuedStageInfo, error) {
 	return pInfo, nil
 }
 
-func updateStage(oldPodInfo interface{}, newStage *meta.Stage) *framework.QueuedStageInfo {
-	pInfo := oldPodInfo.(*framework.QueuedStageInfo)
+func updateStage(oldStageInfo interface{}, newStage *meta.Stage) *framework.QueuedStageInfo {
+	pInfo := oldStageInfo.(*framework.QueuedStageInfo)
 	pInfo.Update(newStage)
 	return pInfo
 }
 
-// isPodUpdated checks if the pod is updated in a way that it may have become
-// schedulable. It drops status of the pod and compares it with old version.
+// isStageUpdated checks if the stage is updated in a way that it may have become
+// schedulable. It drops status of the stage and compares it with old version.
 func isStageUpdated(oldStage, newStage *meta.Stage) bool {
 	strip := func(stage *meta.Stage) *meta.Stage {
 		p := stage // todo deep copy
 		p.ResourceVersion = ""
 		p.Generation = 0
-		//p.Status = v1.PodStatus{}
+		//p.Status = v1.StageStatus{}
 		//p.ManagedFields = nil
 		p.Finalizers = nil
 		return p
@@ -363,10 +363,10 @@ func isStageUpdated(oldStage, newStage *meta.Stage) bool {
 	return !reflect.DeepEqual(strip(oldStage), strip(newStage))
 }
 
-// isStageBackingoff returns true if a pod is still waiting for its backoff timer.
-// If this returns true, the pod should not be re-tried.
-func (p *PriorityQueue) isStageBackingoff(podInfo *framework.QueuedStageInfo) bool {
-	boTime := p.getBackoffTime(podInfo)
+// isStageBackingoff returns true if a stage is still waiting for its backoff timer.
+// If this returns true, the stage should not be re-tried.
+func (p *PriorityQueue) isStageBackingoff(stageInfo *framework.QueuedStageInfo) bool {
+	boTime := p.getBackoffTime(stageInfo)
 	return boTime.After(p.clock.Now())
 }
 
@@ -375,47 +375,47 @@ func (p *PriorityQueue) Update(oldStage, newStage *meta.Stage) error {
 	defer p.lock.Unlock()
 
 	if oldStage != nil {
-		oldPodInfo := newQueuedStageInfoForLookup(oldStage)
-		// If the pod is already in the active queue, just update it there.
-		if oldPodInfo, exists, _ := p.activeQ.Get(oldPodInfo); exists {
-			pInfo := updateStage(oldPodInfo, newStage)
+		oldStageInfo := newQueuedStageInfoForLookup(oldStage)
+		// If the stage is already in the active queue, just update it there.
+		if oldStageInfo, exists, _ := p.activeQ.Get(oldStageInfo); exists {
+			pInfo := updateStage(oldStageInfo, newStage)
 			p.StageNominator.UpdateNominatedStage(oldStage, pInfo.StageInfo)
 			return p.activeQ.Update(pInfo)
 		}
 
-		// If the pod is in the backoff queue, update it there.
-		if oldPodInfo, exists, _ := p.podBackoffQ.Get(oldPodInfo); exists {
-			pInfo := updateStage(oldPodInfo, newStage)
+		// If the stage is in the backoff queue, update it there.
+		if oldStageInfo, exists, _ := p.stageBackoffQ.Get(oldStageInfo); exists {
+			pInfo := updateStage(oldStageInfo, newStage)
 			p.StageNominator.UpdateNominatedStage(oldStage, pInfo.StageInfo)
-			return p.podBackoffQ.Update(pInfo)
+			return p.stageBackoffQ.Update(pInfo)
 		}
 	}
 
-	// If the pod is in the unschedulable queue, updating it may make it schedulable.
-	if usPodInfo := p.unschedulableStages.get(newStage); usPodInfo != nil {
-		pInfo := updateStage(usPodInfo, newStage)
+	// If the stage is in the unschedulable queue, updating it may make it schedulable.
+	if usStageInfo := p.unschedulableStages.get(newStage); usStageInfo != nil {
+		pInfo := updateStage(usStageInfo, newStage)
 		p.StageNominator.UpdateNominatedStage(oldStage, pInfo.StageInfo)
 		if isStageUpdated(oldStage, newStage) {
-			if p.isStageBackingoff(usPodInfo) {
-				if err := p.podBackoffQ.Add(pInfo); err != nil {
+			if p.isStageBackingoff(usStageInfo) {
+				if err := p.stageBackoffQ.Add(pInfo); err != nil {
 					return err
 				}
-				p.unschedulableStages.delete(usPodInfo.Stage)
+				p.unschedulableStages.delete(usStageInfo.Stage)
 			} else {
 				if err := p.activeQ.Add(pInfo); err != nil {
 					return err
 				}
-				p.unschedulableStages.delete(usPodInfo.Stage)
+				p.unschedulableStages.delete(usStageInfo.Stage)
 				p.cond.Broadcast()
 			}
 		} else {
-			// Pod update didn't make it schedulable, keep it in the unschedulable queue.
+			// Stage update didn't make it schedulable, keep it in the unschedulable queue.
 			p.unschedulableStages.addOrUpdate(pInfo)
 		}
 
 		return nil
 	}
-	// If pod is not in any of the queues, we put it in the active queue.
+	// If stage is not in any of the queues, we put it in the active queue.
 	pInfo := p.newQueuedStageInfo(newStage)
 	if err := p.activeQ.Add(pInfo); err != nil {
 		return err
@@ -432,7 +432,7 @@ func (p *PriorityQueue) Delete(stage *meta.Stage) error {
 	p.StageNominator.DeleteNominatedStageIfExists(stage)
 	if err := p.activeQ.Delete(newQueuedStageInfoForLookup(stage)); err != nil {
 		// The item was probably not found in the activeQ.
-		p.podBackoffQ.Delete(newQueuedStageInfoForLookup(stage))
+		p.stageBackoffQ.Delete(newQueuedStageInfoForLookup(stage))
 		p.unschedulableStages.delete(stage)
 	}
 	return nil
@@ -441,41 +441,41 @@ func (p *PriorityQueue) Delete(stage *meta.Stage) error {
 func (p *PriorityQueue) MoveAllToActiveOrBackoffQueue(event framework.ClusterEvent, preCheck PreEnqueueCheck) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
-	unschedulablePods := make([]*framework.QueuedStageInfo, 0, len(p.unschedulableStages.stageInfoMap))
+	unschedulableStages := make([]*framework.QueuedStageInfo, 0, len(p.unschedulableStages.stageInfoMap))
 	for _, pInfo := range p.unschedulableStages.stageInfoMap {
 		if preCheck == nil || preCheck(pInfo.Stage) {
-			unschedulablePods = append(unschedulablePods, pInfo)
+			unschedulableStages = append(unschedulableStages, pInfo)
 		}
 	}
-	p.movePodsToActiveOrBackoffQueue(unschedulablePods, event)
+	p.moveStagesToActiveOrBackoffQueue(unschedulableStages, event)
 }
 
 // NOTE: this function assumes lock has been acquired in caller
-func (p *PriorityQueue) movePodsToActiveOrBackoffQueue(podInfoList []*framework.QueuedStageInfo, event framework.ClusterEvent) {
+func (p *PriorityQueue) moveStagesToActiveOrBackoffQueue(stageInfoList []*framework.QueuedStageInfo, event framework.ClusterEvent) {
 	activated := false
-	for _, pInfo := range podInfoList {
-		// If the event doesn't help making the Pod schedulable, continue.
+	for _, pInfo := range stageInfoList {
+		// If the event doesn't help making the Stage schedulable, continue.
 		// Note: we don't run the check if pInfo.UnschedulablePlugins is nil, which denotes
-		// either there is some abnormal error, or scheduling the pod failed by plugins other than PreFilter, Filter and Permit.
+		// either there is some abnormal error, or scheduling the stage failed by plugins other than PreFilter, Filter and Permit.
 		// In that case, it's desired to move it anyways.
-		if len(pInfo.UnschedulablePlugins) != 0 && !p.podMatchesEvent(pInfo, event) {
+		if len(pInfo.UnschedulablePlugins) != 0 && !p.stageMatchesEvent(pInfo, event) {
 			continue
 		}
-		pod := pInfo.Stage
+		stage := pInfo.Stage
 		if p.isStageBackingoff(pInfo) {
-			if err := p.podBackoffQ.Add(pInfo); err != nil {
+			if err := p.stageBackoffQ.Add(pInfo); err != nil {
 				flog.Error(err)
-				flog.Errorf("Error adding pod to the backoff queue, %v", pod)
+				flog.Errorf("Error adding stage to the backoff queue, %v", stage)
 			} else {
-				p.unschedulableStages.delete(pod)
+				p.unschedulableStages.delete(stage)
 			}
 		} else {
 			if err := p.activeQ.Add(pInfo); err != nil {
 				flog.Error(err)
-				flog.Errorf("Error adding pod to the scheduling queue, %v", pod)
+				flog.Errorf("Error adding stage to the scheduling queue, %v", stage)
 			} else {
 				activated = true
-				p.unschedulableStages.delete(pod)
+				p.unschedulableStages.delete(stage)
 			}
 		}
 	}
@@ -485,9 +485,9 @@ func (p *PriorityQueue) movePodsToActiveOrBackoffQueue(podInfoList []*framework.
 	}
 }
 
-// Checks if the Pod may become schedulable upon the event.
+// Checks if the Stage may become schedulable upon the event.
 // This is achieved by looking up the global clusterEventMap registry.
-func (p *PriorityQueue) podMatchesEvent(podInfo *framework.QueuedStageInfo, clusterEvent framework.ClusterEvent) bool {
+func (p *PriorityQueue) stageMatchesEvent(stageInfo *framework.QueuedStageInfo, clusterEvent framework.ClusterEvent) bool {
 	if clusterEvent.IsWildCard() {
 		return true
 	}
@@ -504,7 +504,7 @@ func (p *PriorityQueue) podMatchesEvent(podInfo *framework.QueuedStageInfo, clus
 
 		// Secondly verify the plugin name matches.
 		// Note that if it doesn't match, we shouldn't continue to search.
-		if evtMatch && intersect(nameSet, podInfo.UnschedulablePlugins) {
+		if evtMatch && intersect(nameSet, stageInfo.UnschedulablePlugins) {
 			return true
 		}
 	}
@@ -512,35 +512,35 @@ func (p *PriorityQueue) podMatchesEvent(podInfo *framework.QueuedStageInfo, clus
 	return false
 }
 
-// getUnschedulablePodsWithMatchingAffinityTerm returns unschedulable pods which have
-// any affinity term that matches "pod".
+// getUnschedulableStagesWithMatchingAffinityTerm returns unschedulable stages which have
+// any affinity term that matches "stage".
 // NOTE: this function assumes lock has been acquired in caller.
-func (p *PriorityQueue) getUnschedulablePodsWithMatchingAffinityTerm(stage *meta.Stage) []*framework.QueuedStageInfo {
-	var podsToMove []*framework.QueuedStageInfo
+func (p *PriorityQueue) getUnschedulableStagesWithMatchingAffinityTerm(stage *meta.Stage) []*framework.QueuedStageInfo {
+	var stagesToMove []*framework.QueuedStageInfo
 	for _, pInfo := range p.unschedulableStages.stageInfoMap {
 		///for _, term := range pInfo.RequiredAffinityTerms {
 		//	if term.Matches(stage, nsLabels) {
-		podsToMove = append(podsToMove, pInfo) // todo
+		stagesToMove = append(stagesToMove, pInfo) // todo
 		//		break
 		//	}
 		//}
 	}
-	return podsToMove
+	return stagesToMove
 }
 
-func (p *PriorityQueue) AssignedPodAdded(stage *meta.Stage) {
+func (p *PriorityQueue) AssignedStageAdded(stage *meta.Stage) {
 	p.lock.Lock()
-	p.movePodsToActiveOrBackoffQueue(p.getUnschedulablePodsWithMatchingAffinityTerm(stage), AssignedStageAdd)
+	p.moveStagesToActiveOrBackoffQueue(p.getUnschedulableStagesWithMatchingAffinityTerm(stage), AssignedStageAdd)
 	p.lock.Unlock()
 }
 
-func (p *PriorityQueue) AssignedPodUpdated(stage *meta.Stage) {
+func (p *PriorityQueue) AssignedStageUpdated(stage *meta.Stage) {
 	p.lock.Lock()
-	p.movePodsToActiveOrBackoffQueue(p.getUnschedulablePodsWithMatchingAffinityTerm(stage), AssignedStageUpdate)
+	p.moveStagesToActiveOrBackoffQueue(p.getUnschedulableStagesWithMatchingAffinityTerm(stage), AssignedStageUpdate)
 	p.lock.Unlock()
 }
 
-func (p *PriorityQueue) PendingPods() []*meta.Stage {
+func (p *PriorityQueue) PendingStages() []*meta.Stage {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
@@ -548,7 +548,7 @@ func (p *PriorityQueue) PendingPods() []*meta.Stage {
 	for _, pInfo := range p.activeQ.List() {
 		result = append(result, pInfo.(*framework.QueuedStageInfo).Stage)
 	}
-	for _, pInfo := range p.podBackoffQ.List() {
+	for _, pInfo := range p.stageBackoffQ.List() {
 		result = append(result, pInfo.(*framework.QueuedStageInfo).Stage)
 	}
 	for _, pInfo := range p.unschedulableStages.stageInfoMap {
@@ -566,28 +566,28 @@ func (p *PriorityQueue) Close() {
 	p.cond.Broadcast()
 }
 
-// flushBackoffQCompleted Moves all pods from backoffQ which have completed backoff in to activeQ
+// flushBackoffQCompleted Moves all stages from backoffQ which have completed backoff in to activeQ
 func (p *PriorityQueue) flushBackoffQCompleted() {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 	activated := false
 	for {
-		rawPodInfo := p.podBackoffQ.Peek()
-		if rawPodInfo == nil {
+		rawStageInfo := p.stageBackoffQ.Peek()
+		if rawStageInfo == nil {
 			break
 		}
-		pod := rawPodInfo.(*framework.QueuedStageInfo).Stage
-		boTime := p.getBackoffTime(rawPodInfo.(*framework.QueuedStageInfo))
+		stage := rawStageInfo.(*framework.QueuedStageInfo).Stage
+		boTime := p.getBackoffTime(rawStageInfo.(*framework.QueuedStageInfo))
 		if boTime.After(p.clock.Now()) {
 			break
 		}
-		_, err := p.podBackoffQ.Pop()
+		_, err := p.stageBackoffQ.Pop()
 		if err != nil {
 			flog.Error(err)
-			flog.Errorf("Unable to pop pod from backoff queue despite backoff completion, %v", pod)
+			flog.Errorf("Unable to pop stage from backoff queue despite backoff completion, %v", stage)
 			break
 		}
-		p.activeQ.Add(rawPodInfo)
+		p.activeQ.Add(rawStageInfo)
 		activated = true
 	}
 
@@ -596,47 +596,47 @@ func (p *PriorityQueue) flushBackoffQCompleted() {
 	}
 }
 
-// flushUnschedulablePodsLeftover moves pods which stay in unschedulablePods
-// longer than podMaxInUnschedulablePodsDuration to backoffQ or activeQ.
-func (p *PriorityQueue) flushUnschedulablePodsLeftover() {
+// flushUnschedulableStagesLeftover moves stages which stay in unschedulableStages
+// longer than stageMaxInUnschedulableStagesDuration to backoffQ or activeQ.
+func (p *PriorityQueue) flushUnschedulableStagesLeftover() {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	var podsToMove []*framework.QueuedStageInfo
+	var stagesToMove []*framework.QueuedStageInfo
 	currentTime := p.clock.Now()
 	for _, pInfo := range p.unschedulableStages.stageInfoMap {
 		lastScheduleTime := pInfo.Timestamp
-		if currentTime.Sub(lastScheduleTime) > p.podMaxInUnschedulablePodsDuration {
-			podsToMove = append(podsToMove, pInfo)
+		if currentTime.Sub(lastScheduleTime) > p.stageMaxInUnschedulableStagesDuration {
+			stagesToMove = append(stagesToMove, pInfo)
 		}
 	}
 
-	if len(podsToMove) > 0 {
-		p.movePodsToActiveOrBackoffQueue(podsToMove, UnschedulableTimeout)
+	if len(stagesToMove) > 0 {
+		p.moveStagesToActiveOrBackoffQueue(stagesToMove, UnschedulableTimeout)
 	}
 }
 
-// NewStageNominator creates a nominator as a backing of framework.PodNominator.
-// A podLister is passed in so as to check if the pod exists
-// before adding its nominatedNode info.
-func NewStageNominator(podLister interface{}) framework.StageNominator {
+// NewStageNominator creates a nominator as a backing of framework.StageNominator.
+// A stageLister is passed in so as to check if the stage exists
+// before adding its nominatedWorker info.
+func NewStageNominator(stageLister interface{}) framework.StageNominator {
 	return &nominator{
-		podLister:          podLister,
-		nominatedPods:      make(map[string][]*framework.StageInfo),
-		nominatedPodToNode: make(map[string]string),
+		stageLister:            stageLister,
+		nominatedStages:        make(map[string][]*framework.StageInfo),
+		nominatedStageToWorker: make(map[string]string),
 	}
 }
 
 type nominator struct {
-	// podLister is used to verify if the given pod is alive.
-	podLister interface{}
-	// nominatedPods is a map keyed by a node name and the value is a list of
-	// pods which are nominated to run on the node. These are pods which can be in
-	// the activeQ or unschedulablePods.
-	nominatedPods map[string][]*framework.StageInfo
-	// nominatedPodToNode is map keyed by a Pod UID to the node name where it is
+	// stageLister is used to verify if the given stage is alive.
+	stageLister interface{}
+	// nominatedStages is a map keyed by a worker name and the value is a list of
+	// stages which are nominated to run on the worker. These are stages which can be in
+	// the activeQ or unschedulableStages.
+	nominatedStages map[string][]*framework.StageInfo
+	// nominatedStageToWorker is map keyed by a Stage UID to the worker name where it is
 	// nominated.
-	nominatedPodToNode map[string]string
+	nominatedStageToWorker map[string]string
 
 	sync.RWMutex
 }
@@ -648,58 +648,58 @@ func (npm *nominator) AddNominatedStage(stage *framework.StageInfo, nominatingIn
 }
 
 func (npm *nominator) delete(p *meta.Stage) {
-	nnn, ok := npm.nominatedPodToNode[p.UID]
+	nnn, ok := npm.nominatedStageToWorker[p.UID]
 	if !ok {
 		return
 	}
-	for i, np := range npm.nominatedPods[nnn] {
+	for i, np := range npm.nominatedStages[nnn] {
 		if np.Stage.UID == p.UID {
-			npm.nominatedPods[nnn] = append(npm.nominatedPods[nnn][:i], npm.nominatedPods[nnn][i+1:]...)
-			if len(npm.nominatedPods[nnn]) == 0 {
-				delete(npm.nominatedPods, nnn)
+			npm.nominatedStages[nnn] = append(npm.nominatedStages[nnn][:i], npm.nominatedStages[nnn][i+1:]...)
+			if len(npm.nominatedStages[nnn]) == 0 {
+				delete(npm.nominatedStages, nnn)
 			}
 			break
 		}
 	}
-	delete(npm.nominatedPodToNode, p.UID)
+	delete(npm.nominatedStageToWorker, p.UID)
 }
 
 func (npm *nominator) add(pi *framework.StageInfo, nominatingInfo *framework.NominatingInfo) {
-	// Always delete the pod if it already exists, to ensure we never store more than
-	// one instance of the pod.
+	// Always delete the stage if it already exists, to ensure we never store more than
+	// one instance of the stage.
 	npm.delete(pi.Stage)
 
-	var nodeName string
+	var workerName string
 	if nominatingInfo.Mode() == framework.ModeOverride {
-		nodeName = nominatingInfo.NominatedNodeName
+		workerName = nominatingInfo.NominatedWorkerName
 	} else if nominatingInfo.Mode() == framework.ModeNoop {
-		//if pi.Stage.Status.NominatedNodeName == "" {
+		//if pi.Stage.Status.NominatedWorkerName == "" {
 		//	return
 		//}
-		//nodeName = pi.Stage.Status.NominatedNodeName
+		//workerName = pi.Stage.Status.NominatedWorkerName
 	}
 
-	if npm.podLister != nil {
-		// If the pod was removed or if it was already scheduled, don't nominate it.
-		//updatedPod, err := npm.podLister.Pods(pi.Pod.Namespace).Get(pi.Pod.Name)
+	if npm.stageLister != nil {
+		// If the stage was removed or if it was already scheduled, don't nominate it.
+		//updatedStage, err := npm.stageLister.Stages(pi.Stage.Namespace).Get(pi.Stage.Name)
 		//if err != nil {
-		//	klog.V(4).InfoS("Pod doesn't exist in podLister, aborted adding it to the nominator", "pod", klog.KObj(pi.Pod))
+		//	klog.V(4).InfoS("Stage doesn't exist in stageLister, aborted adding it to the nominator", "stage", klog.KObj(pi.Stage))
 		//	return
 		//}
-		//if updatedPod.NodeName != "" {
-		//	klog.V(4).InfoS("Pod is already scheduled to a node, aborted adding it to the nominator", "pod", klog.KObj(pi.Pod), "node", updatedPod.Spec.NodeName)
+		//if updatedStage.WorkerName != "" {
+		//	klog.V(4).InfoS("Stage is already scheduled to a worker, aborted adding it to the nominator", "stage", klog.KObj(pi.Stage), "worker", updatedStage.Spec.WorkerName)
 		//	return
 		//}
 	}
 
-	npm.nominatedPodToNode[pi.Stage.UID] = nodeName
-	for _, npi := range npm.nominatedPods[nodeName] {
+	npm.nominatedStageToWorker[pi.Stage.UID] = workerName
+	for _, npi := range npm.nominatedStages[workerName] {
 		if npi.Stage.UID == pi.Stage.UID {
-			flog.Infof("Pod already exists in the nominator, %v", npi.Stage)
+			flog.Infof("Stage already exists in the nominator, %v", npi.Stage)
 			return
 		}
 	}
-	npm.nominatedPods[nodeName] = append(npm.nominatedPods[nodeName], pi)
+	npm.nominatedStages[workerName] = append(npm.nominatedStages[workerName], pi)
 }
 
 func (npm *nominator) DeleteNominatedStageIfExists(stage *meta.Stage) {
@@ -708,50 +708,50 @@ func (npm *nominator) DeleteNominatedStageIfExists(stage *meta.Stage) {
 	npm.Unlock()
 }
 
-func NominatedStageName(pod *meta.Stage) string {
-	return pod.Name // fixme pod.Status.NominatedNodeName
+func NominatedStageName(stage *meta.Stage) string {
+	return stage.Name // fixme stage.Status.NominatedWorkerName
 }
 
 func (npm *nominator) UpdateNominatedStage(oldStage *meta.Stage, newStageInfo *framework.StageInfo) {
 	npm.Lock()
 	defer npm.Unlock()
-	// In some cases, an Update event with no "NominatedNode" present is received right
-	// after a node("NominatedNode") is reserved for this pod in memory.
-	// In this case, we need to keep reserving the NominatedNode when updating the pod pointer.
+	// In some cases, an Update event with no "NominatedWorker" present is received right
+	// after a worker("NominatedWorker") is reserved for this stage in memory.
+	// In this case, we need to keep reserving the NominatedWorker when updating the stage pointer.
 	var nominatingInfo *framework.NominatingInfo
 	// We won't fall into below `if` block if the Update event represents:
-	// (1) NominatedNode info is added
-	// (2) NominatedNode info is updated
-	// (3) NominatedNode info is removed
+	// (1) NominatedWorker info is added
+	// (2) NominatedWorker info is updated
+	// (3) NominatedWorker info is removed
 	if NominatedStageName(oldStage) == "" && NominatedStageName(newStageInfo.Stage) == "" {
-		if nnn, ok := npm.nominatedPodToNode[oldStage.UID]; ok {
-			// This is the only case we should continue reserving the NominatedNode
+		if nnn, ok := npm.nominatedStageToWorker[oldStage.UID]; ok {
+			// This is the only case we should continue reserving the NominatedWorker
 			nominatingInfo = &framework.NominatingInfo{
-				NominatingMode:    framework.ModeOverride,
-				NominatedNodeName: nnn,
+				NominatingMode:      framework.ModeOverride,
+				NominatedWorkerName: nnn,
 			}
 		}
 	}
-	// We update irrespective of the nominatedNodeName changed or not, to ensure
-	// that pod pointer is updated.
+	// We update irrespective of the nominatedWorkerName changed or not, to ensure
+	// that stage pointer is updated.
 	npm.delete(oldStage)
 	npm.add(newStageInfo, nominatingInfo)
 }
 
-func (npm *nominator) NominatedStagesForNode(nodeName string) []*framework.StageInfo {
+func (npm *nominator) NominatedStagesForWorker(workerName string) []*framework.StageInfo {
 	npm.RLock()
 	defer npm.RUnlock()
-	// Make a copy of the nominated Pods so the caller can mutate safely.
-	pods := make([]*framework.StageInfo, len(npm.nominatedPods[nodeName]))
-	for i := 0; i < len(pods); i++ {
-		pods[i] = npm.nominatedPods[nodeName][i] // todo DeepCopy()
+	// Make a copy of the nominated Stages so the caller can mutate safely.
+	stages := make([]*framework.StageInfo, len(npm.nominatedStages[workerName]))
+	for i := 0; i < len(stages); i++ {
+		stages[i] = npm.nominatedStages[workerName][i] // todo DeepCopy()
 	}
-	return pods
+	return stages
 }
 
 func (p *PriorityQueue) Run() {
 	go parallelizer.JitterUntil(p.flushBackoffQCompleted, 1.0*time.Second, 0.0, true, p.stop)
-	go parallelizer.JitterUntil(p.flushUnschedulablePodsLeftover, 30*time.Second, 0.0, true, p.stop)
+	go parallelizer.JitterUntil(p.flushUnschedulableStagesLeftover, 30*time.Second, 0.0, true, p.stop)
 }
 
 // NewPriorityQueue creates a PriorityQueue object.
@@ -765,97 +765,97 @@ func NewPriorityQueue(
 		opt(&options)
 	}
 
-	comp := func(podInfo1, podInfo2 interface{}) bool {
-		pInfo1 := podInfo1.(*framework.QueuedStageInfo)
-		pInfo2 := podInfo2.(*framework.QueuedStageInfo)
+	comp := func(stageInfo1, stageInfo2 interface{}) bool {
+		pInfo1 := stageInfo1.(*framework.QueuedStageInfo)
+		pInfo2 := stageInfo2.(*framework.QueuedStageInfo)
 		return lessFn(pInfo1, pInfo2)
 	}
 
-	if options.podNominator == nil {
-		options.podNominator = NewStageNominator(nil)
+	if options.stageNominator == nil {
+		options.stageNominator = NewStageNominator(nil)
 	}
 
 	pq := &PriorityQueue{
-		StageNominator:                    options.podNominator,
-		clock:                             options.clock,
-		stop:                              make(chan struct{}),
-		podInitialBackoffDuration:         options.podInitialBackoffDuration,
-		podMaxBackoffDuration:             options.podMaxBackoffDuration,
-		podMaxInUnschedulablePodsDuration: options.podMaxInUnschedulablePodsDuration,
-		activeQ:                           heap.NewWithRecorder(podInfoKeyFunc, comp),
-		unschedulableStages:               newUnschedulableStages(),
-		moveRequestCycle:                  -1,
-		clusterEventMap:                   options.clusterEventMap,
+		StageNominator:                        options.stageNominator,
+		clock:                                 options.clock,
+		stop:                                  make(chan struct{}),
+		stageInitialBackoffDuration:           options.stageInitialBackoffDuration,
+		stageMaxBackoffDuration:               options.stageMaxBackoffDuration,
+		stageMaxInUnschedulableStagesDuration: options.stageMaxInUnschedulableStagesDuration,
+		activeQ:                               heap.NewWithRecorder(stageInfoKeyFunc, comp),
+		unschedulableStages:                   newUnschedulableStages(),
+		moveRequestCycle:                      -1,
+		clusterEventMap:                       options.clusterEventMap,
 	}
 	pq.cond.L = &pq.lock
-	pq.podBackoffQ = heap.NewWithRecorder(podInfoKeyFunc, pq.podsCompareBackoffCompleted)
+	pq.stageBackoffQ = heap.NewWithRecorder(stageInfoKeyFunc, pq.stagesCompareBackoffCompleted)
 	// pq.nsLister = informerFactory.Core().V1().Namespaces().Lister()
 
 	return pq
 }
 
-func (p *PriorityQueue) podsCompareBackoffCompleted(podInfo1, podInfo2 interface{}) bool {
-	pInfo1 := podInfo1.(*framework.QueuedStageInfo)
-	pInfo2 := podInfo2.(*framework.QueuedStageInfo)
+func (p *PriorityQueue) stagesCompareBackoffCompleted(stageInfo1, stageInfo2 interface{}) bool {
+	pInfo1 := stageInfo1.(*framework.QueuedStageInfo)
+	pInfo2 := stageInfo2.(*framework.QueuedStageInfo)
 	bo1 := p.getBackoffTime(pInfo1)
 	bo2 := p.getBackoffTime(pInfo2)
 	return bo1.Before(bo2)
 }
 
-func (p *PriorityQueue) getBackoffTime(podInfo *framework.QueuedStageInfo) time.Time {
-	duration := p.calculateBackoffDuration(podInfo)
-	backoffTime := podInfo.Timestamp.Add(duration)
+func (p *PriorityQueue) getBackoffTime(stageInfo *framework.QueuedStageInfo) time.Time {
+	duration := p.calculateBackoffDuration(stageInfo)
+	backoffTime := stageInfo.Timestamp.Add(duration)
 	return backoffTime
 }
 
-func (p *PriorityQueue) calculateBackoffDuration(podInfo *framework.QueuedStageInfo) time.Duration {
-	duration := p.podInitialBackoffDuration
-	for i := 1; i < podInfo.Attempts; i++ {
+func (p *PriorityQueue) calculateBackoffDuration(stageInfo *framework.QueuedStageInfo) time.Duration {
+	duration := p.stageInitialBackoffDuration
+	for i := 1; i < stageInfo.Attempts; i++ {
 		// Use subtraction instead of addition or multiplication to avoid overflow.
-		if duration > p.podMaxBackoffDuration-duration {
-			return p.podMaxBackoffDuration
+		if duration > p.stageMaxBackoffDuration-duration {
+			return p.stageMaxBackoffDuration
 		}
 		duration += duration
 	}
 	return duration
 }
 
-// UnschedulableStages holds pods that cannot be scheduled. This data structure
-// is used to implement unschedulablePods.
+// UnschedulableStages holds stages that cannot be scheduled. This data structure
+// is used to implement unschedulableStages.
 type UnschedulableStages struct {
-	// podInfoMap is a map key by a pod's full-name and the value is a pointer to the QueuedPodInfo.
+	// stageInfoMap is a map key by a stage's full-name and the value is a pointer to the QueuedStageInfo.
 	stageInfoMap map[string]*framework.QueuedStageInfo
 	keyFunc      func(stage *meta.Stage) string
 }
 
-// Add adds a pod to the unschedulable podInfoMap.
+// Add adds a stage to the unschedulable stageInfoMap.
 func (u *UnschedulableStages) addOrUpdate(pInfo *framework.QueuedStageInfo) {
-	podID := u.keyFunc(pInfo.Stage)
-	u.stageInfoMap[podID] = pInfo
+	stageID := u.keyFunc(pInfo.Stage)
+	u.stageInfoMap[stageID] = pInfo
 }
 
-// Delete deletes a pod from the unschedulable podInfoMap.
+// Delete deletes a stage from the unschedulable stageInfoMap.
 func (u *UnschedulableStages) delete(stage *meta.Stage) {
-	podID := u.keyFunc(stage)
-	delete(u.stageInfoMap, podID)
+	stageID := u.keyFunc(stage)
+	delete(u.stageInfoMap, stageID)
 }
 
-// Get returns the QueuedPodInfo if a pod with the same key as the key of the given "pod"
+// Get returns the QueuedStageInfo if a stage with the same key as the key of the given "stage"
 // is found in the map. It returns nil otherwise.
 func (u *UnschedulableStages) get(stage *meta.Stage) *framework.QueuedStageInfo {
-	podKey := u.keyFunc(stage)
-	if pInfo, exists := u.stageInfoMap[podKey]; exists {
+	stageKey := u.keyFunc(stage)
+	if pInfo, exists := u.stageInfoMap[stageKey]; exists {
 		return pInfo
 	}
 	return nil
 }
 
-// Clear removes all the entries from the unschedulable podInfoMap.
+// Clear removes all the entries from the unschedulable stageInfoMap.
 func (u *UnschedulableStages) clear() {
 	u.stageInfoMap = make(map[string]*framework.QueuedStageInfo)
 }
 
-func podInfoKeyFunc(obj interface{}) (string, error) {
+func stageInfoKeyFunc(obj interface{}) (string, error) {
 	return MetaNamespaceKeyFunc(obj.(*framework.QueuedStageInfo).Stage)
 }
 

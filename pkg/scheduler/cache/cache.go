@@ -27,11 +27,11 @@ func newCache(ttl, period time.Duration, stop <-chan struct{}) *cacheImpl {
 		period: period,
 		stop:   stop,
 
-		workers:     make(map[string]*workerInfoListItem),
-		workerTree:  newWorkerTree(nil),
-		assumedPods: make(map[string]struct{}),
-		stageStates: make(map[string]*stageState),
-		imageStates: make(map[string]*imageState),
+		workers:       make(map[string]*workerInfoListItem),
+		workerTree:    newWorkerTree(nil),
+		assumedStages: make(map[string]struct{}),
+		stageStates:   make(map[string]*stageState),
+		imageStates:   make(map[string]*imageState),
 	}
 }
 
@@ -42,13 +42,13 @@ type cacheImpl struct {
 
 	// This mutex guards all fields within this cache struct.
 	mu sync.RWMutex
-	// a set of assumed pod keys.
-	// The key could further be used to get an entry in podStates.
-	assumedPods map[string]struct{}
-	// a map from pod key to podState.
+	// a set of assumed stage keys.
+	// The key could further be used to get an entry in stageStates.
+	assumedStages map[string]struct{}
+	// a map from stage key to stageState.
 	stageStates map[string]*stageState
 	workers     map[string]*workerInfoListItem
-	// headNode points to the most recently updated NodeInfo in "nodes". It is the
+	// headWorker points to the most recently updated WorkerInfo in "workers". It is the
 	// head of the linked list.
 	headWorker *workerInfoListItem
 	workerTree *workerTree
@@ -75,7 +75,7 @@ func (c *cacheImpl) StageCount() (int, error) {
 }
 
 func (c *cacheImpl) AssumeStage(stage *meta.Stage) error {
-	key, err := framework.GetPodKey(stage)
+	key, err := framework.GetStageKey(stage)
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func (c *cacheImpl) AssumeStage(stage *meta.Stage) error {
 	defer c.mu.RUnlock()
 
 	if _, ok := c.stageStates[key]; ok {
-		return fmt.Errorf("pod %v is in the cache, so can't be assumed", key)
+		return fmt.Errorf("stage %v is in the cache, so can't be assumed", key)
 	}
 
 	return c.addStage(stage, true)
@@ -95,7 +95,7 @@ func (c *cacheImpl) FinishBinding(stage *meta.Stage) error {
 }
 
 func (c *cacheImpl) finishBinding(stage *meta.Stage, now time.Time) error {
-	key, err := framework.GetPodKey(stage)
+	key, err := framework.GetStageKey(stage)
 	if err != nil {
 		return err
 	}
@@ -103,9 +103,9 @@ func (c *cacheImpl) finishBinding(stage *meta.Stage, now time.Time) error {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	flog.Infof("Finished binding for pod, can be expired, %s %s, worker %s %s", stage.Name, stage.UID, stage.WorkerUID, stage.WorkerHost)
+	flog.Infof("Finished binding for stage, can be expired, %s %s, worker %s %s", stage.Name, stage.UID, stage.WorkerUID, stage.WorkerHost)
 	currState, ok := c.stageStates[key]
-	_, has := c.assumedPods[key]
+	_, has := c.assumedStages[key]
 	if ok && has {
 		if c.ttl == time.Duration(0) {
 			currState.deadline = nil
@@ -119,7 +119,7 @@ func (c *cacheImpl) finishBinding(stage *meta.Stage, now time.Time) error {
 }
 
 func (c *cacheImpl) ForgetStage(stage *meta.Stage) error {
-	key, err := framework.GetPodKey(stage)
+	key, err := framework.GetStageKey(stage)
 	if err != nil {
 		return err
 	}
@@ -129,19 +129,19 @@ func (c *cacheImpl) ForgetStage(stage *meta.Stage) error {
 
 	currState, ok := c.stageStates[key]
 	if ok && currState.stage.WorkerUID != stage.WorkerUID {
-		return fmt.Errorf("pod %v was assumed on %v but assigned to %v", key, stage.WorkerUID, currState.stage.WorkerUID)
+		return fmt.Errorf("stage %v was assumed on %v but assigned to %v", key, stage.WorkerUID, currState.stage.WorkerUID)
 	}
 
-	// Only assumed pod can be forgotten.
-	_, has := c.assumedPods[key]
+	// Only assumed stage can be forgotten.
+	_, has := c.assumedStages[key]
 	if ok && has {
 		return c.removeStage(stage)
 	}
-	return fmt.Errorf("pod %v wasn't assumed so cannot be forgotten", key)
+	return fmt.Errorf("stage %v wasn't assumed so cannot be forgotten", key)
 }
 
 func (c *cacheImpl) AddStage(stage *meta.Stage) error {
-	key, err := framework.GetPodKey(stage)
+	key, err := framework.GetStageKey(stage)
 	if err != nil {
 		return err
 	}
@@ -150,33 +150,33 @@ func (c *cacheImpl) AddStage(stage *meta.Stage) error {
 	defer c.mu.Unlock()
 
 	currState, ok := c.stageStates[key]
-	_, has := c.assumedPods[key]
+	_, has := c.assumedStages[key]
 	switch {
 	case ok && has:
 		if currState.stage.WorkerUID != stage.WorkerUID {
-			// The pod was added to a different node than it was assumed to.
-			flog.Infof("Pod was added to a different node than it was assumed, %v", stage)
+			// The stage was added to a different worker than it was assumed to.
+			flog.Infof("Stage was added to a different worker than it was assumed, %v", stage)
 			if err = c.updateStage(currState.stage, stage); err != nil {
-				flog.Errorf("%s Error occurred while updating pod", err)
+				flog.Errorf("%s Error occurred while updating stage", err)
 			}
 		} else {
-			delete(c.assumedPods, key)
+			delete(c.assumedStages, key)
 			c.stageStates[key].deadline = nil
 			c.stageStates[key].stage = stage
 		}
 	case !ok:
-		// Pod was expired. We should add it back.
+		// Stage was expired. We should add it back.
 		if err = c.addStage(stage, false); err != nil {
-			flog.Errorf("Error occurred while adding pod %s", err)
+			flog.Errorf("Error occurred while adding stage %s", err)
 		}
 	default:
-		return fmt.Errorf("pod %v was already in added state", key)
+		return fmt.Errorf("stage %v was already in added state", key)
 	}
 	return nil
 }
 
 func (c *cacheImpl) UpdateStage(oldStage, newStage *meta.Stage) error {
-	key, err := framework.GetPodKey(oldStage)
+	key, err := framework.GetStageKey(oldStage)
 	if err != nil {
 		return err
 	}
@@ -185,18 +185,18 @@ func (c *cacheImpl) UpdateStage(oldStage, newStage *meta.Stage) error {
 	defer c.mu.Unlock()
 
 	currState, ok := c.stageStates[key]
-	// An assumed pod won't have Update/Remove event. It needs to have Add event
+	// An assumed stage won't have Update/Remove event. It needs to have Add event
 	// before Update event, in which case the state would change from Assumed to Added.
-	_, has := c.assumedPods[key]
+	_, has := c.assumedStages[key]
 	if ok && !has {
 		if currState.stage.WorkerUID != newStage.WorkerUID {
-			flog.Errorf("Pod updated on a different node than previously added to %v", oldStage)
+			flog.Errorf("Stage updated on a different worker than previously added to %v", oldStage)
 			flog.Errorf("scheduler cache is corrupted and can badly affect scheduling decisions")
 			os.Exit(1)
 		}
 		return c.updateStage(oldStage, newStage)
 	}
-	return fmt.Errorf("pod %v is not added to scheduler cache, so cannot be updated", key)
+	return fmt.Errorf("stage %v is not added to scheduler cache, so cannot be updated", key)
 }
 
 func (c *cacheImpl) updateStage(oldStage, newStage *meta.Stage) error {
@@ -206,8 +206,8 @@ func (c *cacheImpl) updateStage(oldStage, newStage *meta.Stage) error {
 	return c.addStage(newStage, false)
 }
 
-func (c *cacheImpl) addStage(stage *meta.Stage, assumePod bool) error {
-	key, err := framework.GetPodKey(stage)
+func (c *cacheImpl) addStage(stage *meta.Stage, assumeStage bool) error {
+	key, err := framework.GetStageKey(stage)
 	if err != nil {
 		return err
 	}
@@ -217,19 +217,19 @@ func (c *cacheImpl) addStage(stage *meta.Stage, assumePod bool) error {
 		c.workers[stage.WorkerUID] = n
 	}
 	n.info.AddStage(stage)
-	c.moveNodeInfoToHead(stage.WorkerUID)
+	c.moveWorkerInfoToHead(stage.WorkerUID)
 	ps := &stageState{
 		stage: stage,
 	}
 	c.stageStates[key] = ps
-	if assumePod {
-		c.assumedPods[key] = struct{}{}
+	if assumeStage {
+		c.assumedStages[key] = struct{}{}
 	}
 	return nil
 }
 
 func (c *cacheImpl) RemoveStage(stage *meta.Stage) error {
-	key, err := framework.GetPodKey(stage)
+	key, err := framework.GetStageKey(stage)
 	if err != nil {
 		return err
 	}
@@ -239,12 +239,12 @@ func (c *cacheImpl) RemoveStage(stage *meta.Stage) error {
 
 	currState, ok := c.stageStates[key]
 	if !ok {
-		return fmt.Errorf("pod %v is not found in scheduler cache, so cannot be removed from it", key)
+		return fmt.Errorf("stage %v is not found in scheduler cache, so cannot be removed from it", key)
 	}
 	if currState.stage.WorkerUID != stage.WorkerUID {
-		flog.Errorf("Pod was added to a different node than it was assumed %s %s", stage.WorkerUID, currState.stage.WorkerUID)
+		flog.Errorf("Stage was added to a different worker than it was assumed %s %s", stage.WorkerUID, currState.stage.WorkerUID)
 		if stage.WorkerUID != "" {
-			// An empty NodeName is possible when the scheduler misses a Delete
+			// An empty WorkerName is possible when the scheduler misses a Delete
 			// event and it gets the last known state from the informer cache.
 			flog.Errorf("scheduler cache is corrupted and can badly affect scheduling decisions")
 			os.Exit(1)
@@ -254,32 +254,32 @@ func (c *cacheImpl) RemoveStage(stage *meta.Stage) error {
 }
 
 func (c *cacheImpl) removeStage(stage *meta.Stage) error {
-	key, err := framework.GetPodKey(stage)
+	key, err := framework.GetStageKey(stage)
 	if err != nil {
 		return err
 	}
 
 	n, ok := c.workers[stage.WorkerUID]
 	if !ok {
-		flog.Errorf("Node not found when trying to remove pod, %v", stage)
+		flog.Errorf("Worker not found when trying to remove stage, %v", stage)
 	} else {
 		if err := n.info.RemoveStage(stage); err != nil {
 			return err
 		}
 		if len(n.info.Stages) == 0 && n.info.Worker() == nil {
-			c.removeNodeInfoFromList(stage.WorkerUID)
+			c.removeWorkerInfoFromList(stage.WorkerUID)
 		} else {
-			c.moveNodeInfoToHead(stage.WorkerUID)
+			c.moveWorkerInfoToHead(stage.WorkerUID)
 		}
 	}
 
 	delete(c.stageStates, key)
-	delete(c.assumedPods, key)
+	delete(c.assumedStages, key)
 	return nil
 }
 
 func (c *cacheImpl) GetStage(stage *meta.Stage) (*meta.Stage, error) {
-	key, err := framework.GetPodKey(stage)
+	key, err := framework.GetStageKey(stage)
 	if err != nil {
 		return nil, err
 	}
@@ -287,16 +287,16 @@ func (c *cacheImpl) GetStage(stage *meta.Stage) (*meta.Stage, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	podState, ok := c.stageStates[key]
+	stageState, ok := c.stageStates[key]
 	if !ok {
 		return nil, fmt.Errorf("stage %v does not exist in scheduler cache", key)
 	}
 
-	return podState.stage, nil
+	return stageState.stage, nil
 }
 
 func (c *cacheImpl) IsAssumedStage(stage *meta.Stage) (bool, error) {
-	key, err := framework.GetPodKey(stage)
+	key, err := framework.GetStageKey(stage)
 	if err != nil {
 		return false, err
 	}
@@ -304,7 +304,7 @@ func (c *cacheImpl) IsAssumedStage(stage *meta.Stage) (bool, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	_, ok := c.assumedPods[key]
+	_, ok := c.assumedStages[key]
 	return ok, nil
 }
 
@@ -317,7 +317,7 @@ func (c *cacheImpl) AddWorker(worker *meta.Worker) *framework.WorkerInfo {
 		n = newWorkerInfoListItem(framework.NewWorkerInfo())
 		c.workers[worker.UID] = n
 	}
-	c.moveNodeInfoToHead(worker.UID)
+	c.moveWorkerInfoToHead(worker.UID)
 
 	c.workerTree.addWorker(worker)
 	n.info.SetWorker(worker)
@@ -334,7 +334,7 @@ func (c *cacheImpl) UpdateWorker(oldWorker, newWorker *meta.Worker) *framework.W
 		c.workers[newWorker.UID] = n
 		c.workerTree.addWorker(newWorker)
 	}
-	c.moveNodeInfoToHead(newWorker.UID)
+	c.moveWorkerInfoToHead(newWorker.UID)
 
 	c.workerTree.updateWorker(oldWorker, newWorker)
 	n.info.SetWorker(newWorker)
@@ -358,9 +358,9 @@ func (c *cacheImpl) RemoveWorker(worker *meta.Worker) error {
 	n.info.RemoveWorker()
 
 	if len(n.info.Stages) == 0 {
-		c.removeNodeInfoFromList(worker.UID)
+		c.removeWorkerInfoFromList(worker.UID)
 	} else {
-		c.moveNodeInfoToHead(worker.UID)
+		c.moveWorkerInfoToHead(worker.UID)
 	}
 	if err := c.workerTree.removeWorker(worker); err != nil {
 		return err
@@ -368,10 +368,10 @@ func (c *cacheImpl) RemoveWorker(worker *meta.Worker) error {
 	return nil
 }
 
-func (c *cacheImpl) removeNodeInfoFromList(name string) {
+func (c *cacheImpl) removeWorkerInfoFromList(name string) {
 	ni, ok := c.workers[name]
 	if !ok {
-		flog.Errorf("No node info with given name found in the cache, %s", name)
+		flog.Errorf("No worker info with given name found in the cache, %s", name)
 		return
 	}
 
@@ -388,13 +388,13 @@ func (c *cacheImpl) removeNodeInfoFromList(name string) {
 	delete(c.workers, name)
 }
 
-func (c *cacheImpl) moveNodeInfoToHead(name string) {
+func (c *cacheImpl) moveWorkerInfoToHead(name string) {
 	ni, ok := c.workers[name]
 	if !ok {
-		flog.Errorf("No node info with given name found in the cache, %s", name)
+		flog.Errorf("No worker info with given name found in the cache, %s", name)
 		return
 	}
-	// if the node info list item is already at the head, we are done.
+	// if the worker info list item is already at the head, we are done.
 	if ni == c.headWorker {
 		return
 	}
@@ -420,39 +420,39 @@ func (c *cacheImpl) UpdateSnapshot(workerSnapshot *Snapshot) error {
 	// Get the last generation of the snapshot.
 	snapshotGeneration := workerSnapshot.generation
 
-	// NodeInfoList and HavePodsWithAffinityNodeInfoList must be re-created if a node was added
+	// WorkerInfoList and HaveStagesWithAffinityWorkerInfoList must be re-created if a worker was added
 	// or removed from the cache.
 	updateAllLists := false
 
-	// Start from the head of the NodeInfo doubly linked list and update snapshot
-	// of NodeInfos updated after the last snapshot.
-	for node := c.headWorker; node != nil; node = node.next {
-		if node.info.Generation <= snapshotGeneration {
-			// all the nodes are updated before the existing snapshot. We are done.
+	// Start from the head of the WorkerInfo doubly linked list and update snapshot
+	// of WorkerInfos updated after the last snapshot.
+	for worker := c.headWorker; worker != nil; worker = worker.next {
+		if worker.info.Generation <= snapshotGeneration {
+			// all the workers are updated before the existing snapshot. We are done.
 			break
 		}
-		if np := node.info.Worker(); np != nil {
-			existing, ok := workerSnapshot.nodeInfoMap[np.Name]
+		if np := worker.info.Worker(); np != nil {
+			existing, ok := workerSnapshot.workerInfoMap[np.Name]
 			if !ok {
 				updateAllLists = true
 				existing = &framework.WorkerInfo{}
-				workerSnapshot.nodeInfoMap[np.Name] = existing
+				workerSnapshot.workerInfoMap[np.Name] = existing
 			}
-			clone := node.info.Clone()
-			// We need to preserve the original pointer of the NodeInfo struct since it
-			// is used in the NodeInfoList, which we may not update.
+			clone := worker.info.Clone()
+			// We need to preserve the original pointer of the WorkerInfo struct since it
+			// is used in the WorkerInfoList, which we may not update.
 			*existing = *clone
 		}
 	}
-	// Update the snapshot generation with the latest NodeInfo generation.
+	// Update the snapshot generation with the latest WorkerInfo generation.
 	if c.headWorker != nil {
 		workerSnapshot.generation = c.headWorker.info.Generation
 	}
 
-	// Comparing to pods in nodeTree.
-	// Deleted nodes get removed from the tree, but they might remain in the nodes map
-	// if they still have non-deleted Pods.
-	if len(workerSnapshot.nodeInfoMap) > c.workerTree.numNodes {
+	// Comparing to stages in workerTree.
+	// Deleted workers get removed from the tree, but they might remain in the workers map
+	// if they still have non-deleted Stages.
+	if len(workerSnapshot.workerInfoMap) > c.workerTree.numWorkers {
 		//c.removeDeletedWorkersFromSnapshot(workerSnapshot) fixme
 		updateAllLists = true
 	}
@@ -462,12 +462,12 @@ func (c *cacheImpl) UpdateSnapshot(workerSnapshot *Snapshot) error {
 		return nil // fixme
 	}
 
-	if len(workerSnapshot.nodeInfoList) != c.workerTree.numNodes {
-		errMsg := fmt.Sprintf("snapshot state is not consistent, length of NodeInfoList=%v not equal to length of nodes in tree=%v "+
-			", length of NodeInfoMap=%v, length of nodes in cache=%v"+
+	if len(workerSnapshot.workerInfoList) != c.workerTree.numWorkers {
+		errMsg := fmt.Sprintf("snapshot state is not consistent, length of WorkerInfoList=%v not equal to length of workers in tree=%v "+
+			", length of WorkerInfoMap=%v, length of workers in cache=%v"+
 			", trying to recover",
-			len(workerSnapshot.nodeInfoList), c.workerTree.numNodes,
-			len(workerSnapshot.nodeInfoMap), len(c.workers))
+			len(workerSnapshot.workerInfoList), c.workerTree.numWorkers,
+			len(workerSnapshot.workerInfoMap), len(c.workers))
 		flog.Errorf(errMsg)
 		// We will try to recover by re-creating the lists for the next scheduling cycle, but still return an
 		// error to surface the problem, the error will likely cause a failure to the current scheduling cycle.
@@ -479,13 +479,13 @@ func (c *cacheImpl) UpdateSnapshot(workerSnapshot *Snapshot) error {
 }
 
 func (c *cacheImpl) removeDeletedWorkersFromSnapshot(snapshot *Snapshot) {
-	toDelete := len(snapshot.nodeInfoMap) - c.workerTree.numNodes
-	for name := range snapshot.nodeInfoMap {
+	toDelete := len(snapshot.workerInfoMap) - c.workerTree.numWorkers
+	for name := range snapshot.workerInfoMap {
 		if toDelete <= 0 {
 			break
 		}
 		if n, ok := c.workers[name]; !ok || n.info.Worker() == nil {
-			delete(snapshot.nodeInfoMap, name)
+			delete(snapshot.workerInfoMap, name)
 			toDelete--
 		}
 	}
@@ -493,18 +493,18 @@ func (c *cacheImpl) removeDeletedWorkersFromSnapshot(snapshot *Snapshot) {
 
 func (c *cacheImpl) updateWorkerInfoSnapshotList(snapshot *Snapshot, updateAll bool) {
 	if updateAll {
-		// Take a snapshot of the nodes order in the tree
-		snapshot.nodeInfoList = make([]*framework.WorkerInfo, 0, c.workerTree.numNodes)
-		nodesList, err := c.workerTree.list()
+		// Take a snapshot of the workers order in the tree
+		snapshot.workerInfoList = make([]*framework.WorkerInfo, 0, c.workerTree.numWorkers)
+		workersList, err := c.workerTree.list()
 		if err != nil {
 			flog.Error(err)
-			flog.Errorf("Error occurred while retrieving the list of names of the nodes from node tree")
+			flog.Errorf("Error occurred while retrieving the list of names of the workers from worker tree")
 		}
-		for _, nodeName := range nodesList {
-			if nodeInfo := snapshot.nodeInfoMap[nodeName]; nodeInfo != nil {
-				snapshot.nodeInfoList = append(snapshot.nodeInfoList, nodeInfo)
+		for _, workerName := range workersList {
+			if workerInfo := snapshot.workerInfoMap[workerName]; workerInfo != nil {
+				snapshot.workerInfoList = append(snapshot.workerInfoList, workerInfo)
 			} else {
-				flog.Errorf("Node exists in nodeTree but not in NodeInfoMap, this should not happen, %s", nodeName)
+				flog.Errorf("Worker exists in workerTree but not in WorkerInfoMap, this should not happen, %s", workerName)
 			}
 		}
 	}
@@ -514,14 +514,14 @@ func (c *cacheImpl) Dump() *Dump {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	nodes := make(map[string]*framework.WorkerInfo, len(c.workers))
+	workers := make(map[string]*framework.WorkerInfo, len(c.workers))
 	for k, v := range c.workers {
-		nodes[k] = v.info.Clone()
+		workers[k] = v.info.Clone()
 	}
 
 	return &Dump{
-		Workers:       nodes,
-		AssumedStages: Union(c.assumedPods, nil),
+		Workers:       workers,
+		AssumedStages: Union(c.assumedStages, nil),
 	}
 }
 
@@ -548,14 +548,14 @@ func (c *cacheImpl) cleanupAssumedStages(now time.Time) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	for key := range c.assumedPods {
+	for key := range c.assumedStages {
 		ps, ok := c.stageStates[key]
 		if !ok {
-			flog.Errorf("Key found in assumed set but not in podStates, potentially a logical error")
+			flog.Errorf("Key found in assumed set but not in stageStates, potentially a logical error")
 			os.Exit(1)
 		}
 		if !ps.bindingFinished {
-			flog.Info("Could not expire cache for pod as binding is still in progress")
+			flog.Info("Could not expire cache for stage as binding is still in progress")
 			continue
 		}
 		if c.ttl != 0 && now.After(*ps.deadline) {
@@ -569,10 +569,10 @@ func (c *cacheImpl) cleanupAssumedStages(now time.Time) {
 
 type stageState struct {
 	stage *meta.Stage
-	// Used by assumedPod to determinate expiration.
-	// If deadline is nil, assumedPod will never expire.
+	// Used by assumedStage to determinate expiration.
+	// If deadline is nil, assumedStage will never expire.
 	deadline *time.Time
-	// Used to block cache from expiring assumedPod if binding still runs
+	// Used to block cache from expiring assumedStage if binding still runs
 	bindingFinished bool
 }
 
@@ -585,6 +585,6 @@ type workerInfoListItem struct {
 type imageState struct {
 	// Size of the image
 	size int64
-	// A set of node names for nodes having this image present
-	nodes map[string]struct{}
+	// A set of worker names for workers having this image present
+	workers map[string]struct{}
 }

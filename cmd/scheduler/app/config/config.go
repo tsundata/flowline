@@ -8,7 +8,7 @@ import (
 
 // Configuration configures a scheduler
 type Configuration struct {
-	// Parallelism defines the amount of parallelism in algorithms for scheduling a Pods. Must be greater than 0. Defaults to 16
+	// Parallelism defines the amount of parallelism in algorithms for scheduling a Stages. Must be greater than 0. Defaults to 16
 	Parallelism int32
 
 	// ClientConnection specifies the kubeconfig file and client connection
@@ -17,29 +17,29 @@ type Configuration struct {
 	// HealthzBindAddress is the IP address and port for the health check server to serve on.
 	HealthzBindAddress string
 
-	// PercentageOfNodesToScore is the percentage of all nodes that once found feasible
-	// for running a pod, the scheduler stops its search for more feasible nodes in
+	// PercentageOfWorksToScore is the percentage of all workers that once found feasible
+	// for running a stage, the scheduler stops its search for more feasible workers in
 	// the cluster. This helps improve scheduler's performance. Scheduler always tries to find
-	// at least "minFeasibleNodesToFind" feasible nodes no matter what the value of this flag is.
-	// Example: if the cluster size is 500 nodes and the value of this flag is 30,
-	// then scheduler stops finding further feasible nodes once it finds 150 feasible ones.
+	// at least "minFeasibleWorkersToFind" feasible workers no matter what the value of this flag is.
+	// Example: if the cluster size is 500 workers and the value of this flag is 30,
+	// then scheduler stops finding further feasible workers once it finds 150 feasible ones.
 	// When the value is 0, default percentage (5%--50% based on the size of the cluster) of the
-	// nodes will be scored.
-	PercentageOfNodesToScore int32
+	// workers will be scored.
+	PercentageOfWorksToScore int32
 
-	// PodInitialBackoffSeconds is the initial backoff for unschedulable pods.
+	// StageInitialBackoffSeconds is the initial backoff for unschedulable stages.
 	// If specified, it must be greater than 0. If this value is null, the default value (1s)
 	// will be used.
-	PodInitialBackoffSeconds int64
+	StageInitialBackoffSeconds int64
 
-	// PodMaxBackoffSeconds is the max backoff for unschedulable pods.
-	// If specified, it must be greater than or equal to podInitialBackoffSeconds. If this value is null,
+	// StageMaxBackoffSeconds is the max backoff for unschedulable stages.
+	// If specified, it must be greater than or equal to stageInitialBackoffSeconds. If this value is null,
 	// the default value (10s) will be used.
-	PodMaxBackoffSeconds int64
+	StageMaxBackoffSeconds int64
 
-	// Profiles are scheduling profiles that kube-scheduler supports. Pods can
+	// Profiles are scheduling profiles that kube-scheduler supports. Stages can
 	// choose to be scheduled under a particular profile by setting its associated
-	// scheduler name. Pods that don't specify any scheduler name are scheduled
+	// scheduler name. Stages that don't specify any scheduler name are scheduled
 	// with the "default-scheduler" profile, if present here.
 	Profiles []config.Profile
 
@@ -68,9 +68,9 @@ type Config struct {
 	//nolint:staticcheck // SA1019 this deprecated field still needs to be used for now. It will be removed once the migration is done.
 	EventBroadcaster interface{}
 
-	// PodMaxInUnschedulablePodsDuration is the maximum time a pod can stay in
-	// unschedulablePods. If a pod stays in unschedulablePods for longer than this
-	// value, the pod will be moved from unschedulablePods to backoffQ or activeQ.
+	// StageMaxInUnschedulableStagesDuration is the maximum time a stage can stay in
+	// unschedulableStages. If a stage stays in unschedulableStages for longer than this
+	// value, the stage will be moved from unschedulableStages to backoffQ or activeQ.
 	// If this value is empty, the default value (5min) will be used.
-	PodMaxInUnschedulablePodsDuration time.Duration
+	StageMaxInUnschedulableStagesDuration time.Duration
 }

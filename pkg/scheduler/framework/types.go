@@ -14,22 +14,22 @@ type StageInfo struct {
 	ParseError error
 }
 
-// QueuedStageInfo is a Pod wrapper with additional information related to
-// the pod's status in the scheduling queue, such as the timestamp when
+// QueuedStageInfo is a Stage wrapper with additional information related to
+// the stage's status in the scheduling queue, such as the timestamp when
 // it's added to the queue.
 type QueuedStageInfo struct {
 	*StageInfo
-	// The time pod added to the scheduling queue.
+	// The time stage added to the scheduling queue.
 	Timestamp time.Time
 	// Number of schedule attempts before successfully scheduled.
 	// It's used to record the # attempts metric.
 	Attempts int
-	// The time when the pod is added to the queue for the first time. The pod may be added
+	// The time when the stage is added to the queue for the first time. The stage may be added
 	// back to the queue multiple times before it's successfully scheduled.
 	// It shouldn't be updated once initialized. It's used to record the e2e scheduling
-	// latency for a pod.
+	// latency for a stage.
 	InitialAttemptTimestamp time.Time
-	// If a Pod failed in a scheduling cycle, record the plugin names it failed by.
+	// If a Stage failed in a scheduling cycle, record the plugin names it failed by.
 	UnschedulablePlugins map[string]struct{}
 }
 
@@ -43,16 +43,16 @@ type ActionType int64
 const (
 	Add    ActionType = 1 << iota // 1
 	Delete                        // 10
-	// UpdateNodeXYZ is only applicable for Node events.
-	UpdateNodeAllocatable // 100
-	UpdateNodeLabel       // 1000
-	UpdateNodeTaint       // 10000
-	UpdateNodeCondition   // 100000
+	// UpdateWorkerXYZ is only applicable for Worker events.
+	UpdateWorkerAllocatable // 100
+	UpdateWorkerLabel       // 1000
+	UpdateWorkerTaint       // 10000
+	UpdateWorkerCondition   // 100000
 
 	All ActionType = 1<<iota - 1 // 111111
 
 	// Use the general Update type if you don't either know or care the specific sub-Update type to use.
-	Update = UpdateNodeAllocatable | UpdateNodeLabel | UpdateNodeTaint | UpdateNodeCondition
+	Update = UpdateWorkerAllocatable | UpdateWorkerLabel | UpdateWorkerTaint | UpdateWorkerCondition
 )
 
 // GVK is short for group/version/kind, which can uniquely represent a particular API resource.
@@ -65,7 +65,7 @@ const (
 )
 
 // ClusterEvent abstracts how a system resource's state gets changed.
-// Resource represents the standard API resources such as Pod, Node, etc.
+// Resource represents the standard API resources such as Stage, Worker, etc.
 // ActionType denotes the specific change such as Add, Update or Delete.
 type ClusterEvent struct {
 	Resource   GVK
@@ -78,41 +78,41 @@ func (ce ClusterEvent) IsWildCard() bool {
 	return ce.Resource == WildCard && ce.ActionType == All
 }
 
-// NodeInfo is node level aggregated information.
+// WorkerInfo is worker level aggregated information.
 type WorkerInfo struct {
-	// Overall node information.
+	// Overall worker information.
 	worker *meta.Worker
 
-	// Pods running on the node.
+	// Stages running on the worker.
 	Stages []*StageInfo
 
-	// The subset of pods with affinity.
+	// The subset of stages with affinity.
 	StagesWithAffinity []*StageInfo
 
-	// The subset of pods with required anti-affinity.
+	// The subset of stages with required anti-affinity.
 	StagesWithRequiredAntiAffinity []*StageInfo
 
-	// Ports allocated on the node.
+	// Ports allocated on the worker.
 	UsedPorts interface{}
 
-	// Total requested resources of all pods on this node. This includes assumed
-	// pods, which scheduler has sent for binding, but may not be scheduled yet.
+	// Total requested resources of all stages on this worker. This includes assumed
+	// stages, which scheduler has sent for binding, but may not be scheduled yet.
 	Requested *Resource
-	// Total requested resources of all pods on this node with a minimum value
+	// Total requested resources of all stages on this worker with a minimum value
 	// applied to each container's CPU and memory requests. This does not reflect
-	// the actual resource requests for this node, but is used to avoid scheduling
-	// many zero-request pods onto one node.
+	// the actual resource requests for this worker, but is used to avoid scheduling
+	// many zero-request stages onto one worker.
 	NonZeroRequested *Resource
-	// We store allocatedResources (which is Node.Status.Allocatable.*) explicitly
+	// We store allocatedResources (which is Worker.Status.Allocatable.*) explicitly
 	// as int64, to avoid conversions and accessing map.
 	Allocatable *Resource
 
-	// Whenever NodeInfo changes, generation is bumped.
+	// Whenever WorkerInfo changes, generation is bumped.
 	// This is used to avoid cloning it if the object didn't change.
 	Generation int64
 }
 
-// Node returns overall information about this node.
+// Worker returns overall information about this worker.
 func (n *WorkerInfo) Worker() *meta.Worker {
 	if n == nil {
 		return nil
@@ -177,13 +177,13 @@ func (n *WorkerInfo) Clone() *WorkerInfo {
 }
 
 func (n *WorkerInfo) RemoveStage(stage *meta.Stage) error {
-	k, err := GetPodKey(stage)
+	k, err := GetStageKey(stage)
 	if err != nil {
 		return err
 	}
 
 	for i := range n.Stages {
-		k2, err := GetPodKey(n.Stages[i].Stage)
+		k2, err := GetStageKey(n.Stages[i].Stage)
 		if err != nil {
 			flog.Error(err)
 			continue
@@ -205,7 +205,7 @@ func (n *WorkerInfo) RemoveStage(stage *meta.Stage) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("no corresponding pod %s in pods of node %s", stage.UID, n.worker.UID)
+	return fmt.Errorf("no corresponding stage %s in stages of worker %s", stage.UID, n.worker.UID)
 }
 
 func calculateResource(stage *meta.Stage) (res Resource, non0CPU int64, non0Mem int64) {
@@ -221,8 +221,8 @@ func NewStageInfo(stage *meta.Stage) *StageInfo {
 
 func (pi *StageInfo) Update(stage *meta.Stage) {
 	if stage != nil && pi.Stage != nil && pi.Stage.UID == stage.UID {
-		// PodInfo includes immutable information, and so it is safe to update the pod in place if it is
-		// the exact same pod
+		// StageInfo includes immutable information, and so it is safe to update the stage in place if it is
+		// the exact same stage
 		pi.Stage = stage
 		return
 	}
@@ -239,9 +239,9 @@ type Resource struct {
 	MilliCPU         int64
 	Memory           int64
 	EphemeralStorage int64
-	// We store allowedPodNumber (which is Node.Status.Allocatable.Pods().Value())
+	// We store allowedStageNumber (which is Worker.Status.Allocatable.Stages().Value())
 	// explicitly as int, to avoid conversions and improve performance.
-	AllowedPodNumber int
+	AllowedStageNumber int
 }
 
 // Diagnosis records the details to diagnose a scheduling failure.
@@ -252,10 +252,10 @@ type Diagnosis struct {
 	PostFilterMsg string
 }
 
-func GetPodKey(stage *meta.Stage) (string, error) {
+func GetStageKey(stage *meta.Stage) (string, error) {
 	uid := stage.UID
 	if len(uid) == 0 {
-		return "", errors.New("cannot get cache key for pod with empty UID")
+		return "", errors.New("cannot get cache key for stage with empty UID")
 	}
 	return uid, nil
 }
