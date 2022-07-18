@@ -566,7 +566,7 @@ func (f *frameworkImpl) RunPermitPlugins(ctx context.Context, state *framework.C
 		status, timeout := f.runPermitPlugin(ctx, pl, state, stage, workerUID)
 		if !status.IsSuccess() {
 			if status.IsUnschedulable() {
-				flog.Infof("Stage rejected by permit plugin", stage, pl.Name(), status.Message())
+				flog.Infof("Stage rejected by permit plugin %v %s %s", stage, pl.Name(), status.Message())
 				status.SetFailedPlugin(pl.Name())
 				return status
 			}

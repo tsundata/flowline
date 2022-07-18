@@ -25,8 +25,7 @@ func TestApiClient(t *testing.T) {
 	res := NewApiClient(baseURL).Request(ctx).
 		Post().Path("register").Data(meta.Worker{
 		State:    meta.WorkerReady,
-		Host:     "127.0.0.1",
-		Port:     5001,
+		Host:     "127.0.0.1:5001",
 		Runtimes: []string{"javascript"},
 	}).Result()
 	if res.Error() != nil || res.statusCode != http.StatusOK {

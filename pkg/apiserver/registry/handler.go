@@ -93,7 +93,6 @@ const timeout = 30 * 60 * time.Second
 func (e *Store) WatchHandler(req *restful.Request, resp *restful.Response) {
 	ctx := req.Request.Context()
 	uid := req.PathParameter("uid")
-	flog.Infof("UID %s", uid)
 
 	scope := newRequestScope()
 
@@ -106,7 +105,7 @@ func (e *Store) WatchHandler(req *restful.Request, resp *restful.Response) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	watcher, err := e.Watch(ctx, &storage.ListOptions{Recursive: false})
+	watcher, err := e.Watch(ctx, &storage.ListOptions{Field: uid, Recursive: false})
 	if err != nil {
 		_ = resp.WriteError(http.StatusInternalServerError, err)
 		return
@@ -115,17 +114,27 @@ func (e *Store) WatchHandler(req *restful.Request, resp *restful.Response) {
 	serveWatch(watcher, scope, outputMediaType, req.Request, resp, timeout)
 }
 
-func (e *Store) WatchListHandler(_ *restful.Request, resp *restful.Response) {
-	timeout := time.Duration(0)
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-	out, err := e.List(ctx, &storage.ListOptions{})
+func (e *Store) WatchListHandler(req *restful.Request, resp *restful.Response) {
+	ctx := req.Request.Context()
+
+	scope := newRequestScope()
+
+	outputMediaType, _, err := negotiation.NegotiateOutputMediaType(req.Request, scope.Serializer, scope)
 	if err != nil {
 		_ = resp.WriteError(http.StatusInternalServerError, err)
 		return
 	}
 
-	_ = resp.WriteEntity(out)
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	watcher, err := e.Watch(ctx, &storage.ListOptions{Recursive: true})
+	if err != nil {
+		_ = resp.WriteError(http.StatusInternalServerError, err)
+		return
+	}
+
+	serveWatch(watcher, scope, outputMediaType, req.Request, resp, timeout)
 }
 
 func serveWatch(watcher watch.Interface, scope *RequestScope, mediaTypeOptions negotiation.MediaTypeOptions, req *http.Request, w http.ResponseWriter, timeout time.Duration) {
@@ -139,20 +148,20 @@ func serveWatch(watcher watch.Interface, scope *RequestScope, mediaTypeOptions n
 	framer := serializer.StreamSerializer.Framer
 	streamSerializer := serializer.StreamSerializer.Serializer
 	encoder := scope.Serializer.EncoderForVersion(streamSerializer, scope.Kind.GroupVersion())
-	useTextFraming := serializer.EncodesAsText
 	if framer == nil {
 		err = fmt.Errorf("no framer defined for %q available for embedded encoding", serializer.MediaType)
 		flog.Error(err)
 		return
 	}
-	flog.Infof("useTextFraming %v", useTextFraming)
 	mediaType := serializer.MediaType
 	if mediaType != "application/json" {
 		mediaType += ";stream=watch"
 	}
 
 	var embeddedEncoder runtime.Encoder
-	embeddedEncoder = runtime.JsonCoder{}
+	jsonCoder := runtime.JsonCoder{}
+	codec := runtime.NewBase64Serializer(jsonCoder, jsonCoder)
+	embeddedEncoder = codec
 
 	server := &WatchServer{
 		Watching: watcher,
@@ -287,8 +296,10 @@ func (s *WatchServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	for {
 		select {
 		case <-done:
+			flog.Warn("watch handle done")
 			return
 		case <-timeoutCh:
+			flog.Warn("watch handle timeout")
 			return
 		case event, ok := <-ch:
 			if !ok {

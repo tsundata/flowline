@@ -239,7 +239,7 @@ func (s *SelectionPredicate) Empty() bool {
 // MatchesSingle will return (name, true) if and only if s.Field matches on the object's
 // name.
 func (s *SelectionPredicate) MatchesSingle() (string, bool) {
-	if len(s.Continue) > 0 {
+	if len(s.Field) == 0 {
 		return "", false
 	}
 	// field --> metadata.name
@@ -248,6 +248,6 @@ func (s *SelectionPredicate) MatchesSingle() (string, bool) {
 
 // Everything accepts all objects.
 var Everything = SelectionPredicate{
-	Label: "*",
-	Field: "*",
+	Label: "",
+	Field: "",
 }

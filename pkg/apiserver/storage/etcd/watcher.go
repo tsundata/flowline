@@ -242,6 +242,7 @@ func (wc *watchChan) startWatching(watchClosedCh chan struct{}) {
 		}
 
 		for _, e := range wres.Events {
+			flog.Infof("etcd watching event: type %d, key %s", e.Type, string(e.Kv.Key))
 			parsedEvent, err := parseEvent(e)
 			if err != nil {
 				logWatchChannelErr(err)
@@ -411,7 +412,7 @@ func (wc *watchChan) prepareObjs(e *event) (curObj runtime.Object, oldObj runtim
 		if err != nil {
 			return nil, nil, err
 		}
-		curObj, err = decodeObj(wc.watcher.codec, wc.watcher.versioner, data, e.rev)
+		curObj, err = decodeObj(wc.watcher.codec, wc.watcher.versioner, data, e.rev, wc.watcher.newFunc)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -428,7 +429,7 @@ func (wc *watchChan) prepareObjs(e *event) (curObj runtime.Object, oldObj runtim
 		}
 		// Note that this sends the *old* object with the etcd revision for the time at
 		// which it gets deleted.
-		oldObj, err = decodeObj(wc.watcher.codec, wc.watcher.versioner, data, e.rev)
+		oldObj, err = decodeObj(wc.watcher.codec, wc.watcher.versioner, data, e.rev, wc.watcher.newFunc)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -436,8 +437,8 @@ func (wc *watchChan) prepareObjs(e *event) (curObj runtime.Object, oldObj runtim
 	return curObj, oldObj, nil
 }
 
-func decodeObj(codec runtime.Codec, versioner storage.Versioner, data []byte, rev int64) (_ runtime.Object, err error) {
-	obj, err := runtime.Decode(codec, []byte(data))
+func decodeObj(codec runtime.Codec, versioner storage.Versioner, data []byte, rev int64, newFunc func() runtime.Object) (_ runtime.Object, err error) {
+	obj, err := runtime.Decode(codec, []byte(data), newFunc())
 	if err != nil {
 		if fatalOnDecodeError {
 			// catch watch decode error iff we caused it on

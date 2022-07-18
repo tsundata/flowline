@@ -11,6 +11,7 @@ import (
 	"github.com/tsundata/flowline/pkg/apiserver/storage/etcd/watch"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
+	"github.com/tsundata/flowline/pkg/util/flog"
 	"strings"
 )
 
@@ -364,11 +365,11 @@ func (e *Store) ListPredicate(ctx context.Context, p storage.SelectionPredicate,
 // a matcher that matches by key. SelectionPredicate does this for you
 // automatically.
 func (e *Store) Watch(ctx context.Context, options *storage.ListOptions) (watch.Interface, error) {
-	label := "*"
+	label := ""
 	if options != nil && options.Label != "" {
 		label = options.Label
 	}
-	field := "*"
+	field := ""
 	if options != nil && options.Field != "" {
 		field = options.Field
 	}
@@ -397,6 +398,7 @@ func (e *Store) WatchPredicate(ctx context.Context, p storage.SelectionPredicate
 		// optimization is skipped
 	}
 
+	flog.Infof("etcd watch key %s, recursive %v", key, storageOpts.Recursive)
 	w, err := e.Storage.Watch(ctx, key, storageOpts)
 	if err != nil {
 		return nil, err
