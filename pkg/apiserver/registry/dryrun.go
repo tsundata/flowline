@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/tsundata/flowline/pkg/apiserver/storage"
+	"github.com/tsundata/flowline/pkg/apiserver/storage/etcd/watch"
 	"github.com/tsundata/flowline/pkg/runtime"
 )
 
@@ -30,7 +31,7 @@ func (s *DryRunnableStorage) Delete(ctx context.Context, key string, out runtime
 	return s.Storage.Delete(ctx, key, out, preconditions, deleteValidation, cachedExistingObject)
 }
 
-func (s *DryRunnableStorage) Watch(ctx context.Context, key string, opts storage.ListOptions) (storage.WatchInterface, error) {
+func (s *DryRunnableStorage) Watch(ctx context.Context, key string, opts storage.ListOptions) (watch.Interface, error) {
 	return s.Storage.Watch(ctx, key, opts)
 }
 

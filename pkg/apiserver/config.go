@@ -121,6 +121,18 @@ func registerResourceHandlers(resource string, storage rest.Storage, ws *restful
 		Metadata(restfulspec.KeyOpenAPITags, tags)
 	rs = append(rs, listRoute)
 
+	watchRoute := ws.GET(resource+"/{uid}/watch").To(storage.WatchHandler).
+		Doc(fmt.Sprintf("Watch %s resource", resource)).
+		Operation(resource+"WatchHandler").
+		Metadata(restfulspec.KeyOpenAPITags, tags)
+	rs = append(rs, watchRoute)
+
+	watchListRoute := ws.GET(resource+"/watch").To(storage.WatchListHandler).
+		Doc(fmt.Sprintf("Watch List %s resource", resource)).
+		Operation(resource+"WatchListHandler").
+		Metadata(restfulspec.KeyOpenAPITags, tags)
+	rs = append(rs, watchListRoute)
+
 	for _, route := range rs {
 		ws.Route(route)
 	}

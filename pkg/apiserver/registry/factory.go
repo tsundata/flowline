@@ -5,6 +5,7 @@ import (
 	"github.com/tsundata/flowline/pkg/apiserver/storage/config"
 	"github.com/tsundata/flowline/pkg/apiserver/storage/decorator"
 	"github.com/tsundata/flowline/pkg/apiserver/storage/etcd"
+	"github.com/tsundata/flowline/pkg/apiserver/storage/value"
 	"github.com/tsundata/flowline/pkg/runtime"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"sync"
@@ -23,7 +24,9 @@ func StorageFactory() decorator.StorageDecorator {
 			return nil, nil, err
 		}
 
-		s := etcd.New(cli, config.Codec, "", false)
+		transformer := value.IdentityTransformer
+
+		s := etcd.New(cli, config.Codec, newFunc, "", transformer, false)
 
 		var once sync.Once
 		destroyFunc := func() {

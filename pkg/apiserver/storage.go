@@ -32,6 +32,7 @@ func StorageMap() map[string]rest.Storage {
 	jobRestStorage(storageMap)
 	roleRestStorage(storageMap)
 	rolebindingRestStorage(storageMap)
+	stageRestStorage(storageMap)
 	userRestStorage(storageMap)
 	variableRestStorage(storageMap)
 	workerRestStorage(storageMap)
@@ -93,6 +94,14 @@ func rolebindingRestStorage(storageMap map[string]rest.Storage) {
 		flog.Panic(err)
 	}
 	storageMap["rolebinding"] = s
+}
+
+func stageRestStorage(storageMap map[string]rest.Storage) {
+	s, err := user.NewREST(makeStoreOptions("stage"))
+	if err != nil {
+		flog.Panic(err)
+	}
+	storageMap["stage"] = s
 }
 
 func userRestStorage(storageMap map[string]rest.Storage) {

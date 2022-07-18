@@ -1,6 +1,11 @@
 package schema
 
-import "strings"
+import (
+	"github.com/tsundata/flowline/pkg/runtime/constant"
+	"strings"
+)
+
+var SchemeGroupVersion = GroupVersion{Group: constant.GroupName, Version: "v1"}
 
 // GroupVersionKind unambiguously identifies a kind.  It doesn't anonymously include GroupVersion
 // to avoid automatic coercion.  It doesn't use a GroupVersion to avoid custom marshalling
@@ -72,6 +77,25 @@ func (gv GroupVersion) String() string {
 // Identifier implements runtime.GroupVersioner interface.
 func (gv GroupVersion) Identifier() string {
 	return gv.String()
+}
+
+// KindForGroupVersionKinds identifies the preferred GroupVersionKind out of a list. It returns ok false
+// if none of the options match the group. It prefers a match to group and version over just group.
+// TODO: Move GroupVersion to a package under pkg/runtime, since it's used by scheme.
+// TODO: Introduce an adapter type between GroupVersion and runtime.GroupVersioner, and use LegacyCodec(GroupVersion)
+//   in fewer places.
+func (gv GroupVersion) KindForGroupVersionKinds(kinds []GroupVersionKind) (target GroupVersionKind, ok bool) {
+	for _, gvk := range kinds {
+		if gvk.Group == gv.Group && gvk.Version == gv.Version {
+			return gvk, true
+		}
+	}
+	for _, gvk := range kinds {
+		if gvk.Group == gv.Group {
+			return gv.WithKind(gvk.Kind), true
+		}
+	}
+	return GroupVersionKind{}, false
 }
 
 // WithKind creates a GroupVersionKind based on the method receiver's GroupVersion and the passed Kind.

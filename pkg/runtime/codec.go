@@ -123,7 +123,7 @@ func Encode(e Encoder, obj Object) ([]byte, error) {
 }
 
 // Decode is a convenience wrapper for decoding data into an Object.
-func Decode(d Decoder, data []byte) (interface{}, error) {
+func Decode(d Decoder, data []byte) (Object, error) {
 	obj, _, err := d.Decode(data, nil, nil)
 	return obj, err
 }

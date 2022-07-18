@@ -35,3 +35,24 @@ func (m *EventList) DeepCopyObject() runtime.Object {
 	//TODO implement me
 	panic("implement me")
 }
+
+type WatchEvent struct {
+	TypeMeta
+	ObjectMeta
+
+	Type   string `json:"type"`
+	Object struct {
+		Raw    []byte         `json:"raw"`
+		Object runtime.Object `json:"object"`
+	} `json:"object"`
+}
+
+func (m *WatchEvent) GetObjectKind() schema.ObjectKind {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *WatchEvent) DeepCopyObject() runtime.Object {
+	//TODO implement me
+	panic("implement me")
+}

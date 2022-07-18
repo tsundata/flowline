@@ -8,6 +8,7 @@ import (
 	"github.com/tsundata/flowline/pkg/apiserver/registry/options"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest"
 	"github.com/tsundata/flowline/pkg/apiserver/storage"
+	"github.com/tsundata/flowline/pkg/apiserver/storage/etcd/watch"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"strings"
@@ -55,6 +56,11 @@ type Store struct {
 	//
 	// Objects that are persisted with a TTL are evicted once the TTL expires.
 	TTLFunc func(obj runtime.Object, existing uint64, update bool) (uint64, error)
+
+	// PredicateFunc returns a matcher corresponding to the provided labels
+	// and fields. The SelectionPredicate returned should return true if the
+	// object matches the given field and label selectors.
+	PredicateFunc func(label string, field string) storage.SelectionPredicate
 
 	// EnableGarbageCollection affects the handling of Update and Delete
 	// requests. Enabling garbage collection allows finalizers to do work to
@@ -155,6 +161,20 @@ func (e *Store) CompleteWithOptions(options *options.StoreOptions) error {
 
 	if options.RESTOptions == nil {
 		return fmt.Errorf("options for %s must have RESTOptions set", e.DefaultQualifiedResource.String())
+	}
+
+	attrFunc := options.AttrFunc
+	if attrFunc == nil {
+		attrFunc = storage.DefaultClusterScopedAttr
+	}
+	if e.PredicateFunc == nil {
+		e.PredicateFunc = func(label string, field string) storage.SelectionPredicate {
+			return storage.SelectionPredicate{
+				Label:    label,
+				Field:    field,
+				GetAttrs: attrFunc,
+			}
+		}
 	}
 
 	opts, err := options.RESTOptions.GetRESTOptions(e.DefaultQualifiedResource)
@@ -337,6 +357,54 @@ func (e *Store) ListPredicate(ctx context.Context, p storage.SelectionPredicate,
 		return nil, err
 	}
 	return list, nil
+}
+
+// Watch makes a matcher for the given label and field, and calls
+// WatchPredicate. If possible, you should customize PredicateFunc to produce
+// a matcher that matches by key. SelectionPredicate does this for you
+// automatically.
+func (e *Store) Watch(ctx context.Context, options *storage.ListOptions) (watch.Interface, error) {
+	label := "*"
+	if options != nil && options.Label != "" {
+		label = options.Label
+	}
+	field := "*"
+	if options != nil && options.Field != "" {
+		field = options.Field
+	}
+	predicate := e.PredicateFunc(label, field)
+
+	resourceVersion := ""
+	if options != nil {
+		resourceVersion = options.ResourceVersion
+
+	}
+
+	return e.WatchPredicate(ctx, predicate, resourceVersion)
+}
+
+// WatchPredicate starts a watch for the items that matches.
+func (e *Store) WatchPredicate(ctx context.Context, p storage.SelectionPredicate, resourceVersion string) (watch.Interface, error) {
+	storageOpts := storage.ListOptions{ResourceVersion: resourceVersion, Predicate: p, Recursive: true}
+
+	key := e.KeyRootFunc(ctx)
+	if name, ok := p.MatchesSingle(); ok {
+		if k, err := e.KeyFunc(ctx, name); err == nil {
+			key = k
+			storageOpts.Recursive = false
+		}
+		// if we cannot extract a key based on the current context, the
+		// optimization is skipped
+	}
+
+	w, err := e.Storage.Watch(ctx, key, storageOpts)
+	if err != nil {
+		return nil, err
+	}
+	if e.Decorator != nil {
+		return newDecoratedWatcher(ctx, w, e.Decorator), nil
+	}
+	return w, nil
 }
 
 // calculateTTL is a helper for retrieving the updated TTL for an object or

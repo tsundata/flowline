@@ -66,4 +66,6 @@ type Handler interface {
 	UpdateHandler(req *restful.Request, resp *restful.Response)
 	DeleteHandler(req *restful.Request, resp *restful.Response)
 	ListHandler(req *restful.Request, resp *restful.Response)
+	WatchHandler(req *restful.Request, resp *restful.Response)
+	WatchListHandler(req *restful.Request, resp *restful.Response)
 }

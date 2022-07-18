@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver/storage"
+	"github.com/tsundata/flowline/pkg/apiserver/storage/etcd/watch"
+	"github.com/tsundata/flowline/pkg/apiserver/storage/value"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	clientv3 "go.etcd.io/etcd/client/v3"
@@ -18,30 +20,33 @@ type store struct {
 	client        *clientv3.Client
 	codec         runtime.Codec
 	versioner     storage.Versioner
+	transformer   value.Transformer
 	pathPrefix    string
+	watcher       *watcher
 	pagingEnabled bool
 	leaseManager  *leaseManager
 }
 
-func New(c *clientv3.Client, codec runtime.Codec, prefix string, pagingEnabled bool) storage.Interface {
-	return newStore(c, codec, prefix, pagingEnabled)
+func New(c *clientv3.Client, codec runtime.Codec, newFunc func() runtime.Object, prefix string, transformer value.Transformer, pagingEnabled bool) storage.Interface {
+	return newStore(c, codec, newFunc, prefix, transformer, pagingEnabled)
 }
 
-func newStore(c *clientv3.Client, codec runtime.Codec, prefix string, pagingEnabled bool) *store {
+func newStore(c *clientv3.Client, codec runtime.Codec, newFunc func() runtime.Object, prefix string, transformer value.Transformer, pagingEnabled bool) *store {
 	versioner := storage.APIObjectVersioner{}
 	return &store{
 		client:        c,
 		codec:         codec,
 		versioner:     versioner,
+		transformer:   transformer,
 		pathPrefix:    path.Join("/", prefix),
 		pagingEnabled: pagingEnabled,
+		watcher:       newWatcher(c, codec, newFunc, versioner, transformer),
 		leaseManager:  newDefaultLeaseManager(c, NewDefaultLeaseManagerConfig()),
 	}
 }
 
 func (s *store) Versioner() storage.Versioner {
-	//TODO implement me
-	panic("implement me")
+	return s.versioner
 }
 
 func (s *store) Create(ctx context.Context, key string, obj, out runtime.Object, ttl uint64) error {
@@ -91,15 +96,13 @@ func (s *store) Delete(ctx context.Context, key string, out runtime.Object, prec
 	return err
 }
 
-func (s *store) Watch(ctx context.Context, key string, opts storage.ListOptions) (storage.WatchInterface, error) {
+func (s *store) Watch(ctx context.Context, key string, opts storage.ListOptions) (watch.Interface, error) {
 	rev, err := s.versioner.ParseResourceVersion(opts.ResourceVersion)
 	if err != nil {
 		return nil, err
 	}
 	key = path.Join(s.pathPrefix, key)
-	// return s.watcher.Watch(ctx, key, int64(rev), opts.Recursive, opts.ProgressNotify, opts.Predicate)  todo
-	fmt.Println(rev)
-	return nil, nil
+	return s.watcher.Watch(ctx, key, int64(rev), opts.Recursive, opts.ProgressNotify, opts.Predicate)
 }
 
 func (s *store) Get(ctx context.Context, key string, opts storage.GetOptions, out runtime.Object) error {

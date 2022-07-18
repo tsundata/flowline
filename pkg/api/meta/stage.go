@@ -38,3 +38,19 @@ func (m *Stage) DeepCopyObject() runtime.Object {
 	//TODO implement me
 	panic("implement me")
 }
+
+type StageList struct {
+	TypeMeta
+	ListMeta
+	Items []Stage
+}
+
+func (m *StageList) GetObjectKind() schema.ObjectKind {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *StageList) DeepCopyObject() runtime.Object {
+	//TODO implement me
+	panic("implement me")
+}

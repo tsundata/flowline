@@ -1,6 +1,7 @@
 package options
 
 import (
+	"github.com/tsundata/flowline/pkg/apiserver/storage"
 	"github.com/tsundata/flowline/pkg/apiserver/storage/config"
 	"github.com/tsundata/flowline/pkg/apiserver/storage/decorator"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
@@ -30,4 +31,5 @@ type RESTOptionsGetter interface {
 // StoreOptions is set of configuration options used to complete generic registries.
 type StoreOptions struct {
 	RESTOptions RESTOptionsGetter
+	AttrFunc    storage.AttrFunc
 }
