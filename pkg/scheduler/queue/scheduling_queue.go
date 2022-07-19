@@ -3,6 +3,7 @@ package queue
 import (
 	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
+	v1 "github.com/tsundata/flowline/pkg/informer/listers/core/v1"
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
 	"github.com/tsundata/flowline/pkg/scheduler/heap"
 	"github.com/tsundata/flowline/pkg/util/clock"
@@ -27,6 +28,8 @@ var (
 	AssignedStageDelete = framework.ClusterEvent{Resource: framework.Stage, ActionType: framework.Delete, Label: "AssignedStageDelete"}
 	// UnschedulableTimeout is the event when a stage stays in unschedulable for longer than timeout.
 	UnschedulableTimeout = framework.ClusterEvent{Resource: framework.WildCard, ActionType: framework.All, Label: "UnschedulableTimeout"}
+	// WorkerStateChange is the event when node label is changed.
+	WorkerStateChange = framework.ClusterEvent{Resource: framework.Worker, ActionType: framework.Update, Label: "WorkerStateChange"}
 )
 
 // PreEnqueueCheck is a function type. It's used to build functions that
@@ -619,7 +622,7 @@ func (p *PriorityQueue) flushUnschedulableStagesLeftover() {
 // NewStageNominator creates a nominator as a backing of framework.StageNominator.
 // A stageLister is passed in so as to check if the stage exists
 // before adding its nominatedWorker info.
-func NewStageNominator(stageLister interface{}) framework.StageNominator {
+func NewStageNominator(stageLister v1.StageLister) framework.StageNominator {
 	return &nominator{
 		stageLister:            stageLister,
 		nominatedStages:        make(map[string][]*framework.StageInfo),
@@ -629,7 +632,7 @@ func NewStageNominator(stageLister interface{}) framework.StageNominator {
 
 type nominator struct {
 	// stageLister is used to verify if the given stage is alive.
-	stageLister interface{}
+	stageLister v1.StageLister
 	// nominatedStages is a map keyed by a worker name and the value is a list of
 	// stages which are nominated to run on the worker. These are stages which can be in
 	// the activeQ or unschedulableStages.
@@ -680,16 +683,16 @@ func (npm *nominator) add(pi *framework.StageInfo, nominatingInfo *framework.Nom
 	}
 
 	if npm.stageLister != nil {
-		// If the stage was removed or if it was already scheduled, don't nominate it.
-		//updatedStage, err := npm.stageLister.Stages(pi.Stage.Namespace).Get(pi.Stage.Name)
-		//if err != nil {
-		//	klog.V(4).InfoS("Stage doesn't exist in stageLister, aborted adding it to the nominator", "stage", klog.KObj(pi.Stage))
-		//	return
-		//}
-		//if updatedStage.WorkerName != "" {
-		//	klog.V(4).InfoS("Stage is already scheduled to a worker, aborted adding it to the nominator", "stage", klog.KObj(pi.Stage), "worker", updatedStage.Spec.WorkerName)
-		//	return
-		//}
+		//If the stage was removed or if it was already scheduled, don't nominate it.
+		updatedStage, err := npm.stageLister.Get(pi.Stage.Name)
+		if err != nil {
+			flog.Errorf("Stage doesn't exist in stageLister, aborted adding it to the nominator %T", pi.Stage)
+			return
+		}
+		if updatedStage.WorkerUID != "" {
+			flog.Infof("Stage is already scheduled to a worker, aborted adding it to the nominator, %T %s", pi.Stage, updatedStage.WorkerUID)
+			return
+		}
 	}
 
 	npm.nominatedStageToWorker[pi.Stage.UID] = workerName

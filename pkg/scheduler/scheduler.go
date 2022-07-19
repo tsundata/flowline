@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
+	"github.com/tsundata/flowline/pkg/informer/informers"
 	"github.com/tsundata/flowline/pkg/scheduler/cache"
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/config"
@@ -389,7 +390,7 @@ var defaultSchedulerOptions = schedulerOptions{
 
 // New returns a Scheduler
 func New(client interface{},
-	informerFactory interface{},
+	informerFactory informers.SharedInformerFactory,
 	dynInformerFactory interface{},
 	recorderFactory profile.RecorderFactory,
 	stopCh <-chan struct{},
@@ -486,8 +487,12 @@ func New(client interface{},
 		},
 	})
 
+	stageLister := informerFactory.Core().V1().Stages().Lister()
+	nominator := queue.NewStageNominator(stageLister)
+
 	profiles, err := profile.NewMap(options.profiles, registry, recorderFactory, stopCh,
 		frameworkruntime.WithExtenders(extenders),
+		frameworkruntime.WithStageNominator(nominator),
 	)
 	if err != nil {
 		return nil, err
@@ -513,7 +518,7 @@ func New(client interface{},
 		options.percentageOfWorkersToScore,
 	)
 
-	// todo addAllEventHandlers(sched, informerFactory, dynInformerFactory, unionedGVKs(clusterEventMap))
+	addAllEventHandlers(sched, informerFactory, nil)
 
 	return sched, nil
 }

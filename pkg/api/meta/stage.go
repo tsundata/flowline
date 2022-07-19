@@ -5,6 +5,12 @@ import (
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 )
 
+type StageState string
+
+const (
+	StageDone StageState = "done"
+)
+
 type Stage struct {
 	TypeMeta
 	ObjectMeta
@@ -17,7 +23,7 @@ type Stage struct {
 	JobUID string `json:"jobUID,omitempty"`
 	DagUID string `json:"dagUID,omitempty"`
 
-	State string `json:"state,omitempty"` // todo
+	State StageState `json:"state,omitempty"` // todo
 
 	Runtime string `json:"runtime,omitempty"`
 	Code    string `json:"code,omitempty"`

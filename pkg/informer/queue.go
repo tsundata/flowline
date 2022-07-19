@@ -52,3 +52,37 @@ type DeletedFinalStateUnknown struct {
 	Key string
 	Obj interface{}
 }
+
+// DeltaType is the type of a change (addition, deletion, etc)
+type DeltaType string
+
+// Change type definition
+const (
+	Added   DeltaType = "Added"
+	Updated DeltaType = "Updated"
+	Deleted DeltaType = "Deleted"
+	// Replaced is emitted when we encountered watch errors and had to do a
+	// relist. We don't know if the replaced object has changed.
+	//
+	// NOTE: Previous versions of DeltaFIFO would use Sync for Replace events
+	// as well. Hence, Replaced is only emitted when the option
+	// EmitDeltaTypeReplaced is true.
+	Replaced DeltaType = "Replaced"
+	// Sync is for synthetic events during a periodic resync.
+	Sync DeltaType = "Sync"
+)
+
+// Delta is a member of Deltas (a list of Delta objects) which
+// in its turn is the type stored by a DeltaFIFO. It tells you what
+// change happened, and the object's state after* that change.
+//
+// [*] Unless the change is a deletion, and then you'll get the final
+// state of the object before it was deleted.
+type Delta struct {
+	Type   DeltaType
+	Object interface{}
+}
+
+// Deltas is a list of one or more 'Delta's to an individual object.
+// The oldest delta is at index 0, the newest delta is the last one.
+type Deltas []Delta

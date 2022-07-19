@@ -1,6 +1,8 @@
 package config
 
 import (
+	"github.com/tsundata/flowline/pkg/api/client"
+	"github.com/tsundata/flowline/pkg/informer/informers"
 	"github.com/tsundata/flowline/pkg/scheduler"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/config"
 	"time"
@@ -60,17 +62,21 @@ type Config struct {
 	//Authorization  apiserver.AuthorizationInfo
 	//SecureServing  *apiserver.SecureServingInfo
 
-	Client interface{}
-	Config *scheduler.Config
-	//InformerFactory    informers.SharedInformerFactory
+	Client          *client.RestClient
+	Config          *scheduler.Config
+	InformerFactory informers.SharedInformerFactory
 	//DynInformerFactory dynamicinformer.DynamicSharedInformerFactory
-
-	//nolint:staticcheck // SA1019 this deprecated field still needs to be used for now. It will be removed once the migration is done.
-	EventBroadcaster interface{}
 
 	// StageMaxInUnschedulableStagesDuration is the maximum time a stage can stay in
 	// unschedulableStages. If a stage stays in unschedulableStages for longer than this
 	// value, the stage will be moved from unschedulableStages to backoffQ or activeQ.
 	// If this value is empty, the default value (5min) will be used.
 	StageMaxInUnschedulableStagesDuration time.Duration
+}
+
+func (c *Config) Complete() {
+	// todo AuthorizeClientBearerToken
+
+	c.Client = client.NewRestClient(c.Config.ApiURL)
+	c.InformerFactory = informers.NewSharedInformerFactory(c.Client, 10*time.Minute)
 }

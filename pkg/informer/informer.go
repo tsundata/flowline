@@ -1,7 +1,9 @@
 package informer
 
 import (
+	"errors"
 	"fmt"
+	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/util/buffer"
 	"github.com/tsundata/flowline/pkg/util/clock"
@@ -47,6 +49,7 @@ type SharedInformer interface {
 	// thread-safe.
 	LastSyncResourceVersion() string
 
+	// SetWatchErrorHandler
 	// The WatchErrorHandler is called whenever ListAndWatch drops the
 	// connection with an error. After calling this handler, the informer
 	// will backoff and retry.
@@ -62,6 +65,7 @@ type SharedInformer interface {
 	// offloaded.
 	SetWatchErrorHandler(handler WatchErrorHandler) error
 
+	// SetTransform
 	// The TransformFunc is called for each object which is about to be stored.
 	//
 	// This function is intended for you to take the opportunity to
@@ -157,9 +161,56 @@ func (s *sharedIndexInformer) AddEventHandler(handler ResourceEventHandler) {
 	s.AddEventHandlerWithResyncPeriod(handler, s.defaultEventHandlerResyncPeriod)
 }
 
+const minimumResyncPeriod = 1 * time.Second
+
 func (s *sharedIndexInformer) AddEventHandlerWithResyncPeriod(handler ResourceEventHandler, resyncPeriod time.Duration) {
-	//TODO implement me
-	panic("implement me")
+	s.startedLock.Lock()
+	defer s.startedLock.Unlock()
+
+	if s.stopped {
+		flog.Infof("Handler %v was not added to shared informer because it has stopped already", handler)
+		return
+	}
+
+	if resyncPeriod > 0 {
+		if resyncPeriod < minimumResyncPeriod {
+			flog.Warnf("resyncPeriod %v is too small. Changing it to the minimum allowed value of %v", resyncPeriod, minimumResyncPeriod)
+			resyncPeriod = minimumResyncPeriod
+		}
+
+		if resyncPeriod < s.resyncCheckPeriod {
+			if s.started {
+				flog.Warnf("resyncPeriod %v is smaller than resyncCheckPeriod %v and the informer has already started. Changing it to %v", resyncPeriod, s.resyncCheckPeriod, s.resyncCheckPeriod)
+				resyncPeriod = s.resyncCheckPeriod
+			} else {
+				// if the event handler's resyncPeriod is smaller than the current resyncCheckPeriod, update
+				// resyncCheckPeriod to match resyncPeriod and adjust the resync periods of all the listeners
+				// accordingly
+				s.resyncCheckPeriod = resyncPeriod
+				s.processor.resyncCheckPeriodChanged(resyncPeriod)
+			}
+		}
+	}
+
+	listener := newProcessListener(handler, resyncPeriod, determineResyncPeriod(resyncPeriod, s.resyncCheckPeriod), s.clock.Now(), initialBufferSize)
+
+	if !s.started {
+		s.processor.addListener(listener)
+		return
+	}
+
+	// in order to safely join, we have to
+	// 1. stop sending add/update/delete notifications
+	// 2. do a list against the store
+	// 3. send synthetic "Add" events to the new handler
+	// 4. unblock
+	s.blockDeltas.Lock()
+	defer s.blockDeltas.Unlock()
+
+	s.processor.addListener(listener)
+	for _, item := range s.indexer.List() {
+		listener.add(addNotification{newObj: item})
+	}
 }
 
 func (s *sharedIndexInformer) GetStore() Store {
@@ -215,7 +266,50 @@ func (s *sharedIndexInformer) Run(stopCh <-chan struct{}) {
 }
 
 func (s *sharedIndexInformer) HandleQueue(obj interface{}) error {
-	return nil
+	s.blockDeltas.Lock()
+	defer s.blockDeltas.Unlock()
+
+	if deltas, ok := obj.(Deltas); ok {
+		return processDeltas(s, s.indexer, s.transform, deltas)
+	}
+	return errors.New("object given as Process argument is not Deltas")
+}
+
+// OnAdd Conforms to ResourceEventHandler
+func (s *sharedIndexInformer) OnAdd(obj interface{}) {
+	// Invocation of this function is locked under s.blockDeltas, so it is
+	// save to distribute the notification
+	s.cacheMutationDetector.AddObject(obj)
+	s.processor.distribute(addNotification{newObj: obj}, false)
+}
+
+// OnUpdate Conforms to ResourceEventHandler
+func (s *sharedIndexInformer) OnUpdate(old, new interface{}) {
+	isSync := false
+
+	// If is a Sync event, isSync should be true
+	// If is a Replaced event, isSync is true if resource version is unchanged.
+	// If RV is unchanged: this is a Sync/Replaced event, so isSync is true
+
+	if accessor, err := meta.Accessor(new); err == nil {
+		if oldAccessor, err := meta.Accessor(old); err == nil {
+			// Events that didn't change resourceVersion are treated as resync events
+			// and only propagated to listeners that requested resync
+			isSync = accessor.GetResourceVersion() == oldAccessor.GetResourceVersion()
+		}
+	}
+
+	// Invocation of this function is locked under s.blockDeltas, so it is
+	// save to distribute the notification
+	s.cacheMutationDetector.AddObject(new)
+	s.processor.distribute(updateNotification{oldObj: old, newObj: new}, isSync)
+}
+
+// OnDelete Conforms to ResourceEventHandler
+func (s *sharedIndexInformer) OnDelete(old interface{}) {
+	// Invocation of this function is locked under s.blockDeltas, so it is
+	// save to distribute the notification
+	s.processor.distribute(deleteNotification{oldObj: old}, false)
 }
 
 func (s *sharedIndexInformer) HasSynced() bool {
@@ -271,7 +365,7 @@ type dummyController struct {
 	informer *sharedIndexInformer
 }
 
-func (v *dummyController) Run(stopCh <-chan struct{}) {
+func (v *dummyController) Run(_ <-chan struct{}) {
 }
 
 func (v *dummyController) HasSynced() bool {
@@ -564,3 +658,37 @@ func (p *processorListener) setResyncPeriod(resyncPeriod time.Duration) {
 
 	p.resyncPeriod = resyncPeriod
 }
+
+// InformerSynced is a function that can be used to determine if an informer has synced.  This is useful for determining if caches have synced.
+type InformerSynced func() bool
+
+// WaitForCacheSync waits for caches to populate.  It returns true if it was successful, false
+// if the controller should shutdown
+// callers should prefer WaitForNamedCacheSync()
+func WaitForCacheSync(stopCh <-chan struct{}, cacheSyncs ...InformerSynced) bool {
+	err := parallelizer.PollImmediateUntil(syncedPollPeriod,
+		func() (bool, error) {
+			for _, syncFunc := range cacheSyncs {
+				if !syncFunc() {
+					return false, nil
+				}
+			}
+			return true, nil
+		},
+		stopCh)
+	if err != nil {
+		flog.Infof("stop requested")
+		return false
+	}
+
+	flog.Infof("caches populated")
+	return true
+}
+
+const (
+	// syncedPollPeriod controls how often you look at the status of your sync funcs
+	syncedPollPeriod = 100 * time.Millisecond
+
+	// initialBufferSize is the initial number of event notifications that can be buffered.
+	initialBufferSize = 1024
+)

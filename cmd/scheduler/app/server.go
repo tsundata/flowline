@@ -36,8 +36,11 @@ func NewSchedulerCommand() *cli.App {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			cc := &config.Config{} // todo
-			//config.ApiURL = c.String("api-url")
+			cc := &config.Config{
+				ComponentConfig: config.Configuration{},
+				Config:          &scheduler.Config{},
+			} // todo
+			cc.Config.ApiURL = c.String("api-url")
 			return runCommand(cc, signal.SetupSignalHandler())
 		},
 		Commands: []*cli.Command{
@@ -54,7 +57,7 @@ func NewSchedulerCommand() *cli.App {
 	}
 }
 
-func runCommand(cc *config.Config, stopCh <-chan struct{}) error {
+func runCommand(c *config.Config, stopCh <-chan struct{}) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go func() {
@@ -62,24 +65,24 @@ func runCommand(cc *config.Config, stopCh <-chan struct{}) error {
 		cancel()
 	}()
 
-	cc, sched, err := Setup(ctx, cc)
+	c, sched, err := Setup(ctx, c)
 	if err != nil {
 		return err
 	}
 
-	return Run(ctx, cc, sched)
+	return Run(ctx, c, sched)
 }
 
 // Option configures a framework.Registry.
 type Option func(runtime.Registry) error
 
-func Run(ctx context.Context, cc *config.Config, sched *scheduler.Scheduler) error {
+func Run(ctx context.Context, _ *config.Config, sched *scheduler.Scheduler) error {
 	flog.Info("scheduler running")
 	sched.Run(ctx)
 	return nil
 }
 
-func Setup(ctx context.Context, cc *config.Config, outOfTreeRegistryOptions ...Option) (*config.Config, *scheduler.Scheduler, error) {
+func Setup(ctx context.Context, c *config.Config, outOfTreeRegistryOptions ...Option) (*config.Config, *scheduler.Scheduler, error) {
 	outOfTreeRegistry := make(runtime.Registry)
 	for _, option := range outOfTreeRegistryOptions {
 		if err := option(outOfTreeRegistry); err != nil {
@@ -87,22 +90,24 @@ func Setup(ctx context.Context, cc *config.Config, outOfTreeRegistryOptions ...O
 		}
 	}
 
+	c.Complete()
+
 	completedProfiles := make([]config2.Profile, 0)
 	sche, err := scheduler.New(
-		cc.Client,
-		nil,
+		c.Client,
+		c.InformerFactory,
 		nil,
 		nil,
 		ctx.Done(),
-		scheduler.WithConfig(cc.Config),
+		scheduler.WithConfig(c.Config),
 		//scheduler.WithProfiles(cc.ComponentConfig.Profiles...),
-		scheduler.WithPercentageOfWorkersToScore(cc.ComponentConfig.PercentageOfWorksToScore),
+		scheduler.WithPercentageOfWorkersToScore(c.ComponentConfig.PercentageOfWorksToScore),
 		scheduler.WithFrameworkOutOfTreeRegistry(outOfTreeRegistry),
-		scheduler.WithStageMaxBackoffSeconds(cc.ComponentConfig.StageMaxBackoffSeconds),
-		scheduler.WithStageInitialBackoffSeconds(cc.ComponentConfig.StageInitialBackoffSeconds),
-		scheduler.WithStageMaxInUnschedulableStagesDuration(cc.StageMaxInUnschedulableStagesDuration),
-		scheduler.WithExtenders(cc.ComponentConfig.Extenders...),
-		scheduler.WithParallelism(cc.ComponentConfig.Parallelism),
+		scheduler.WithStageMaxBackoffSeconds(c.ComponentConfig.StageMaxBackoffSeconds),
+		scheduler.WithStageInitialBackoffSeconds(c.ComponentConfig.StageInitialBackoffSeconds),
+		scheduler.WithStageMaxInUnschedulableStagesDuration(c.StageMaxInUnschedulableStagesDuration),
+		scheduler.WithExtenders(c.ComponentConfig.Extenders...),
+		scheduler.WithParallelism(c.ComponentConfig.Parallelism),
 		scheduler.WithBuildFrameworkCapturer(func(profile config2.Profile) {
 			completedProfiles = append(completedProfiles, profile)
 		}),
@@ -111,5 +116,5 @@ func Setup(ctx context.Context, cc *config.Config, outOfTreeRegistryOptions ...O
 		return nil, nil, err
 	}
 
-	return cc, sche, nil
+	return c, sche, nil
 }
