@@ -101,6 +101,11 @@ func (c *RestClient) RoleBinding() *RestClient {
 	return c
 }
 
+func (c *RestClient) Stage() *RestClient {
+	c.resource = "stage"
+	return c
+}
+
 func (c *RestClient) User() *RestClient {
 	c.resource = "user"
 	return c

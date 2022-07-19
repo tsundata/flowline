@@ -1,11 +1,11 @@
 package worker
 
 import (
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/client"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/worker/stage"
 	"net"
+	"strconv"
 )
 
 type GenericWorkerServer struct {
@@ -25,7 +25,7 @@ func NewGenericWorkerServer(name string, config *Config) *GenericWorkerServer {
 func (g *GenericWorkerServer) Run(stopCh <-chan struct{}) error {
 	// handle stage
 	go func() {
-		addr := fmt.Sprintf("%s:%d", g.config.Host, g.config.Port)
+		addr := net.JoinHostPort(g.config.Host, strconv.Itoa(g.config.Port))
 		flog.Infof("worker %s starting", addr)
 		listener, err := net.Listen("tcp", addr)
 		if err != nil {

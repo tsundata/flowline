@@ -5,6 +5,24 @@ import (
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 )
 
+type RawExtension struct {
+	// Raw is the underlying serialization of this object.
+	Raw []byte `json:"-" protobuf:"bytes,1,opt,name=raw"`
+	// Object can hold a representation of this extension - useful for working with versioned
+	// structs.
+	Object runtime.Object `json:"-"`
+}
+
+func (m *RawExtension) GetObjectKind() schema.ObjectKind {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *RawExtension) DeepCopyObject() runtime.Object {
+	//TODO implement me
+	panic("implement me")
+}
+
 type Unknown struct {
 	TypeMeta `json:",inline" protobuf:"bytes,1,opt,name=typeMeta"`
 	// Raw will hold the complete serialized object which couldn't be matched

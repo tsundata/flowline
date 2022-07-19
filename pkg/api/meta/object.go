@@ -2,6 +2,8 @@ package meta
 
 import (
 	"errors"
+	"fmt"
+	"github.com/tsundata/flowline/pkg/runtime"
 	"time"
 )
 
@@ -80,4 +82,40 @@ func ListAccessor(obj interface{}) (List, error) { //fixme
 
 func SetZeroValue(obj interface{}) error { //fixme
 	return nil
+}
+
+// ExtractList returns obj's Items element as an array of runtime.Objects.
+// Returns an error if obj is not a List type (does not have an Items member).
+func ExtractList(obj runtime.Object) ([]runtime.Object, error) {
+	itemsPtr, err := GetItemsPtr(obj)
+	if err != nil {
+		return nil, err
+	}
+	items, err := EnforcePtr(itemsPtr)
+	if err != nil {
+		return nil, err
+	}
+	list := make([]runtime.Object, items.Len())
+	for i := range list {
+		raw := items.Index(i)
+		switch item := raw.Interface().(type) {
+		case RawExtension:
+			switch {
+			case item.Object != nil:
+				list[i] = item.Object
+			case item.Raw != nil:
+				list[i] = &Unknown{Raw: item.Raw}
+			default:
+				list[i] = nil
+			}
+		case runtime.Object:
+			list[i] = item
+		default:
+			var found bool
+			if list[i], found = raw.Addr().Interface().(runtime.Object); !found {
+				return nil, fmt.Errorf("%v: item[%v]: Expected object, got %#v(%s)", obj, i, raw.Interface(), raw.Kind())
+			}
+		}
+	}
+	return list, nil
 }
