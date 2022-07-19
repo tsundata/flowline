@@ -14,7 +14,7 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
 	github.com/robertkrimen/otto v0.0.0-20211024170158-b87d35c0b86f
 	github.com/stretchr/testify v1.8.0
-	github.com/urfave/cli/v2 v2.10.3
+	github.com/urfave/cli/v2 v2.11.0
 	go.etcd.io/etcd/api/v3 v3.5.4
 	go.etcd.io/etcd/client/v3 v3.5.4
 	go.uber.org/zap v1.21.0
