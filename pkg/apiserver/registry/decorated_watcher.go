@@ -2,8 +2,8 @@ package registry
 
 import (
 	"context"
-	"github.com/tsundata/flowline/pkg/apiserver/storage/etcd/watch"
 	"github.com/tsundata/flowline/pkg/runtime"
+	"github.com/tsundata/flowline/pkg/watch"
 )
 
 type decoratedWatcher struct {

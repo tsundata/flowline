@@ -2,8 +2,11 @@ package net
 
 import (
 	"errors"
+	"io"
 	"net"
+	"net/url"
 	"reflect"
+	"strings"
 	"syscall"
 )
 
@@ -35,6 +38,47 @@ func IsConnectionRefused(err error) bool {
 	var errno syscall.Errno
 	if errors.As(err, &errno) {
 		return errno == syscall.ECONNREFUSED
+	}
+	return false
+}
+
+// IsProbableEOF returns true if the given error resembles a connection termination
+// scenario that would justify assuming that the watch is empty.
+// These errors are what the Go http stack returns back to us which are general
+// connection closure errors (strongly correlated) and callers that need to
+// differentiate probable errors in connection behavior between normal "this is
+// disconnected" should use the method.
+func IsProbableEOF(err error) bool {
+	if err == nil {
+		return false
+	}
+	var uerr *url.Error
+	if errors.As(err, &uerr) {
+		err = uerr.Err
+	}
+	msg := err.Error()
+	switch {
+	case err == io.EOF:
+		return true
+	case err == io.ErrUnexpectedEOF:
+		return true
+	case msg == "http: can't write HTTP request on broken connection":
+		return true
+	case strings.Contains(msg, "http2: server sent GOAWAY and closed the connection"):
+		return true
+	case strings.Contains(msg, "connection reset by peer"):
+		return true
+	case strings.Contains(strings.ToLower(msg), "use of closed network connection"):
+		return true
+	}
+	return false
+}
+
+// IsTimeout returns true if the given error is a network timeout error
+func IsTimeout(err error) bool {
+	var neterr net.Error
+	if errors.As(err, &neterr) {
+		return neterr != nil && neterr.Timeout()
 	}
 	return false
 }

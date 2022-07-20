@@ -8,10 +8,10 @@ import (
 	"github.com/tsundata/flowline/pkg/apiserver/registry/options"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest"
 	"github.com/tsundata/flowline/pkg/apiserver/storage"
-	"github.com/tsundata/flowline/pkg/apiserver/storage/etcd/watch"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"github.com/tsundata/flowline/pkg/util/flog"
+	"github.com/tsundata/flowline/pkg/watch"
 	"strings"
 )
 

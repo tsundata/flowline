@@ -41,10 +41,7 @@ type WatchEvent struct {
 	ObjectMeta
 
 	Type   string `json:"type"`
-	Object struct {
-		Raw    []byte         `json:"raw"`
-		Object runtime.Object `json:"object"`
-	} `json:"object"`
+	Object RawExtension
 }
 
 func (m *WatchEvent) GetObjectKind() schema.ObjectKind {

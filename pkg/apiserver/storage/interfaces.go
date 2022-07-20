@@ -3,8 +3,8 @@ package storage
 import (
 	"context"
 	"github.com/tsundata/flowline/pkg/api/meta"
-	"github.com/tsundata/flowline/pkg/apiserver/storage/etcd/watch"
 	"github.com/tsundata/flowline/pkg/runtime"
+	"github.com/tsundata/flowline/pkg/watch"
 )
 
 // Interface offers a common interface for object marshaling/unmarshaling operations and

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"io"
+	"net/url"
 )
 
 const (
@@ -183,4 +184,37 @@ type NegotiatedSerializer interface {
 	// DecoderToVersion returns a decoder that ensures objects being read by the provided
 	// serializer are in the provided group version by default.
 	DecoderToVersion(serializer Decoder, gv GroupVersioner) Decoder
+}
+
+// ClientNegotiator handles turning an HTTP content type into the appropriate encoder.
+// Use NewClientNegotiator or NewVersionedClientNegotiator to create this interface from
+// a NegotiatedSerializer.
+type ClientNegotiator interface {
+	// Encoder returns the appropriate encoder for the provided contentType (e.g. application/json)
+	// and any optional mediaType parameters (e.g. pretty=1), or an error. If no serializer is found
+	// a NegotiateError will be returned. The current client implementations consider params to be
+	// optional modifiers to the contentType and will ignore unrecognized parameters.
+	Encoder(contentType string, params map[string]string) (Encoder, error)
+	// Decoder returns the appropriate decoder for the provided contentType (e.g. application/json)
+	// and any optional mediaType parameters (e.g. pretty=1), or an error. If no serializer is found
+	// a NegotiateError will be returned. The current client implementations consider params to be
+	// optional modifiers to the contentType and will ignore unrecognized parameters.
+	Decoder(contentType string, params map[string]string) (Decoder, error)
+	// StreamDecoder returns the appropriate stream decoder for the provided contentType (e.g.
+	// application/json) and any optional mediaType parameters (e.g. pretty=1), or an error. If no
+	// serializer is found a NegotiateError will be returned. The Serializer and Framer will always
+	// be returned if a Decoder is returned. The current client implementations consider params to be
+	// optional modifiers to the contentType and will ignore unrecognized parameters.
+	StreamDecoder(contentType string, params map[string]string) (Decoder, Serializer, Framer, error)
+}
+
+// ParameterCodec defines methods for serializing and deserializing API objects to url.Values and
+// performing any necessary conversion. Unlike the normal Codec, query parameters are not self describing
+// and the desired version must be specified.
+type ParameterCodec interface {
+	// DecodeParameters takes the given url.Values in the specified group version and decodes them
+	// into the provided object, or returns an error.
+	DecodeParameters(parameters url.Values, from schema.GroupVersion, into Object) error
+	// EncodeParameters encodes the provided object as query parameters or returns an error.
+	EncodeParameters(obj Object, to schema.GroupVersion) (url.Values, error)
 }

@@ -2,8 +2,8 @@ package informer
 
 import (
 	"github.com/tsundata/flowline/pkg/api/meta"
-	"github.com/tsundata/flowline/pkg/apiserver/storage/etcd/watch"
 	"github.com/tsundata/flowline/pkg/runtime"
+	"github.com/tsundata/flowline/pkg/watch"
 )
 
 // Lister is any object that knows how to perform an initial list.

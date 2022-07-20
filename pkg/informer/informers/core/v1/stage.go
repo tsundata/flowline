@@ -3,11 +3,11 @@ package v1
 import (
 	"github.com/tsundata/flowline/pkg/api/client"
 	"github.com/tsundata/flowline/pkg/api/meta"
-	"github.com/tsundata/flowline/pkg/apiserver/storage/etcd/watch"
 	"github.com/tsundata/flowline/pkg/informer"
 	"github.com/tsundata/flowline/pkg/informer/informers/internalinterfaces"
 	v1 "github.com/tsundata/flowline/pkg/informer/listers/core/v1"
 	"github.com/tsundata/flowline/pkg/runtime"
+	"github.com/tsundata/flowline/pkg/watch"
 	"time"
 )
 

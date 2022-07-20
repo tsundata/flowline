@@ -1,5 +1,113 @@
 package meta
 
+// GetOptions is the standard query options to the standard REST get call.
+type GetOptions struct {
+	TypeMeta `json:",inline"`
+	// resourceVersion sets a constraint on what resource versions a request may be served from.
+	// See https://kubernetes.io/docs/reference/using-api/api-concepts/#resource-versions for
+	// details.
+	//
+	// Defaults to unset
+	// +optional
+	ResourceVersion string `json:"resourceVersion,omitempty" protobuf:"bytes,1,opt,name=resourceVersion"`
+	// +k8s:deprecated=includeUninitialized,protobuf=2
+}
+
+// CreateOptions may be provided when creating an API object.
+type CreateOptions struct {
+	TypeMeta `json:",inline"`
+
+	// When present, indicates that modifications should not be
+	// persisted. An invalid or unrecognized dryRun directive will
+	// result in an error response and no further processing of the
+	// request. Valid values are:
+	// - All: all dry run stages will be processed
+	// +optional
+	DryRun []string `json:"dryRun,omitempty" protobuf:"bytes,1,rep,name=dryRun"`
+	// +k8s:deprecated=includeUninitialized,protobuf=2
+
+	// fieldManager is a name associated with the actor or entity
+	// that is making these changes. The value must be less than or
+	// 128 characters long, and only contain printable characters,
+	// as defined by https://golang.org/pkg/unicode/#IsPrint.
+	// +optional
+	FieldManager string `json:"fieldManager,omitempty" protobuf:"bytes,3,name=fieldManager"`
+
+	// fieldValidation instructs the server on how to handle
+	// objects in the request (POST/PUT/PATCH) containing unknown
+	// or duplicate fields, provided that the `ServerSideFieldValidation`
+	// feature gate is also enabled. Valid values are:
+	// - Ignore: This will ignore any unknown fields that are silently
+	// dropped from the object, and will ignore all but the last duplicate
+	// field that the decoder encounters. This is the default behavior
+	// prior to v1.23 and is the default behavior when the
+	// `ServerSideFieldValidation` feature gate is disabled.
+	// - Warn: This will send a warning via the standard warning response
+	// header for each unknown field that is dropped from the object, and
+	// for each duplicate field that is encountered. The request will
+	// still succeed if there are no other errors, and will only persist
+	// the last of any duplicate fields. This is the default when the
+	// `ServerSideFieldValidation` feature gate is enabled.
+	// - Strict: This will fail the request with a BadRequest error if
+	// any unknown fields would be dropped from the object, or if any
+	// duplicate fields are present. The error returned from the server
+	// will contain all unknown and duplicate fields encountered.
+	// +optional
+	FieldValidation string `json:"fieldValidation,omitempty" protobuf:"bytes,4,name=fieldValidation"`
+}
+
+// PatchOptions may be provided when patching an API object.
+// PatchOptions is meant to be a superset of UpdateOptions.
+type PatchOptions struct {
+	TypeMeta `json:",inline"`
+
+	// When present, indicates that modifications should not be
+	// persisted. An invalid or unrecognized dryRun directive will
+	// result in an error response and no further processing of the
+	// request. Valid values are:
+	// - All: all dry run stages will be processed
+	// +optional
+	DryRun []string `json:"dryRun,omitempty" protobuf:"bytes,1,rep,name=dryRun"`
+
+	// Force is going to "force" Apply requests. It means user will
+	// re-acquire conflicting fields owned by other people. Force
+	// flag must be unset for non-apply patch requests.
+	// +optional
+	Force *bool `json:"force,omitempty" protobuf:"varint,2,opt,name=force"`
+
+	// fieldManager is a name associated with the actor or entity
+	// that is making these changes. The value must be less than or
+	// 128 characters long, and only contain printable characters,
+	// as defined by https://golang.org/pkg/unicode/#IsPrint. This
+	// field is required for apply requests
+	// (application/apply-patch) but optional for non-apply patch
+	// types (JsonPatch, MergePatch, StrategicMergePatch).
+	// +optional
+	FieldManager string `json:"fieldManager,omitempty" protobuf:"bytes,3,name=fieldManager"`
+
+	// fieldValidation instructs the server on how to handle
+	// objects in the request (POST/PUT/PATCH) containing unknown
+	// or duplicate fields, provided that the `ServerSideFieldValidation`
+	// feature gate is also enabled. Valid values are:
+	// - Ignore: This will ignore any unknown fields that are silently
+	// dropped from the object, and will ignore all but the last duplicate
+	// field that the decoder encounters. This is the default behavior
+	// prior to v1.23 and is the default behavior when the
+	// `ServerSideFieldValidation` feature gate is disabled.
+	// - Warn: This will send a warning via the standard warning response
+	// header for each unknown field that is dropped from the object, and
+	// for each duplicate field that is encountered. The request will
+	// still succeed if there are no other errors, and will only persist
+	// the last of any duplicate fields. This is the default when the
+	// `ServerSideFieldValidation` feature gate is enabled.
+	// - Strict: This will fail the request with a BadRequest error if
+	// any unknown fields would be dropped from the object, or if any
+	// duplicate fields are present. The error returned from the server
+	// will contain all unknown and duplicate fields encountered.
+	// +optional
+	FieldValidation string `json:"fieldValidation,omitempty" protobuf:"bytes,4,name=fieldValidation"`
+}
+
 // ListOptions is the query options to a standard REST list call.
 type ListOptions struct {
 	TypeMeta `json:",inline"`
@@ -82,4 +190,101 @@ type ListOptions struct {
 	// This field is not supported when watch is true. Clients may start a watch from the last
 	// resourceVersion value returned by the server and not miss any modifications.
 	Continue string `json:"continue,omitempty" protobuf:"bytes,8,opt,name=continue"`
+}
+
+// UpdateOptions may be provided when updating an API object.
+// All fields in UpdateOptions should also be present in PatchOptions.
+type UpdateOptions struct {
+	TypeMeta `json:",inline"`
+
+	// When present, indicates that modifications should not be
+	// persisted. An invalid or unrecognized dryRun directive will
+	// result in an error response and no further processing of the
+	// request. Valid values are:
+	// - All: all dry run stages will be processed
+	// +optional
+	DryRun []string `json:"dryRun,omitempty" protobuf:"bytes,1,rep,name=dryRun"`
+
+	// fieldManager is a name associated with the actor or entity
+	// that is making these changes. The value must be less than or
+	// 128 characters long, and only contain printable characters,
+	// as defined by https://golang.org/pkg/unicode/#IsPrint.
+	// +optional
+	FieldManager string `json:"fieldManager,omitempty" protobuf:"bytes,2,name=fieldManager"`
+
+	// fieldValidation instructs the server on how to handle
+	// objects in the request (POST/PUT/PATCH) containing unknown
+	// or duplicate fields, provided that the `ServerSideFieldValidation`
+	// feature gate is also enabled. Valid values are:
+	// - Ignore: This will ignore any unknown fields that are silently
+	// dropped from the object, and will ignore all but the last duplicate
+	// field that the decoder encounters. This is the default behavior
+	// prior to v1.23 and is the default behavior when the
+	// `ServerSideFieldValidation` feature gate is disabled.
+	// - Warn: This will send a warning via the standard warning response
+	// header for each unknown field that is dropped from the object, and
+	// for each duplicate field that is encountered. The request will
+	// still succeed if there are no other errors, and will only persist
+	// the last of any duplicate fields. This is the default when the
+	// `ServerSideFieldValidation` feature gate is enabled.
+	// - Strict: This will fail the request with a BadRequest error if
+	// any unknown fields would be dropped from the object, or if any
+	// duplicate fields are present. The error returned from the server
+	// will contain all unknown and duplicate fields encountered.
+	// +optional
+	FieldValidation string `json:"fieldValidation,omitempty" protobuf:"bytes,3,name=fieldValidation"`
+}
+
+// DeleteOptions may be provided when deleting an API object.
+type DeleteOptions struct {
+	TypeMeta `json:",inline"`
+
+	// The duration in seconds before the object should be deleted. Value must be non-negative integer.
+	// The value zero indicates delete immediately. If this value is nil, the default grace period for the
+	// specified type will be used.
+	// Defaults to a per object value if not specified. zero means delete immediately.
+	// +optional
+	GracePeriodSeconds *int64 `json:"gracePeriodSeconds,omitempty" protobuf:"varint,1,opt,name=gracePeriodSeconds"`
+
+	// Must be fulfilled before a deletion is carried out. If not possible, a 409 Conflict status will be
+	// returned.
+	// +k8s:conversion-gen=false
+	// +optional
+	Preconditions *Preconditions `json:"preconditions,omitempty" protobuf:"bytes,2,opt,name=preconditions"`
+
+	// Deprecated: please use the PropagationPolicy, this field will be deprecated in 1.7.
+	// Should the dependent objects be orphaned. If true/false, the "orphan"
+	// finalizer will be added to/removed from the object's finalizers list.
+	// Either this field or PropagationPolicy may be set, but not both.
+	// +optional
+	OrphanDependents *bool `json:"orphanDependents,omitempty" protobuf:"varint,3,opt,name=orphanDependents"`
+
+	// Whether and how garbage collection will be performed.
+	// Either this field or OrphanDependents may be set, but not both.
+	// The default policy is decided by the existing finalizer set in the
+	// metadata.finalizers and the resource-specific default policy.
+	// Acceptable values are: 'Orphan' - orphan the dependents; 'Background' -
+	// allow the garbage collector to delete the dependents in the background;
+	// 'Foreground' - a cascading policy that deletes all dependents in the
+	// foreground.
+	// +optional
+	PropagationPolicy *string `json:"propagationPolicy,omitempty" protobuf:"varint,4,opt,name=propagationPolicy"`
+
+	// When present, indicates that modifications should not be
+	// persisted. An invalid or unrecognized dryRun directive will
+	// result in an error response and no further processing of the
+	// request. Valid values are:
+	// - All: all dry run stages will be processed
+	// +optional
+	DryRun []string `json:"dryRun,omitempty" protobuf:"bytes,5,rep,name=dryRun"`
+}
+
+// Preconditions must be fulfilled before an operation (update, delete, etc.) is carried out.
+type Preconditions struct {
+	// Specifies the target UID.
+	// +optional
+	UID *string `json:"uid,omitempty" protobuf:"bytes,1,opt,name=uid,casttype=k8s.io/apimachinery/pkg/types.UID"`
+	// Specifies the target ResourceVersion
+	// +optional
+	ResourceVersion *string `json:"resourceVersion,omitempty" protobuf:"bytes,2,opt,name=resourceVersion"`
 }
