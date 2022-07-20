@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-type StagesGetter interface {
-	Stages() StageInterface
+type StageGetter interface {
+	Stage() StageInterface
 }
 
 type StageInterface interface {
@@ -31,15 +31,15 @@ type StageExpansion interface {
 	Bind(ctx context.Context, binding *meta.Binding, opts meta.CreateOptions) error
 }
 
-type stages struct {
+type stage struct {
 	client rest.Interface
 }
 
-func newStages(c *CoreV1Client) *stages {
-	return &stages{client: c.RESTClient()}
+func newStage(c *CoreV1Client) *stage {
+	return &stage{client: c.RESTClient()}
 }
 
-func (c *stages) Create(ctx context.Context, stage *meta.Stage, _ meta.CreateOptions) (*meta.Stage, error) {
+func (c *stage) Create(ctx context.Context, stage *meta.Stage, _ meta.CreateOptions) (*meta.Stage, error) {
 	var result = &meta.Stage{}
 	var err = c.client.Post().
 		Resource("stage").
@@ -50,7 +50,7 @@ func (c *stages) Create(ctx context.Context, stage *meta.Stage, _ meta.CreateOpt
 	return result, err
 }
 
-func (c *stages) Update(ctx context.Context, stage *meta.Stage, _ meta.UpdateOptions) (*meta.Stage, error) {
+func (c *stage) Update(ctx context.Context, stage *meta.Stage, _ meta.UpdateOptions) (*meta.Stage, error) {
 	var result = &meta.Stage{}
 	var err = c.client.Put().
 		Resource("stage").
@@ -61,7 +61,7 @@ func (c *stages) Update(ctx context.Context, stage *meta.Stage, _ meta.UpdateOpt
 	return result, err
 }
 
-func (c *stages) UpdateStatus(ctx context.Context, stage *meta.Stage, _ meta.UpdateOptions) (*meta.Stage, error) {
+func (c *stage) UpdateStatus(ctx context.Context, stage *meta.Stage, _ meta.UpdateOptions) (*meta.Stage, error) {
 	var result = &meta.Stage{}
 	var err = c.client.Put().
 		Resource("stage").
@@ -74,7 +74,7 @@ func (c *stages) UpdateStatus(ctx context.Context, stage *meta.Stage, _ meta.Upd
 	return result, err
 }
 
-func (c *stages) Delete(ctx context.Context, name string, opts meta.DeleteOptions) error {
+func (c *stage) Delete(ctx context.Context, name string, opts meta.DeleteOptions) error {
 	return c.client.Delete().
 		Resource("stage").
 		Name(name).
@@ -83,7 +83,7 @@ func (c *stages) Delete(ctx context.Context, name string, opts meta.DeleteOption
 		Error()
 }
 
-func (c *stages) DeleteCollection(ctx context.Context, opts meta.DeleteOptions, listOpts meta.ListOptions) error {
+func (c *stage) DeleteCollection(ctx context.Context, opts meta.DeleteOptions, listOpts meta.ListOptions) error {
 	var timeout time.Duration
 	if listOpts.TimeoutSeconds != nil {
 		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
@@ -98,7 +98,7 @@ func (c *stages) DeleteCollection(ctx context.Context, opts meta.DeleteOptions, 
 		Error()
 }
 
-func (c *stages) Get(ctx context.Context, name string, _ meta.GetOptions) (*meta.Stage, error) {
+func (c *stage) Get(ctx context.Context, name string, _ meta.GetOptions) (*meta.Stage, error) {
 	var result = &meta.Stage{}
 	err := c.client.Get().
 		Resource("stage").
@@ -110,7 +110,7 @@ func (c *stages) Get(ctx context.Context, name string, _ meta.GetOptions) (*meta
 	return result, err
 }
 
-func (c *stages) List(ctx context.Context, opts meta.ListOptions) (*meta.StageList, error) {
+func (c *stage) List(ctx context.Context, opts meta.ListOptions) (*meta.StageList, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -119,6 +119,7 @@ func (c *stages) List(ctx context.Context, opts meta.ListOptions) (*meta.StageLi
 	var result = &meta.StageList{}
 	var err = c.client.Get().
 		Resource("stage").
+		SubResource("list").
 		Timeout(timeout).
 		Do(ctx).
 		Into(result)
@@ -126,7 +127,7 @@ func (c *stages) List(ctx context.Context, opts meta.ListOptions) (*meta.StageLi
 	return result, err
 }
 
-func (c *stages) Watch(ctx context.Context, opts meta.ListOptions) (watch.Interface, error) {
+func (c *stage) Watch(ctx context.Context, opts meta.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -135,11 +136,12 @@ func (c *stages) Watch(ctx context.Context, opts meta.ListOptions) (watch.Interf
 
 	return c.client.Get().
 		Resource("stage").
+		SubResource("watch").
 		Timeout(timeout).
 		Watch(ctx)
 }
 
-func (c *stages) Patch(ctx context.Context, name string, pt string, data []byte, _ meta.PatchOptions, subresources ...string) (*meta.Stage, error) {
+func (c *stage) Patch(ctx context.Context, name string, pt string, data []byte, _ meta.PatchOptions, subresources ...string) (*meta.Stage, error) {
 	var result = &meta.Stage{}
 	var err = c.client.Patch(pt).
 		Resource("nodes").
@@ -153,7 +155,7 @@ func (c *stages) Patch(ctx context.Context, name string, pt string, data []byte,
 	return result, err
 }
 
-func (c *stages) Bind(ctx context.Context, binding *meta.Binding, _ meta.CreateOptions) error {
+func (c *stage) Bind(ctx context.Context, binding *meta.Binding, _ meta.CreateOptions) error {
 	return c.client.Post().
 		Resource("stage").
 		Name(binding.Name).

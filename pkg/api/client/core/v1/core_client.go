@@ -10,15 +10,20 @@ import (
 
 type CoreV1Interface interface {
 	RESTClient() rest.Interface
-	StagesGetter
+	WorkerGetter
+	StageGetter
 }
 
 type CoreV1Client struct {
 	restClient rest.Interface
 }
 
-func (c *CoreV1Client) Stages() StageInterface {
-	return newStages(c)
+func (c *CoreV1Client) Worker() WorkerInterface {
+	return newWorker(c)
+}
+
+func (c *CoreV1Client) Stage() StageInterface {
+	return newStage(c)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

@@ -33,13 +33,13 @@ func NewFilteredStageInformer(client client.Interface, resyncPeriod time.Duratio
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.CoreV1().Stages().List(context.TODO(), options)
+				return client.CoreV1().Stage().List(context.TODO(), options)
 			},
 			WatchFunc: func(options meta.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.CoreV1().Stages().Watch(context.TODO(), options)
+				return client.CoreV1().Stage().Watch(context.TODO(), options)
 			},
 		},
 		&meta.Stage{},

@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"context"
 	"github.com/tsundata/flowline/pkg/api/client"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/informer"
@@ -32,13 +33,13 @@ func NewFilteredWorkerInformer(client client.Interface, resyncPeriod time.Durati
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return nil, nil //client.Request(context.TODO()).Worker().List().Result()
+				return client.CoreV1().Worker().List(context.TODO(), options)
 			},
 			WatchFunc: func(options meta.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return nil, nil //client.Request(context.TODO()).Pods().Watch(, options)
+				return client.CoreV1().Worker().Watch(context.TODO(), options)
 			},
 		},
 		&meta.Worker{},

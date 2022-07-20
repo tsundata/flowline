@@ -456,6 +456,7 @@ func New(client interface{},
 			Runtimes: []string{"go", "javascript"},
 		},
 	})
+	snapshot = cache.NewEmptySnapshot()
 
 	stageLister := informerFactory.Core().V1().Stages().Lister()
 	nominator := queue.NewStageNominator(stageLister)

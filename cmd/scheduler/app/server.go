@@ -78,8 +78,14 @@ func runCommand(c *config.Config, stopCh <-chan struct{}) error {
 // Option configures a framework.Registry.
 type Option func(runtime.Registry) error
 
-func Run(ctx context.Context, _ *config.Config, sched *scheduler.Scheduler) error {
+func Run(ctx context.Context, c *config.Config, sched *scheduler.Scheduler) error {
 	flog.Info("scheduler running")
+
+	// Start all informers
+	c.InformerFactory.Start(ctx.Done())
+	// Wait for all caches to sync before scheduling.
+	c.InformerFactory.WaitForCacheSync(ctx.Done())
+
 	sched.Run(ctx)
 	return nil
 }

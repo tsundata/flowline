@@ -747,14 +747,6 @@ func (r *Request) Stream(ctx context.Context) (io.ReadCloser, error) {
 // to GET, PUT or DELETE a named resource(resourceName != ""), again, if
 // namespaceSet is true then namespace must not be empty.
 func (r *Request) requestPreflightCheck() error {
-	switch r.verb {
-	case "POST":
-		return fmt.Errorf("an empty namespace may not be set during creation")
-	case "GET", "PUT", "DELETE":
-		if len(r.resourceName) > 0 {
-			return fmt.Errorf("an empty namespace may not be set when a resource name is provided")
-		}
-	}
 	return nil
 }
 

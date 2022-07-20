@@ -3,6 +3,7 @@ package queue
 import (
 	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
+	"github.com/tsundata/flowline/pkg/informer/informers"
 	v1 "github.com/tsundata/flowline/pkg/informer/listers/core/v1"
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
 	"github.com/tsundata/flowline/pkg/scheduler/heap"
@@ -112,7 +113,7 @@ type Option func(*priorityQueueOptions)
 // NewSchedulingQueue initializes a priority queue as a new scheduling queue.
 func NewSchedulingQueue(
 	lessFn framework.LessFunc,
-	informerFactory interface{},
+	informerFactory informers.SharedInformerFactory,
 	opts ...Option) SchedulingQueue {
 	return NewPriorityQueue(lessFn, informerFactory, opts...)
 }
@@ -191,8 +192,6 @@ type PriorityQueue struct {
 	// closed indicates that the queue is closed.
 	// It is mainly used to let Pop() exit its control loop while waiting for an item.
 	closed bool
-
-	nsLister interface{}
 }
 
 // newQueuedStageInfo builds a QueuedStageInfo object.
@@ -760,7 +759,7 @@ func (p *PriorityQueue) Run() {
 // NewPriorityQueue creates a PriorityQueue object.
 func NewPriorityQueue(
 	lessFn framework.LessFunc,
-	informerFactory interface{},
+	informerFactory informers.SharedInformerFactory,
 	opts ...Option,
 ) *PriorityQueue {
 	options := defaultPriorityQueueOptions
@@ -775,7 +774,7 @@ func NewPriorityQueue(
 	}
 
 	if options.stageNominator == nil {
-		options.stageNominator = NewStageNominator(nil)
+		options.stageNominator = NewStageNominator(informerFactory.Core().V1().Stages().Lister())
 	}
 
 	pq := &PriorityQueue{
@@ -792,7 +791,6 @@ func NewPriorityQueue(
 	}
 	pq.cond.L = &pq.lock
 	pq.stageBackoffQ = heap.NewWithRecorder(stageInfoKeyFunc, pq.stagesCompareBackoffCompleted)
-	// pq.nsLister = informerFactory.Core().V1().Namespaces().Lister()
 
 	return pq
 }

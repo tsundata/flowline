@@ -228,16 +228,20 @@ func (s *sharedIndexInformer) Run(stopCh <-chan struct{}) {
 		flog.Warnf("The sharedIndexInformer has started, run more than once is not allowed")
 		return
 	}
-	var fifo Queue
+
+	fifo := NewDeltaFIFOWithOptions(DeltaFIFOOptions{
+		KnownObjects:          s.indexer,
+		EmitDeltaTypeReplaced: true,
+	})
 
 	cfg := &Config{
-		Queue:            fifo,
-		ListerWatcher:    s.listerWatcher,
-		ObjectType:       s.objectType,
-		FullResyncPeriod: s.resyncCheckPeriod,
-		//ShouldResync:      s.processor.shouldResync,
+		Queue:             fifo,
+		ListerWatcher:     s.listerWatcher,
+		ObjectType:        s.objectType,
+		FullResyncPeriod:  s.resyncCheckPeriod,
+		ShouldResync:      s.processor.shouldResync,
 		RetryOnError:      false,
-		Process:           s.HandleQueue,
+		Process:           s.HandleDeltas,
 		WatchErrorHandler: s.watchErrorHandler,
 	}
 
@@ -265,7 +269,7 @@ func (s *sharedIndexInformer) Run(stopCh <-chan struct{}) {
 	s.controller.Run(stopCh)
 }
 
-func (s *sharedIndexInformer) HandleQueue(obj interface{}) error {
+func (s *sharedIndexInformer) HandleDeltas(obj interface{}) error {
 	s.blockDeltas.Lock()
 	defer s.blockDeltas.Unlock()
 

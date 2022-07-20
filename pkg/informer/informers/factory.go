@@ -82,9 +82,9 @@ func (f *sharedInformerFactory) Start(stopCh <-chan struct{}) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 
-	for informerType, informer := range f.informers {
+	for informerType, ir := range f.informers {
 		if !f.startedInformers[informerType] {
-			go informer.Run(stopCh)
+			go ir.Run(stopCh)
 			f.startedInformers[informerType] = true
 		}
 	}
@@ -97,9 +97,9 @@ func (f *sharedInformerFactory) WaitForCacheSync(stopCh <-chan struct{}) map[ref
 		defer f.lock.Unlock()
 
 		is := map[reflect.Type]informer.SharedIndexInformer{}
-		for informerType, informer := range f.informers {
+		for informerType, ir := range f.informers {
 			if f.startedInformers[informerType] {
-				is[informerType] = informer
+				is[informerType] = ir
 			}
 		}
 		return is

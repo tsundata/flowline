@@ -88,7 +88,7 @@ type Reflector struct {
 }
 
 func NewReflector(lw ListerWatcher, expectedType interface{}, store Store, resyncPeriod time.Duration) *Reflector {
-	return NewNamedReflector("demo", lw, expectedType, store, resyncPeriod)
+	return NewNamedReflector("reflector", lw, expectedType, store, resyncPeriod)
 }
 
 func NewNamedReflector(name string, lw ListerWatcher, expectedType interface{}, store Store, resyncPeriod time.Duration) *Reflector {

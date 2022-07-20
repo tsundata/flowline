@@ -66,7 +66,7 @@ func (c *RESTClient) Patch(pt string) *Request {
 }
 
 func (c *RESTClient) Get() *Request {
-	return c.Verb(http.MethodPost)
+	return c.Verb(http.MethodGet)
 }
 
 func (c *RESTClient) Delete() *Request {
