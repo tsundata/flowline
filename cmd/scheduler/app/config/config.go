@@ -62,7 +62,7 @@ type Config struct {
 	//Authorization  apiserver.AuthorizationInfo
 	//SecureServing  *apiserver.SecureServingInfo
 
-	Client          *client.RestClient
+	Client          client.Interface
 	Config          *scheduler.Config
 	InformerFactory informers.SharedInformerFactory
 	//DynInformerFactory dynamicinformer.DynamicSharedInformerFactory
@@ -77,6 +77,5 @@ type Config struct {
 func (c *Config) Complete() {
 	// todo AuthorizeClientBearerToken
 
-	c.Client = client.NewRestClient(c.Config.ApiURL)
 	c.InformerFactory = informers.NewSharedInformerFactory(c.Client, 10*time.Minute)
 }

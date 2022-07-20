@@ -7,13 +7,17 @@ import (
 )
 
 type GenericControllerManagerServer struct {
-	client *client.RestClient
+	client client.Interface
 }
 
 func NewGenericControllerManagerServer(name string, config *Config) *GenericControllerManagerServer {
 	flog.Infof("%s starting...", name)
+	c, err := client.NewForConfig(config.RestConfig)
+	if err != nil {
+		panic(err)
+	}
 	s := &GenericControllerManagerServer{
-		client: client.NewRestClient(config.ApiURL),
+		client: c,
 	}
 	return s
 }

@@ -1,11 +1,14 @@
 package rest
 
 import (
-	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"github.com/tsundata/flowline/pkg/util/flowcontrol"
 	"net/http"
 	"net/url"
+	"os"
+	"strconv"
+	"strings"
+	"time"
 )
 
 type Interface interface {
@@ -74,20 +77,51 @@ func (c *RESTClient) APIVersion() schema.GroupVersion {
 	return c.content.GroupVersion
 }
 
-type ClientContentConfig struct {
-	// AcceptContentTypes specifies the types the client will accept and is optional.
-	// If not set, ContentType will be used to define the Accept header
-	AcceptContentTypes string
-	// ContentType specifies the wire format used to communicate with the server.
-	// This value will be set as the Accept header on requests made to the server if
-	// AcceptContentTypes is not set, and as the default content type on any object
-	// sent to the server. If not set, "application/json" is used.
-	ContentType string
-	// GroupVersion is the API version to talk to. Must be provided when initializing
-	// a RESTClient directly. When initializing a Client, will be set with the default
-	// code version. This is used as the default group version for VersionedParams.
-	GroupVersion schema.GroupVersion
-	// Negotiator is used for obtaining encoders and decoders for multiple
-	// supported media types.
-	Negotiator runtime.ClientNegotiator
+// NewRESTClient creates a new RESTClient. This client performs generic REST functions
+// such as Get, Put, Post, and Delete on specified paths.
+func NewRESTClient(baseURL *url.URL, versionedAPIPath string, config ClientContentConfig, rateLimiter flowcontrol.RateLimiter, client *http.Client) (*RESTClient, error) {
+	if len(config.ContentType) == 0 {
+		config.ContentType = "application/json"
+	}
+
+	base := *baseURL
+	if !strings.HasSuffix(base.Path, "/") {
+		base.Path += "/"
+	}
+	base.RawQuery = ""
+	base.Fragment = ""
+
+	return &RESTClient{
+		base:             &base,
+		versionedAPIPath: versionedAPIPath,
+		content:          config,
+		createBackoffMgr: readExpBackoffConfig,
+		rateLimiter:      rateLimiter,
+
+		Client: client,
+	}, nil
+}
+
+const (
+	// Environment variables: Note that the duration should be long enough that the backoff
+	// persists for some reasonable time (i.e. 120 seconds).  The typical base might be "1".
+	envBackoffBase     = "CLIENT_BACKOFF_BASE"
+	envBackoffDuration = "CLIENT_BACKOFF_DURATION"
+)
+
+// readExpBackoffConfig handles the internal logic of determining what the
+// backoff policy is.  By default if no information is available, NoBackoff.
+func readExpBackoffConfig() BackoffManager {
+	backoffBase := os.Getenv(envBackoffBase)
+	backoffDuration := os.Getenv(envBackoffDuration)
+
+	backoffBaseInt, errBase := strconv.ParseInt(backoffBase, 10, 64)
+	backoffDurationInt, errDuration := strconv.ParseInt(backoffDuration, 10, 64)
+	if errBase != nil || errDuration != nil {
+		return &NoBackoff{}
+	}
+	return &URLBackoff{
+		Backoff: flowcontrol.NewBackOff(
+			time.Duration(backoffBaseInt)*time.Second,
+			time.Duration(backoffDurationInt)*time.Second)}
 }

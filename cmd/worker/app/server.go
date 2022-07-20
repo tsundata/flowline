@@ -40,7 +40,7 @@ func NewWorkerCommand() *cli.App {
 			&cli.StringFlag{
 				Name:    "api-url",
 				Aliases: []string{"A"},
-				Value:   "http://127.0.0.1:5000/",
+				Value:   "127.0.0.1:5000",
 				Usage:   "server host",
 				EnvVars: []string{"CONTROLLER_MANAGER_HOST"},
 			},
@@ -49,7 +49,7 @@ func NewWorkerCommand() *cli.App {
 			config := worker.NewConfig() // todo
 			config.Host = c.String("host")
 			config.Port = c.Int("port")
-			config.ApiURL = c.String("api-url")
+			config.RestConfig.Host = c.String("api-url")
 			config.StageWorkers = 10
 			return Run(config, signal.SetupSignalHandler())
 		},

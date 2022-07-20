@@ -1,10 +1,8 @@
 package informer
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"github.com/tsundata/flowline/pkg/api/client"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/util/clock"
@@ -153,14 +151,11 @@ func (r *Reflector) ListAndWatch(stopCh <-chan struct{}) error {
 					panicCh <- r
 				}
 
-				ctx := context.Background()
-				baseURL := "http://127.0.0.1:5000/" //fixme
-
-				err = client.NewRestClient(baseURL).Request(ctx).
-					Get().Stage().List().Result().Into(list)
-				if err != nil { // todo isExpiredError(err) || isTooLargeResourceVersionError(err)
+				list, err = r.listerWatcher.List(options)
+				if err != nil {
 					r.setIsLastSyncResourceVersionUnavailable(true)
 					// todo retry
+					list, err = r.listerWatcher.List(meta.ListOptions{ResourceVersion: r.relistResourceVersion()})
 				}
 				close(listCh)
 			}()
@@ -266,11 +261,11 @@ func (r *Reflector) ListAndWatch(stopCh <-chan struct{}) error {
 	}
 }
 
-func IsTooManyRequests(err error) bool {
+func IsTooManyRequests(_ error) bool {
 	return false
 }
 
-func isExpiredError(err error) bool {
+func isExpiredError(_ error) bool {
 	return false
 }
 

@@ -1,9 +1,11 @@
 package manager
 
+import "github.com/tsundata/flowline/pkg/api/client/rest"
+
 type Config struct {
-	ApiURL string
+	RestConfig *rest.Config
 }
 
 func NewConfig() *Config {
-	return &Config{}
+	return &Config{RestConfig: &rest.Config{}}
 }

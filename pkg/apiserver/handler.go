@@ -65,8 +65,8 @@ func (d director) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	for _, ws := range d.restfulContainer.RegisteredWebServices() {
 		switch {
-		case ws.RootPath() == "/"+constant.ApiPrefix:
-			if path == "/"+constant.ApiPrefix || path == "/"+constant.ApiPrefix+"/" {
+		case ws.RootPath() == "/"+constant.RestPrefix:
+			if path == "/"+constant.RestPrefix || path == "/"+constant.RestPrefix+"/" {
 				d.restfulContainer.Dispatch(w, req)
 				return
 			}

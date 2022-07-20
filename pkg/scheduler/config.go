@@ -1,7 +1,7 @@
 package scheduler
 
 type Config struct {
-	ApiURL string
+	ApiHost string
 }
 
 func NewConfig() *Config {

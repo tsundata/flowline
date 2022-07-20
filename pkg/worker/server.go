@@ -10,14 +10,18 @@ import (
 
 type GenericWorkerServer struct {
 	config *Config
-	client *client.RestClient
+	client client.Interface
 }
 
 func NewGenericWorkerServer(name string, config *Config) *GenericWorkerServer {
 	flog.Infof("%s starting...", name)
+	c, err := client.NewForConfig(config.RestConfig)
+	if err != nil {
+		panic(err)
+	}
 	s := &GenericWorkerServer{
 		config: config,
-		client: client.NewRestClient(config.ApiURL),
+		client: c,
 	}
 	return s
 }

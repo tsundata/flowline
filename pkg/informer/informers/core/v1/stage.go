@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"context"
 	"github.com/tsundata/flowline/pkg/api/client"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/informer"
@@ -21,24 +22,24 @@ type stageInformer struct {
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 }
 
-func newStageInformer(client *client.RestClient, resyncPeriod time.Duration, indexers informer.Indexers) informer.SharedIndexInformer {
+func newStageInformer(client client.Interface, resyncPeriod time.Duration, indexers informer.Indexers) informer.SharedIndexInformer {
 	return NewFilteredStageInformer(client, resyncPeriod, indexers, nil)
 }
 
-func NewFilteredStageInformer(client *client.RestClient, resyncPeriod time.Duration, indexers informer.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) informer.SharedIndexInformer {
+func NewFilteredStageInformer(client client.Interface, resyncPeriod time.Duration, indexers informer.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) informer.SharedIndexInformer {
 	return informer.NewSharedIndexInformer(
 		&informer.ListWatch{
 			ListFunc: func(options meta.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return nil, nil //client.Request(context.TODO()).Stage().List().Result()
+				return client.CoreV1().Stages().List(context.TODO(), options)
 			},
 			WatchFunc: func(options meta.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return nil, nil //client.Request(context.TODO()).Pods().Watch(, options)
+				return client.CoreV1().Stages().Watch(context.TODO(), options)
 			},
 		},
 		&meta.Stage{},
@@ -47,7 +48,7 @@ func NewFilteredStageInformer(client *client.RestClient, resyncPeriod time.Durat
 	)
 }
 
-func (f *stageInformer) defaultInformer(client *client.RestClient, resyncPeriod time.Duration) informer.SharedIndexInformer {
+func (f *stageInformer) defaultInformer(client client.Interface, resyncPeriod time.Duration) informer.SharedIndexInformer {
 	return NewFilteredStageInformer(client, resyncPeriod, informer.Indexers{}, f.tweakListOptions)
 }
 

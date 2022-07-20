@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/tsundata/flowline/cmd/scheduler/app/config"
+	"github.com/tsundata/flowline/pkg/api/client"
+	"github.com/tsundata/flowline/pkg/api/client/rest"
 	"github.com/tsundata/flowline/pkg/scheduler"
 	config2 "github.com/tsundata/flowline/pkg/scheduler/framework/config"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/runtime"
@@ -28,10 +30,10 @@ func NewSchedulerCommand() *cli.App {
 		Version: version.Version,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:    "api-url",
+				Name:    "api-host",
 				Aliases: []string{"A"},
-				Value:   "http://127.0.0.1:5000/",
-				Usage:   "server host",
+				Value:   "127.0.0.1:5000",
+				Usage:   "apiserver host",
 				EnvVars: []string{"CONTROLLER_MANAGER_HOST"},
 			},
 		},
@@ -40,7 +42,7 @@ func NewSchedulerCommand() *cli.App {
 				ComponentConfig: config.Configuration{},
 				Config:          &scheduler.Config{},
 			} // todo
-			cc.Config.ApiURL = c.String("api-url")
+			cc.Config.ApiHost = c.String("api-host")
 			return runCommand(cc, signal.SetupSignalHandler())
 		},
 		Commands: []*cli.Command{
@@ -88,6 +90,18 @@ func Setup(ctx context.Context, c *config.Config, outOfTreeRegistryOptions ...Op
 		if err := option(outOfTreeRegistry); err != nil {
 			return nil, nil, err
 		}
+	}
+
+	var err error
+	c.Client, err = client.NewForConfig(&rest.Config{
+		Host:          c.Config.ApiHost,
+		APIPath:       "",
+		ContentConfig: rest.ContentConfig{},
+		Impersonate:   rest.ImpersonationConfig{},
+		Timeout:       0,
+	})
+	if err != nil {
+		return nil, nil, err
 	}
 
 	c.Complete()

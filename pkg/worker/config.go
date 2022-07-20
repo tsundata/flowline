@@ -1,14 +1,16 @@
 package worker
 
+import "github.com/tsundata/flowline/pkg/api/client/rest"
+
 type Config struct {
 	Host string
 	Port int
 
-	ApiURL string
+	RestConfig *rest.Config
 
 	StageWorkers int
 }
 
 func NewConfig() *Config {
-	return &Config{}
+	return &Config{RestConfig: &rest.Config{}}
 }

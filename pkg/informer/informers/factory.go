@@ -23,7 +23,7 @@ type SharedInformerFactory interface {
 }
 
 type sharedInformerFactory struct {
-	client           *client.RestClient
+	client           client.Interface
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 	lock             sync.Mutex
 	defaultResync    time.Duration
@@ -55,12 +55,12 @@ func WithTweakListOptions(tweakListOptions internalinterfaces.TweakListOptionsFu
 }
 
 // NewSharedInformerFactory constructs a new instance of sharedInformerFactory for all namespaces.
-func NewSharedInformerFactory(client *client.RestClient, defaultResync time.Duration) SharedInformerFactory {
+func NewSharedInformerFactory(client client.Interface, defaultResync time.Duration) SharedInformerFactory {
 	return NewSharedInformerFactoryWithOptions(client, defaultResync)
 }
 
 // NewSharedInformerFactoryWithOptions constructs a new instance of a SharedInformerFactory with additional options.
-func NewSharedInformerFactoryWithOptions(client *client.RestClient, defaultResync time.Duration, options ...SharedInformerOption) SharedInformerFactory {
+func NewSharedInformerFactoryWithOptions(client client.Interface, defaultResync time.Duration, options ...SharedInformerOption) SharedInformerFactory {
 	factory := &sharedInformerFactory{
 		client:           client,
 		defaultResync:    defaultResync,

@@ -17,7 +17,6 @@ import (
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
 	"github.com/tsundata/flowline/pkg/util/uid"
-	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -147,35 +146,6 @@ func (sched *Scheduler) Run(ctx context.Context) {
 	sched.SchedulingQueue.Run()
 
 	go parallelizer.JitterUntilWithContext(ctx, sched.scheduleOne, 0, 0.0, true)
-
-	go func() { // fixme
-		for i := 1; i <= 1; i++ {
-			err := sched.SchedulingQueue.Add(&meta.Stage{
-				TypeMeta: meta.TypeMeta{},
-				ObjectMeta: meta.ObjectMeta{
-					Name: "stage-" + strconv.Itoa(i),
-					UID:  uid.New(),
-				},
-				SchedulerName: "default-scheduler",
-				Priority:      1,
-				WorkerUID:     "",
-				WorkerHost:    "",
-				JobUID:        "93693ac6-1a9b-4c14-974c-78a6b5ce8f17",
-				DagUID:        "a5c88ab6-b521-48bc-b816-3b208117890b",
-				State:         "",
-				Runtime:       "javascript",
-				Code:          "input() + 1",
-				Input:         1000,
-				Output:        nil,
-				Connection:    nil,
-				Variable:      nil,
-			})
-			if err != nil {
-				flog.Error(err)
-			}
-			time.Sleep(5 * time.Second)
-		}
-	}()
 
 	<-ctx.Done()
 	flog.Info("SchedulingQueue close")

@@ -26,14 +26,14 @@ func NewControllerManagerCommand() *cli.App {
 			&cli.StringFlag{
 				Name:    "api-url",
 				Aliases: []string{"A"},
-				Value:   "http://127.0.0.1:5000/",
+				Value:   "127.0.0.1:5000",
 				Usage:   "server host",
 				EnvVars: []string{"CONTROLLER_MANAGER_HOST"},
 			},
 		},
 		Action: func(c *cli.Context) error {
 			config := manager.NewConfig() // todo
-			config.ApiURL = c.String("api-url")
+			config.RestConfig.Host = c.String("api-url")
 			return Run(config, signal.SetupSignalHandler())
 		},
 		Commands: []*cli.Command{
