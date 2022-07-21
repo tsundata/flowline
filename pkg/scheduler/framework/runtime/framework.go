@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"github.com/tsundata/flowline/pkg/api/client"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
@@ -22,7 +23,7 @@ const (
 
 type frameworkOptions struct {
 	componentConfigVersion string
-	clientSet              interface{}
+	clientSet              client.Interface
 	config                 interface{}
 	eventRecorder          interface{}
 	informerFactory        interface{}
@@ -322,7 +323,7 @@ type frameworkImpl struct {
 	bindPlugins       []framework.BindPlugin
 	permitPlugins     []framework.PermitPlugin
 
-	clientSet       interface{}
+	clientSet       client.Interface
 	config          interface{}
 	eventRecorder   interface{}
 	informerFactory interface{}
@@ -467,7 +468,7 @@ func (f *frameworkImpl) RejectWaitingStage(uid string) bool {
 	return false
 }
 
-func (f *frameworkImpl) ClientSet() interface{} {
+func (f *frameworkImpl) ClientSet() client.Interface {
 	return f.clientSet
 }
 

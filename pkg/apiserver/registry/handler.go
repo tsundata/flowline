@@ -181,16 +181,8 @@ func serveWatch(watcher watch.Interface, scope *RequestScope, mediaTypeOptions n
 }
 
 func newRequestScope() *RequestScope {
-	jsonCoder := runtime.JsonCoder{}
 	return &RequestScope{
-		Serializer: runtime.NewSimpleNegotiatedSerializer(runtime.SerializerInfo{
-			StreamSerializer: &runtime.StreamSerializerInfo{
-				EncodesAsText: true,
-				Framer:        json.Framer,
-				Serializer:    runtime.NewBase64Serializer(jsonCoder, jsonCoder),
-			},
-			EncodesAsText: true,
-		}),
+		Serializer:          json.NewBasicNegotiatedSerializer(),
 		StandardSerializers: nil,
 		Resource:            schema.GroupVersionResource{},
 		Kind:                schema.GroupVersionKind{},

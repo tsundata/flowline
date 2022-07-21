@@ -31,7 +31,6 @@ func (e *Encoder) Encode(event *watch.Event) error {
 	if err != nil {
 		return err
 	}
-	// FIXME: get rid of json.RawMessage.
 	return e.encoder.Encode(&meta.WatchEvent{
 		Type:   string(event.Type),
 		Object: meta.RawExtension{Raw: json.RawMessage(data)},

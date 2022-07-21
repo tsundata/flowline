@@ -453,12 +453,12 @@ func (c *cacheImpl) UpdateSnapshot(workerSnapshot *Snapshot) error {
 	// Deleted workers get removed from the tree, but they might remain in the workers map
 	// if they still have non-deleted Stages.
 	if len(workerSnapshot.workerInfoMap) > c.workerTree.numWorkers {
-		//c.removeDeletedWorkersFromSnapshot(workerSnapshot) fixme
+		c.removeDeletedWorkersFromSnapshot(workerSnapshot)
 		updateAllLists = true
 	}
 
 	if updateAllLists {
-		//c.updateWorkerInfoSnapshotList(workerSnapshot, updateAllLists) fixme
+		c.updateWorkerInfoSnapshotList(workerSnapshot, updateAllLists)
 		return nil // fixme
 	}
 

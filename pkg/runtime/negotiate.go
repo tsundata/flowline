@@ -5,26 +5,6 @@ import (
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 )
 
-type simpleNegotiatedSerializer struct {
-	info SerializerInfo
-}
-
-func NewSimpleNegotiatedSerializer(info SerializerInfo) NegotiatedSerializer {
-	return &simpleNegotiatedSerializer{info: info}
-}
-
-func (n *simpleNegotiatedSerializer) SupportedMediaTypes() []SerializerInfo {
-	return []SerializerInfo{n.info}
-}
-
-func (n *simpleNegotiatedSerializer) EncoderForVersion(e Encoder, _ GroupVersioner) Encoder {
-	return e
-}
-
-func (n *simpleNegotiatedSerializer) DecoderToVersion(d Decoder, _gv GroupVersioner) Decoder {
-	return d
-}
-
 // NegotiateError is returned when a ClientNegotiator is unable to locate
 // a serializer for the requested operation.
 type NegotiateError struct {

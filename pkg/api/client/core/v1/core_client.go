@@ -2,7 +2,6 @@ package v1
 
 import (
 	"github.com/tsundata/flowline/pkg/api/client/rest"
-	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"github.com/tsundata/flowline/pkg/runtime/serializer/json"
 	"net/http"
@@ -52,18 +51,10 @@ func New(c rest.Interface) *CoreV1Client {
 }
 
 func setConfigDefaults(config *rest.Config) error {
-	jsonCoder := runtime.JsonCoder{}
 	gv := schema.SchemeGroupVersion
 	config.GroupVersion = &gv
 	config.APIPath = "/api"
-	config.NegotiatedSerializer = runtime.NewSimpleNegotiatedSerializer(runtime.SerializerInfo{
-		StreamSerializer: &runtime.StreamSerializerInfo{
-			EncodesAsText: true,
-			Framer:        json.Framer,
-			Serializer:    runtime.NewBase64Serializer(jsonCoder, jsonCoder),
-		},
-		EncodesAsText: true,
-	})
+	config.NegotiatedSerializer = json.NewBasicNegotiatedSerializer()
 
 	if config.UserAgent == "" {
 		config.UserAgent = rest.DefaultUserAgent()

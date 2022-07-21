@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/tsundata/flowline/pkg/api/client"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/config"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
@@ -192,7 +193,7 @@ type Handle interface {
 	RejectWaitingStage(uid string) bool
 
 	// ClientSet returns a clientSet.
-	ClientSet() interface{}
+	ClientSet() client.Interface
 
 	// EventRecorder returns an event recorder.
 	EventRecorder() interface{}

@@ -37,9 +37,9 @@ func (b DefaultBinder) Bind(ctx context.Context, state *framework.CycleState, p 
 		Target:     &meta.Worker{ObjectMeta: meta.ObjectMeta{UID: workerUID}},
 	}
 	flog.Infof("api send binging info ----> %s %s : %s", binding.Name, binding.UID, binding.Target.UID)
-	//err := b.handle.ClientSet().CoreV1().Stages(binding.Namespace).Bind(ctx, binding, metav1.CreateOptions{}) fixme
-	//if err != nil {
-	//		return framework.AsStatus(err)
-	//	}
+	err := b.handle.ClientSet().CoreV1().Stage().Bind(ctx, binding, meta.CreateOptions{})
+	if err != nil {
+		return framework.AsStatus(err)
+	}
 	return nil
 }
