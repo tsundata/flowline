@@ -17,9 +17,9 @@ type Worker struct {
 	TypeMeta
 	ObjectMeta
 
-	State    WorkerState
-	Host     string   `json:"host,omitempty"`
-	Runtimes []string `json:"runtimes,omitempty"`
+	State    WorkerState `json:"state,omitempty"`
+	Host     string      `json:"host,omitempty"`
+	Runtimes []string    `json:"runtimes,omitempty"`
 }
 
 func (m *Worker) GetObjectKind() schema.ObjectKind {

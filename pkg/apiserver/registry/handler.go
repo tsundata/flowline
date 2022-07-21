@@ -288,7 +288,7 @@ func (s *WatchServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	for {
 		select {
 		case <-done:
-			flog.Warn("watch handle done")
+			flog.Warn("watch handle req context canceled")
 			return
 		case <-timeoutCh:
 			flog.Warn("watch handle timeout")

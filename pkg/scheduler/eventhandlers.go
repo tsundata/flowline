@@ -160,10 +160,10 @@ func (sched *Scheduler) updateStageInCache(oldObj, newObj interface{}) {
 		return
 	}
 
-	flog.Infof("update event for scheduled stage %T %T", oldStage, newStage)
+	flog.Infof("update event for scheduled stage %+v --> %+v", oldStage, newStage)
 
 	if err := sched.Cache.UpdateStage(oldStage, newStage); err != nil {
-		flog.Errorf("scheduler cache updateStage failed %T %T", oldStage, newStage)
+		flog.Errorf("scheduler cache updateStage failed %+v --> %+v", oldStage, newStage)
 	}
 
 	sched.SchedulingQueue.AssignedStageUpdated(newStage)

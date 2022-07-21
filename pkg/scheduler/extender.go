@@ -233,7 +233,7 @@ func (h *HTTPExtender) Bind(binding *meta.Binding) error {
 	req := map[string]interface{}{
 		"StageName": binding.Name,
 		"StageUID":  binding.UID,
-		"Worker":    binding.Target.Name,
+		"Worker":    binding.Target,
 	} // fixme
 	if err := h.send(h.bindVerb, req, &result); err != nil {
 		return err

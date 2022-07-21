@@ -9,7 +9,7 @@ type Binding struct {
 	TypeMeta
 	ObjectMeta
 
-	Target *Worker
+	Target runtime.Object `json:"target,omitempty"`
 }
 
 func (m *Binding) GetObjectKind() schema.ObjectKind {

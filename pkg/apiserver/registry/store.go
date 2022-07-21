@@ -378,15 +378,19 @@ func (e *Store) Watch(ctx context.Context, options *storage.ListOptions) (watch.
 	resourceVersion := ""
 	if options != nil {
 		resourceVersion = options.ResourceVersion
-
 	}
 
-	return e.WatchPredicate(ctx, predicate, resourceVersion)
+	progressNotify := false
+	if options != nil && options.ProgressNotify {
+		progressNotify = options.ProgressNotify
+	}
+
+	return e.WatchPredicate(ctx, predicate, resourceVersion, progressNotify)
 }
 
 // WatchPredicate starts a watch for the items that matches.
-func (e *Store) WatchPredicate(ctx context.Context, p storage.SelectionPredicate, resourceVersion string) (watch.Interface, error) {
-	storageOpts := storage.ListOptions{ResourceVersion: resourceVersion, Predicate: p, Recursive: true}
+func (e *Store) WatchPredicate(ctx context.Context, p storage.SelectionPredicate, resourceVersion string, progressNotify bool) (watch.Interface, error) {
+	storageOpts := storage.ListOptions{ResourceVersion: resourceVersion, Predicate: p, Recursive: true, ProgressNotify: progressNotify}
 
 	key := e.KeyRootFunc(ctx)
 	if name, ok := p.MatchesSingle(); ok {
@@ -398,7 +402,7 @@ func (e *Store) WatchPredicate(ctx context.Context, p storage.SelectionPredicate
 		// optimization is skipped
 	}
 
-	flog.Infof("etcd watch key %s, recursive %v", key, storageOpts.Recursive)
+	flog.Infof("(%s) etcd watch key, recursive %v", key, storageOpts.Recursive)
 	w, err := e.Storage.Watch(ctx, key, storageOpts)
 	if err != nil {
 		return nil, err

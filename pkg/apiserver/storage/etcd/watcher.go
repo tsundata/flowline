@@ -242,7 +242,7 @@ func (wc *watchChan) startWatching(watchClosedCh chan struct{}) {
 		}
 
 		for _, e := range wres.Events {
-			flog.Infof("etcd watching event: type %d, key %s", e.Type, string(e.Kv.Key))
+			flog.Infof("(%s) etcd watching event: key %s, type %d, version %d, CreateRevision %d, ModRevision %d", wc.key, string(e.Kv.Key), e.Type, e.Kv.Version, e.Kv.CreateRevision, e.Kv.ModRevision)
 			parsedEvent, err := parseEvent(e)
 			if err != nil {
 				logWatchChannelErr(err)

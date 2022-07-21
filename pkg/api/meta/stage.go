@@ -15,15 +15,15 @@ type Stage struct {
 	TypeMeta
 	ObjectMeta
 
-	SchedulerName string
-	Priority      int
-	WorkerUID     string
-	WorkerHost    string
+	SchedulerName string `json:"schedulerName,omitempty"`
+	Priority      int    `json:"priority,omitempty"`
+	WorkerUID     string `json:"workerUID,omitempty"`
+	WorkerHost    string `json:"workerHost,omitempty"`
 
 	JobUID string `json:"jobUID,omitempty"`
 	DagUID string `json:"dagUID,omitempty"`
 
-	State StageState `json:"state,omitempty"` // todo
+	State StageState `json:"state,omitempty"`
 
 	Runtime string `json:"runtime,omitempty"`
 	Code    string `json:"code,omitempty"`
