@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
+	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
 	"github.com/tsundata/flowline/pkg/scheduler/queue"
 	"github.com/tsundata/flowline/pkg/util/flog"
@@ -194,6 +195,7 @@ func (sched *Scheduler) handleSchedulingFailure(ctx context.Context, fwk framewo
 }
 
 func (sched *Scheduler) frameworkForStage(stage *meta.Stage) (framework.Framework, error) {
+	stage.SchedulerName = constant.DefaultSchedulerName // fixme
 	fwk, ok := sched.Profiles[stage.SchedulerName]
 	if !ok {
 		return nil, fmt.Errorf("profile not found for scheduler name %q", stage.SchedulerName)

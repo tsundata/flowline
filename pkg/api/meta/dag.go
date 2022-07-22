@@ -48,8 +48,7 @@ type Edge struct {
 }
 
 func (m *Dag) GetObjectKind() schema.ObjectKind {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 func (m *Dag) DeepCopyObject() runtime.Object {
@@ -64,8 +63,7 @@ type DagList struct {
 }
 
 func (m *DagList) GetObjectKind() schema.ObjectKind {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 func (m *DagList) DeepCopyObject() runtime.Object {

@@ -2,10 +2,7 @@ package runtime
 
 import (
 	"bytes"
-	"encoding/base64"
-	"encoding/json"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
-	"github.com/tsundata/flowline/pkg/util/flog"
 	"io"
 )
 
@@ -59,60 +56,6 @@ type Decoder interface {
 	Decode(data []byte, defaults *schema.GroupVersionKind, into Object) (Object, *schema.GroupVersionKind, error)
 }
 
-type base64Serializer struct {
-	Encoder
-	Decoder
-
-	identifier Identifier
-}
-
-func NewBase64Serializer(e Encoder, d Decoder) Serializer {
-	return &base64Serializer{
-		Encoder:    e,
-		Decoder:    d,
-		identifier: identifier(e),
-	}
-}
-
-func identifier(e Encoder) Identifier {
-	result := map[string]string{
-		"name": "base64",
-	}
-	if e != nil {
-		result["encoder"] = string(e.Identifier())
-	}
-	identifier, err := json.Marshal(result)
-	if err != nil {
-		flog.Fatalf("Failed marshaling identifier for base64Serializer: %v", err)
-	}
-	return Identifier(identifier)
-}
-
-func (s base64Serializer) Encode(obj Object, stream io.Writer) error {
-	return s.doEncode(obj, stream)
-}
-
-func (s base64Serializer) doEncode(obj Object, stream io.Writer) error {
-	e := base64.NewEncoder(base64.StdEncoding, stream)
-	err := s.Encoder.Encode(obj, e)
-	_ = e.Close()
-	return err
-}
-
-// Identifier implements runtime.Encoder interface.
-func (s base64Serializer) Identifier() Identifier {
-	return s.identifier
-}
-
-func (s base64Serializer) Decode(data []byte, defaults *schema.GroupVersionKind, into Object) (Object, *schema.GroupVersionKind, error) {
-	out := make([]byte, base64.StdEncoding.DecodedLen(len(data)))
-	n, err := base64.StdEncoding.Decode(out, data)
-	if err != nil {
-		return nil, nil, err
-	}
-	return s.Decoder.Decode(out[:n], defaults, into)
-}
-
 // Encode is a convenience wrapper for encoding to a []byte from an Encoder
 func Encode(e Encoder, obj Object) ([]byte, error) {
 	buf := &bytes.Buffer{}
@@ -126,29 +69,6 @@ func Encode(e Encoder, obj Object) ([]byte, error) {
 func Decode(d Decoder, data []byte, obj Object) (Object, error) {
 	obj, _, err := d.Decode(data, nil, obj)
 	return obj, err
-}
-
-type JsonCoder struct{}
-
-func (c JsonCoder) Decode(data []byte, _ *schema.GroupVersionKind, into Object) (Object, *schema.GroupVersionKind, error) {
-	err := json.Unmarshal(data, &into)
-	if err != nil {
-		return nil, nil, err
-	}
-	return into, nil, nil
-}
-
-func (c JsonCoder) Encode(obj Object, w io.Writer) error {
-	data, err := json.Marshal(obj)
-	if err != nil {
-		return err
-	}
-	_, err = w.Write(data)
-	return err
-}
-
-func (c JsonCoder) Identifier() Identifier {
-	return "json"
 }
 
 // SerializerInfoForMediaType returns the first info in types that has a matching media type (which cannot

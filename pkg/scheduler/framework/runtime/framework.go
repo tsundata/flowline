@@ -62,6 +62,13 @@ func WithExtenders(extenders []framework.Extender) Option {
 	}
 }
 
+// WithClientSet sets clientSet for the scheduling frameworkImpl.
+func WithClientSet(clientSet client.Interface) Option {
+	return func(o *frameworkOptions) {
+		o.clientSet = clientSet
+	}
+}
+
 func defaultFrameworkOptions(_ <-chan struct{}) frameworkOptions {
 	return frameworkOptions{
 		clusterEventMap: make(map[framework.ClusterEvent]map[string]struct{}),

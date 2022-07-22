@@ -1,6 +1,7 @@
 package meta
 
 import (
+	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"time"
 )
@@ -13,21 +14,21 @@ type TypeMeta struct {
 	// Servers may infer this from the endpoint the client submits requests to.
 	// Cannot be updated.
 	// In CamelCase.
-	Kind string `json:"kind,omitempty" protobuf:"bytes,1,opt,name=kind"`
+	Kind string `json:"kind,omitempty"`
 
 	// APIVersion defines the versioned schema of this representation of an object.
 	// Servers should convert recognized schemas to the latest internal value, and
 	// may reject unrecognized values.
-	APIVersion string `json:"apiVersion,omitempty" protobuf:"bytes,2,opt,name=apiVersion"`
+	APIVersion string `json:"apiVersion,omitempty"`
 }
 
 func (t *TypeMeta) SetGroupVersionKind(kind schema.GroupVersionKind) {
 	t.Kind = kind.Kind
 }
 
-func (t *TypeMeta) GroupVersionKind() schema.GroupVersionKind { // todo
+func (t *TypeMeta) GroupVersionKind() schema.GroupVersionKind {
 	return schema.GroupVersionKind{
-		Group:   "apps",
+		Group:   constant.GroupName,
 		Version: t.APIVersion,
 		Kind:    t.Kind,
 	}
@@ -36,19 +37,19 @@ func (t *TypeMeta) GroupVersionKind() schema.GroupVersionKind { // todo
 // ObjectMeta is metadata that all persisted resources must have, which includes all objects
 // users must create.
 type ObjectMeta struct {
-	Name string `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
-	UID  string `json:"uid,omitempty" protobuf:"bytes,5,opt,name=uid,casttype=k8s.io/kubernetes/pkg/types.UID"`
+	Name string `json:"name,omitempty"`
+	UID  string `json:"uid,omitempty"`
 
-	ResourceVersion string `json:"resourceVersion,omitempty" protobuf:"bytes,6,opt,name=resourceVersion"`
-	Generation      int64  `json:"generation,omitempty" protobuf:"varint,7,opt,name=generation"`
+	ResourceVersion string `json:"resourceVersion,omitempty"`
+	Generation      int64  `json:"generation,omitempty"`
 
-	CreationTimestamp          *time.Time `json:"creationTimestamp,omitempty" protobuf:"bytes,8,opt,name=creationTimestamp"`
-	DeletionTimestamp          *time.Time `json:"deletionTimestamp,omitempty" protobuf:"bytes,9,opt,name=deletionTimestamp"`
-	DeletionGracePeriodSeconds *int64     `json:"deletionGracePeriodSeconds,omitempty" protobuf:"varint,10,opt,name=deletionGracePeriodSeconds"`
+	CreationTimestamp          *time.Time `json:"creationTimestamp,omitempty"`
+	DeletionTimestamp          *time.Time `json:"deletionTimestamp,omitempty"`
+	DeletionGracePeriodSeconds *int64     `json:"deletionGracePeriodSeconds,omitempty"`
 
-	Labels map[string]string `json:"labels,omitempty" protobuf:"bytes,11,rep,name=labels"`
+	Labels map[string]string `json:"labels,omitempty"`
 
-	Finalizers []string `json:"finalizers,omitempty" protobuf:"bytes,14,rep,name=finalizers"`
+	Finalizers []string `json:"finalizers,omitempty"`
 }
 
 func (o *ObjectMeta) GetObjectMeta() Object {
@@ -127,7 +128,7 @@ type ListMeta struct {
 	// Value must be treated as opaque by clients and passed unmodified back to the server.
 	// Populated by the system.
 	// Read-only.
-	ResourceVersion string `json:"resourceVersion,omitempty" protobuf:"bytes,2,opt,name=resourceVersion"`
+	ResourceVersion string `json:"resourceVersion,omitempty"`
 
 	// continue may be set if the user set a limit on the number of items returned, and indicates that
 	// the server has more data available. The value is opaque and may be used to issue another request
@@ -136,7 +137,7 @@ type ListMeta struct {
 	// minutes have passed. The resourceVersion field returned when using this continue value will be
 	// identical to the value in the first response, unless you have received this token from an error
 	// message.
-	Continue string `json:"continue,omitempty" protobuf:"bytes,3,opt,name=continue"`
+	Continue string `json:"continue,omitempty"`
 
 	// remainingItemCount is the number of subsequent items in the list which are not included in this
 	// list response. If the list request contained label or field selectors, then the number of
@@ -148,7 +149,7 @@ type ListMeta struct {
 	// The intended use of the remainingItemCount is *estimating* the size of a collection. Clients
 	// should not rely on the remainingItemCount to be set or to be exact.
 	// +optional
-	RemainingItemCount *int64 `json:"remainingItemCount,omitempty" protobuf:"bytes,4,opt,name=remainingItemCount"`
+	RemainingItemCount *int64 `json:"remainingItemCount,omitempty"`
 }
 
 func (l *ListMeta) GetListMeta() List {

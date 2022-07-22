@@ -111,7 +111,7 @@ func (e *Store) WatchHandler(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	serveWatch(watcher, scope, outputMediaType, req.Request, resp, timeout)
+	serveWatch(watcher, scope, outputMediaType, req.Request, resp.ResponseWriter, timeout)
 }
 
 func (e *Store) WatchListHandler(req *restful.Request, resp *restful.Response) {
@@ -134,7 +134,7 @@ func (e *Store) WatchListHandler(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	serveWatch(watcher, scope, outputMediaType, req.Request, resp, timeout)
+	serveWatch(watcher, scope, outputMediaType, req.Request, resp.ResponseWriter, timeout)
 }
 
 func serveWatch(watcher watch.Interface, scope *RequestScope, mediaTypeOptions negotiation.MediaTypeOptions, req *http.Request, w http.ResponseWriter, timeout time.Duration) {
@@ -159,8 +159,7 @@ func serveWatch(watcher watch.Interface, scope *RequestScope, mediaTypeOptions n
 	}
 
 	var embeddedEncoder runtime.Encoder
-	jsonCoder := runtime.JsonCoder{}
-	codec := runtime.NewBase64Serializer(jsonCoder, jsonCoder)
+	codec := json.NewSerializerWithOptions(json.DefaultMetaFactory, json.SerializerOptions{})
 	embeddedEncoder = codec
 
 	server := &WatchServer{
@@ -305,10 +304,15 @@ func (s *WatchServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				return
 			}
 
+			kind := event.Object.GetObjectKind().GroupVersionKind().Kind
+			version := event.Object.GetObjectKind().GroupVersionKind().Version
+
 			unknown.Raw = buf.Bytes()
 			event.Object = &unknown
 
 			outEvent = &meta.WatchEvent{}
+			outEvent.Kind = kind
+			outEvent.APIVersion = version
 
 			err := ConvertInternalEventToWatchEvent(&event, outEvent)
 			if err != nil {

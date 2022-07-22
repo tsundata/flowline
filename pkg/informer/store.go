@@ -217,7 +217,7 @@ func MetaNamespaceKeyFunc(obj interface{}) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("object has no meta: %v", err)
 	}
-	return objMeta.GetName(), nil
+	return objMeta.GetUID(), nil
 }
 
 // NewIndexer returns an Indexer implemented simply with a map and a lock.

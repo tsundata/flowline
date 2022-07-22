@@ -13,8 +13,7 @@ type Binding struct {
 }
 
 func (m *Binding) GetObjectKind() schema.ObjectKind {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 func (m *Binding) DeepCopyObject() runtime.Object {

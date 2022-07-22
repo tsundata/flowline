@@ -14,8 +14,7 @@ type Function struct {
 }
 
 func (m *Function) GetObjectKind() schema.ObjectKind {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 func (m *Function) DeepCopyObject() runtime.Object {
@@ -30,8 +29,7 @@ type FunctionList struct {
 }
 
 func (m *FunctionList) GetObjectKind() schema.ObjectKind {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 func (m *FunctionList) DeepCopyObject() runtime.Object {

@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/tsundata/flowline/pkg/api/client"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/informer/informers"
+	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/scheduler/cache"
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/config"
@@ -359,7 +361,7 @@ var defaultSchedulerOptions = schedulerOptions{
 }
 
 // New returns a Scheduler
-func New(client interface{},
+func New(client client.Interface,
 	informerFactory informers.SharedInformerFactory,
 	dynInformerFactory interface{},
 	recorderFactory profile.RecorderFactory,
@@ -379,7 +381,7 @@ func New(client interface{},
 	if options.applyDefaultProfile {
 		options.profiles = []config.Profile{ // fixme
 			{
-				SchedulerName: "default-scheduler",
+				SchedulerName: constant.DefaultSchedulerName,
 				Plugins: &config.Plugins{
 					QueueSort: config.PluginSet{
 						Enabled: []config.Plugin{
@@ -464,6 +466,7 @@ func New(client interface{},
 	profiles, err := profile.NewMap(options.profiles, registry, recorderFactory, stopCh,
 		frameworkruntime.WithExtenders(extenders),
 		frameworkruntime.WithStageNominator(nominator),
+		frameworkruntime.WithClientSet(client),
 	)
 	if err != nil {
 		return nil, err

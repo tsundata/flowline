@@ -8,3 +8,6 @@ const GroupName = "apps"
 
 // Version is the version use in this package
 const Version = "v1"
+
+// DefaultSchedulerName is default scheduler name
+const DefaultSchedulerName = "default-scheduler"

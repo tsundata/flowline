@@ -41,7 +41,7 @@ func addAllEventHandlers(sched *Scheduler, informerFactory informers.SharedInfor
 			FilterFunc: func(obj interface{}) bool {
 				switch t := obj.(type) {
 				case *meta.Stage:
-					return assignedStage(t)
+					return !assignedStage(t)
 				case informer.DeletedFinalStateUnknown:
 					if _, ok := t.Obj.(*meta.Stage); ok {
 						return true
@@ -70,8 +70,9 @@ func addAllEventHandlers(sched *Scheduler, informerFactory informers.SharedInfor
 	)
 }
 
-func assignedStage(_ *meta.Stage) bool {
-	return true //stage.State != meta.StageDone // fixme
+func assignedStage(stage *meta.Stage) bool {
+	// fixme
+	return stage.WorkerUID != ""
 }
 
 func (sched *Scheduler) addStageToSchedulingQueue(obj interface{}) {
@@ -200,7 +201,7 @@ func (sched *Scheduler) addWorkerToCache(obj interface{}) {
 		flog.Errorf("cannot convert to *meta.worker %T", obj)
 		return
 	}
-	flog.Infof("add event for worker %T", worker)
+	flog.Infof("add event for worker %+v", worker)
 	workerInfo := sched.Cache.AddWorker(worker)
 	sched.SchedulingQueue.MoveAllToActiveOrBackoffQueue(queue.WorkerAdd, preCheckForWorker(workerInfo))
 }
@@ -217,7 +218,7 @@ func (sched *Scheduler) updateWorkerToCache(oldObj, newObj interface{}) {
 		return
 	}
 
-	flog.Infof("update event for worker %T %T", oldWorker, newWorker)
+	flog.Infof("update event for worker %+v --> %+v", oldWorker, newWorker)
 
 	workerInfo := sched.Cache.UpdateWorker(oldWorker, newWorker)
 	if event := workerSchedulingPropertiesChange(newWorker, oldWorker); event != nil {

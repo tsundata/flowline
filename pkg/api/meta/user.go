@@ -15,8 +15,7 @@ type User struct {
 }
 
 func (m *User) GetObjectKind() schema.ObjectKind {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 func (m *User) DeepCopyObject() runtime.Object {
@@ -31,8 +30,7 @@ type UserList struct {
 }
 
 func (m *UserList) GetObjectKind() schema.ObjectKind {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 func (m *UserList) DeepCopyObject() runtime.Object {

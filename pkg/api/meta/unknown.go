@@ -7,10 +7,10 @@ import (
 
 type RawExtension struct {
 	// Raw is the underlying serialization of this object.
-	Raw []byte `json:"-" protobuf:"bytes,1,opt,name=raw"`
+	Raw []byte `json:"raw,omitempty"`
 	// Object can hold a representation of this extension - useful for working with versioned
 	// structs.
-	Object runtime.Object `json:"-"`
+	Object runtime.Object `json:"object,omitempty"`
 }
 
 func (m *RawExtension) GetObjectKind() schema.ObjectKind {
@@ -24,22 +24,21 @@ func (m *RawExtension) DeepCopyObject() runtime.Object {
 }
 
 type Unknown struct {
-	TypeMeta `json:",inline" protobuf:"bytes,1,opt,name=typeMeta"`
+	TypeMeta `json:",inline"`
 	// Raw will hold the complete serialized object which couldn't be matched
 	// with a registered type. Most likely, nothing should be done with this
 	// except for passing it through the system.
-	Raw []byte `protobuf:"bytes,2,opt,name=raw"`
+	Raw []byte
 	// ContentEncoding is encoding used to encode 'Raw' data.
 	// Unspecified means no encoding.
-	ContentEncoding string `protobuf:"bytes,3,opt,name=contentEncoding"`
+	ContentEncoding string
 	// ContentType  is serialization method used to serialize 'Raw'.
 	// Unspecified means ContentTypeJSON.
-	ContentType string `protobuf:"bytes,4,opt,name=contentType"`
+	ContentType string
 }
 
 func (m *Unknown) GetObjectKind() schema.ObjectKind {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 func (m *Unknown) DeepCopyObject() runtime.Object {

@@ -36,8 +36,7 @@ type Stage struct {
 }
 
 func (m *Stage) GetObjectKind() schema.ObjectKind {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 func (m *Stage) DeepCopyObject() runtime.Object {
@@ -52,8 +51,7 @@ type StageList struct {
 }
 
 func (m *StageList) GetObjectKind() schema.ObjectKind {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 func (m *StageList) DeepCopyObject() runtime.Object {

@@ -190,7 +190,7 @@ func (c *cacheImpl) UpdateStage(oldStage, newStage *meta.Stage) error {
 	_, has := c.assumedStages[key]
 	if ok && !has {
 		if currState.stage.WorkerUID != newStage.WorkerUID {
-			flog.Errorf("Stage updated on a different worker than previously added to %v", oldStage)
+			flog.Errorf("Stage updated on a different worker than previously added to %+v", oldStage)
 			flog.Errorf("scheduler cache is corrupted and can badly affect scheduling decisions")
 			os.Exit(1)
 		}

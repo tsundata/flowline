@@ -1,6 +1,7 @@
 package meta
 
 import (
+	"github.com/barkimedes/go-deepcopy"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 )
@@ -11,8 +12,7 @@ type Event struct {
 }
 
 func (m *Event) GetObjectKind() schema.ObjectKind {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 func (m *Event) DeepCopyObject() runtime.Object {
@@ -40,16 +40,15 @@ type WatchEvent struct {
 	TypeMeta
 	ObjectMeta
 
-	Type   string `json:"type"`
-	Object RawExtension
+	Type   string       `json:"type"`
+	Object RawExtension `json:"object"`
 }
 
 func (m *WatchEvent) GetObjectKind() schema.ObjectKind {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 func (m *WatchEvent) DeepCopyObject() runtime.Object {
-	//TODO implement me
-	panic("implement me")
+	a, _ := deepcopy.Anything(m)
+	return a.(*WatchEvent)
 }

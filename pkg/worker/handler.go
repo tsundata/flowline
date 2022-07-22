@@ -3,7 +3,7 @@ package worker
 import (
 	"bufio"
 	"github.com/tsundata/flowline/pkg/api/meta"
-	"github.com/tsundata/flowline/pkg/runtime"
+	"github.com/tsundata/flowline/pkg/runtime/serializer/json"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/worker/queue"
 	"net"
@@ -22,7 +22,7 @@ func (w *WorkerHandler) Handle(conn net.Conn) {
 		}
 		flog.Info(string(message))
 
-		codec := runtime.JsonCoder{}
+		codec := json.NewSerializerWithOptions(json.DefaultMetaFactory, json.SerializerOptions{})
 
 		obj := meta.Stage{}
 		_, _, err = codec.Decode(message, nil, &obj)

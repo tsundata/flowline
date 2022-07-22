@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
+	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/plugins/names"
 	"github.com/tsundata/flowline/pkg/util/flog"
@@ -34,7 +35,10 @@ func (b DefaultBinder) Bind(ctx context.Context, state *framework.CycleState, p 
 	flog.Infof("Attempting to bind stage to worker, %s %s : %s", p.Name, p.UID, workerUID)
 	binding := &meta.Binding{
 		ObjectMeta: meta.ObjectMeta{Name: p.Name, UID: p.UID},
-		Target:     &meta.Worker{ObjectMeta: meta.ObjectMeta{UID: workerUID}},
+		Target: &meta.Worker{
+			TypeMeta:   meta.TypeMeta{Kind: "worker", APIVersion: constant.Version},
+			ObjectMeta: meta.ObjectMeta{UID: workerUID},
+		},
 	}
 	err := b.handle.ClientSet().CoreV1().Stage().Bind(ctx, binding, meta.CreateOptions{})
 	if err != nil {

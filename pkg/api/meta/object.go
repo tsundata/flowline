@@ -119,3 +119,14 @@ func ExtractList(obj runtime.Object) ([]runtime.Object, error) {
 	}
 	return list, nil
 }
+
+func FactoryNewObject(kind string) runtime.Object {
+	switch kind {
+	case "stage":
+		return &Stage{}
+	case "worker":
+		return &Worker{}
+	default:
+		return &Unknown{}
+	}
+}

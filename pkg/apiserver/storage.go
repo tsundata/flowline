@@ -12,14 +12,15 @@ import (
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/job"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/role"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/rolebinding"
+	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/stage"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/user"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/variable"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/worker"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/workflow"
 	"github.com/tsundata/flowline/pkg/apiserver/storage/config"
-	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
+	"github.com/tsundata/flowline/pkg/runtime/serializer/json"
 	"github.com/tsundata/flowline/pkg/util/flog"
 )
 
@@ -97,7 +98,7 @@ func rolebindingRestStorage(storageMap map[string]rest.Storage) {
 }
 
 func stageRestStorage(storageMap map[string]rest.Storage) {
-	s, err := user.NewREST(makeStoreOptions("stage"))
+	s, err := stage.NewREST(makeStoreOptions("stage"))
 	if err != nil {
 		flog.Panic(err)
 	}
@@ -137,8 +138,7 @@ func workflowRestStorage(storageMap map[string]rest.Storage) {
 }
 
 func makeStoreOptions(resource string) *options.StoreOptions {
-	jsonCoder := runtime.JsonCoder{}
-	codec := runtime.NewBase64Serializer(jsonCoder, jsonCoder)
+	codec := json.NewSerializerWithOptions(json.DefaultMetaFactory, json.SerializerOptions{})
 	storeOptions := &options.StoreOptions{
 		RESTOptions: &options.RESTOptions{
 			StorageConfig: &config.ConfigForResource{

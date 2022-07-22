@@ -9,8 +9,7 @@ type GetOptions struct {
 	//
 	// Defaults to unset
 	// +optional
-	ResourceVersion string `json:"resourceVersion,omitempty" protobuf:"bytes,1,opt,name=resourceVersion"`
-	// +k8s:deprecated=includeUninitialized,protobuf=2
+	ResourceVersion string `json:"resourceVersion,omitempty"`
 }
 
 // CreateOptions may be provided when creating an API object.
@@ -23,15 +22,14 @@ type CreateOptions struct {
 	// request. Valid values are:
 	// - All: all dry run stages will be processed
 	// +optional
-	DryRun []string `json:"dryRun,omitempty" protobuf:"bytes,1,rep,name=dryRun"`
-	// +k8s:deprecated=includeUninitialized,protobuf=2
+	DryRun []string `json:"dryRun,omitempty"`
 
 	// fieldManager is a name associated with the actor or entity
 	// that is making these changes. The value must be less than or
 	// 128 characters long, and only contain printable characters,
 	// as defined by https://golang.org/pkg/unicode/#IsPrint.
 	// +optional
-	FieldManager string `json:"fieldManager,omitempty" protobuf:"bytes,3,name=fieldManager"`
+	FieldManager string `json:"fieldManager,omitempty"`
 
 	// fieldValidation instructs the server on how to handle
 	// objects in the request (POST/PUT/PATCH) containing unknown
@@ -53,7 +51,7 @@ type CreateOptions struct {
 	// duplicate fields are present. The error returned from the server
 	// will contain all unknown and duplicate fields encountered.
 	// +optional
-	FieldValidation string `json:"fieldValidation,omitempty" protobuf:"bytes,4,name=fieldValidation"`
+	FieldValidation string `json:"fieldValidation,omitempty"`
 }
 
 // PatchOptions may be provided when patching an API object.
@@ -67,13 +65,13 @@ type PatchOptions struct {
 	// request. Valid values are:
 	// - All: all dry run stages will be processed
 	// +optional
-	DryRun []string `json:"dryRun,omitempty" protobuf:"bytes,1,rep,name=dryRun"`
+	DryRun []string `json:"dryRun,omitempty"`
 
 	// Force is going to "force" Apply requests. It means user will
 	// re-acquire conflicting fields owned by other people. Force
 	// flag must be unset for non-apply patch requests.
 	// +optional
-	Force *bool `json:"force,omitempty" protobuf:"varint,2,opt,name=force"`
+	Force *bool `json:"force,omitempty"`
 
 	// fieldManager is a name associated with the actor or entity
 	// that is making these changes. The value must be less than or
@@ -83,7 +81,7 @@ type PatchOptions struct {
 	// (application/apply-patch) but optional for non-apply patch
 	// types (JsonPatch, MergePatch, StrategicMergePatch).
 	// +optional
-	FieldManager string `json:"fieldManager,omitempty" protobuf:"bytes,3,name=fieldManager"`
+	FieldManager string `json:"fieldManager,omitempty"`
 
 	// fieldValidation instructs the server on how to handle
 	// objects in the request (POST/PUT/PATCH) containing unknown
@@ -105,7 +103,7 @@ type PatchOptions struct {
 	// duplicate fields are present. The error returned from the server
 	// will contain all unknown and duplicate fields encountered.
 	// +optional
-	FieldValidation string `json:"fieldValidation,omitempty" protobuf:"bytes,4,name=fieldValidation"`
+	FieldValidation string `json:"fieldValidation,omitempty"`
 }
 
 // ListOptions is the query options to a standard REST list call.
@@ -115,18 +113,16 @@ type ListOptions struct {
 	// A selector to restrict the list of returned objects by their labels.
 	// Defaults to everything.
 	// +optional
-	LabelSelector string `json:"labelSelector,omitempty" protobuf:"bytes,1,opt,name=labelSelector"`
+	LabelSelector string `json:"labelSelector,omitempty"`
 	// A selector to restrict the list of returned objects by their fields.
 	// Defaults to everything.
 	// +optional
-	FieldSelector string `json:"fieldSelector,omitempty" protobuf:"bytes,2,opt,name=fieldSelector"`
-
-	// +k8s:deprecated=includeUninitialized,protobuf=6
+	FieldSelector string `json:"fieldSelector,omitempty"`
 
 	// Watch for changes to the described resources and return them as a stream of
 	// add, update, and remove notifications. Specify resourceVersion.
 	// +optional
-	Watch bool `json:"watch,omitempty" protobuf:"varint,3,opt,name=watch"`
+	Watch bool `json:"watch,omitempty"`
 	// allowWatchBookmarks requests watch events with type "BOOKMARK".
 	// Servers that do not implement bookmarks may ignore this flag and
 	// bookmarks are sent at the server's discretion. Clients should not
@@ -134,7 +130,7 @@ type ListOptions struct {
 	// assume the server will send any BOOKMARK event during a session.
 	// If this is not a watch, this field is ignored.
 	// +optional
-	AllowWatchBookmarks bool `json:"allowWatchBookmarks,omitempty" protobuf:"varint,9,opt,name=allowWatchBookmarks"`
+	AllowWatchBookmarks bool `json:"allowWatchBookmarks,omitempty"`
 
 	// resourceVersion sets a constraint on what resource versions a request may be served from.
 	// See https://kubernetes.io/docs/reference/using-api/api-concepts/#resource-versions for
@@ -142,7 +138,7 @@ type ListOptions struct {
 	//
 	// Defaults to unset
 	// +optional
-	ResourceVersion string `json:"resourceVersion,omitempty" protobuf:"bytes,4,opt,name=resourceVersion"`
+	ResourceVersion string `json:"resourceVersion,omitempty"`
 
 	// resourceVersionMatch determines how resourceVersion is applied to list calls.
 	// It is highly recommended that resourceVersionMatch be set for list calls where
@@ -152,11 +148,11 @@ type ListOptions struct {
 	//
 	// Defaults to unset
 	// +optional
-	ResourceVersionMatch string `json:"resourceVersionMatch,omitempty" protobuf:"bytes,10,opt,name=resourceVersionMatch,casttype=ResourceVersionMatch"`
+	ResourceVersionMatch string `json:"resourceVersionMatch,omitempty"`
 	// Timeout for the list/watch call.
 	// This limits the duration of the call, regardless of any activity or inactivity.
 	// +optional
-	TimeoutSeconds *int64 `json:"timeoutSeconds,omitempty" protobuf:"varint,5,opt,name=timeoutSeconds"`
+	TimeoutSeconds *int64 `json:"timeoutSeconds,omitempty"`
 
 	// limit is a maximum number of responses to return for a list call. If more items exist, the
 	// server will set the `continue` field on the list metadata to a value that can be used with the
@@ -174,7 +170,7 @@ type ListOptions struct {
 	// smaller chunks of a very large result can ensure they see all possible objects. If objects are
 	// updated during a chunked list the version of the object that was present at the time the first list
 	// result was calculated is returned.
-	Limit int64 `json:"limit,omitempty" protobuf:"varint,7,opt,name=limit"`
+	Limit int64 `json:"limit,omitempty"`
 	// The continue option should be set when retrieving more results from the server. Since this value is
 	// server defined, clients may only use the continue value from a previous query result with identical
 	// query parameters (except for the value of continue) and the server may reject a continue value it
@@ -189,7 +185,7 @@ type ListOptions struct {
 	//
 	// This field is not supported when watch is true. Clients may start a watch from the last
 	// resourceVersion value returned by the server and not miss any modifications.
-	Continue string `json:"continue,omitempty" protobuf:"bytes,8,opt,name=continue"`
+	Continue string `json:"continue,omitempty"`
 }
 
 // UpdateOptions may be provided when updating an API object.
@@ -203,14 +199,14 @@ type UpdateOptions struct {
 	// request. Valid values are:
 	// - All: all dry run stages will be processed
 	// +optional
-	DryRun []string `json:"dryRun,omitempty" protobuf:"bytes,1,rep,name=dryRun"`
+	DryRun []string `json:"dryRun,omitempty"`
 
 	// fieldManager is a name associated with the actor or entity
 	// that is making these changes. The value must be less than or
 	// 128 characters long, and only contain printable characters,
 	// as defined by https://golang.org/pkg/unicode/#IsPrint.
 	// +optional
-	FieldManager string `json:"fieldManager,omitempty" protobuf:"bytes,2,name=fieldManager"`
+	FieldManager string `json:"fieldManager,omitempty"`
 
 	// fieldValidation instructs the server on how to handle
 	// objects in the request (POST/PUT/PATCH) containing unknown
@@ -232,7 +228,7 @@ type UpdateOptions struct {
 	// duplicate fields are present. The error returned from the server
 	// will contain all unknown and duplicate fields encountered.
 	// +optional
-	FieldValidation string `json:"fieldValidation,omitempty" protobuf:"bytes,3,name=fieldValidation"`
+	FieldValidation string `json:"fieldValidation,omitempty"`
 }
 
 // DeleteOptions may be provided when deleting an API object.
@@ -244,20 +240,20 @@ type DeleteOptions struct {
 	// specified type will be used.
 	// Defaults to a per object value if not specified. zero means delete immediately.
 	// +optional
-	GracePeriodSeconds *int64 `json:"gracePeriodSeconds,omitempty" protobuf:"varint,1,opt,name=gracePeriodSeconds"`
+	GracePeriodSeconds *int64 `json:"gracePeriodSeconds,omitempty"`
 
 	// Must be fulfilled before a deletion is carried out. If not possible, a 409 Conflict status will be
 	// returned.
 	// +k8s:conversion-gen=false
 	// +optional
-	Preconditions *Preconditions `json:"preconditions,omitempty" protobuf:"bytes,2,opt,name=preconditions"`
+	Preconditions *Preconditions `json:"preconditions,omitempty"`
 
 	// Deprecated: please use the PropagationPolicy, this field will be deprecated in 1.7.
 	// Should the dependent objects be orphaned. If true/false, the "orphan"
 	// finalizer will be added to/removed from the object's finalizers list.
 	// Either this field or PropagationPolicy may be set, but not both.
 	// +optional
-	OrphanDependents *bool `json:"orphanDependents,omitempty" protobuf:"varint,3,opt,name=orphanDependents"`
+	OrphanDependents *bool `json:"orphanDependents,omitempty"`
 
 	// Whether and how garbage collection will be performed.
 	// Either this field or OrphanDependents may be set, but not both.
@@ -268,7 +264,7 @@ type DeleteOptions struct {
 	// 'Foreground' - a cascading policy that deletes all dependents in the
 	// foreground.
 	// +optional
-	PropagationPolicy *string `json:"propagationPolicy,omitempty" protobuf:"varint,4,opt,name=propagationPolicy"`
+	PropagationPolicy *string `json:"propagationPolicy,omitempty"`
 
 	// When present, indicates that modifications should not be
 	// persisted. An invalid or unrecognized dryRun directive will
@@ -276,15 +272,15 @@ type DeleteOptions struct {
 	// request. Valid values are:
 	// - All: all dry run stages will be processed
 	// +optional
-	DryRun []string `json:"dryRun,omitempty" protobuf:"bytes,5,rep,name=dryRun"`
+	DryRun []string `json:"dryRun,omitempty"`
 }
 
 // Preconditions must be fulfilled before an operation (update, delete, etc.) is carried out.
 type Preconditions struct {
 	// Specifies the target UID.
 	// +optional
-	UID *string `json:"uid,omitempty" protobuf:"bytes,1,opt,name=uid,casttype=k8s.io/apimachinery/pkg/types.UID"`
+	UID *string `json:"uid,omitempty"`
 	// Specifies the target ResourceVersion
 	// +optional
-	ResourceVersion *string `json:"resourceVersion,omitempty" protobuf:"bytes,2,opt,name=resourceVersion"`
+	ResourceVersion *string `json:"resourceVersion,omitempty"`
 }

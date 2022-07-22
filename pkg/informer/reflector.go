@@ -253,7 +253,7 @@ func (r *Reflector) ListAndWatch(stopCh <-chan struct{}) error {
 					<-r.initConnBackoffManager.Backoff().C()
 					continue
 				default:
-					flog.Warnf("%s: watch of %v ended with: %v", r.name, r.expectedTypeName, err)
+					flog.Errorf("%s: watch of %v ended with: %v", r.name, r.expectedTypeName, err)
 				}
 			}
 			return nil

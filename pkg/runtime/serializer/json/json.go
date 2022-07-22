@@ -9,6 +9,7 @@ import (
 	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"github.com/tsundata/flowline/pkg/util/flog"
+	"github.com/tsundata/flowline/pkg/util/framer"
 	"io"
 	"strconv"
 	"unicode"
@@ -28,7 +29,7 @@ func (jsonFramer) NewFrameWriter(w io.Writer) io.Writer {
 // NewFrameReader implements stream framing for this serializer
 func (jsonFramer) NewFrameReader(r io.ReadCloser) io.ReadCloser {
 	// we need to extract the JSON chunks of data to pass to Decode()
-	return runtime.NewJSONFramedReader(r)
+	return framer.NewJSONFramedReader(r)
 }
 
 // NewSerializerWithOptions creates a JSON/YAML serializer that handles encoding versioned objects into the proper JSON/YAML

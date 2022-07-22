@@ -27,8 +27,7 @@ type Workflow struct {
 }
 
 func (m *Workflow) GetObjectKind() schema.ObjectKind {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 func (m *Workflow) DeepCopyObject() runtime.Object {
@@ -43,8 +42,7 @@ type WorkflowList struct {
 }
 
 func (m *WorkflowList) GetObjectKind() schema.ObjectKind {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 func (m *WorkflowList) DeepCopyObject() runtime.Object {

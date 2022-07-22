@@ -33,13 +33,13 @@ func NewFilteredWorkerInformer(client client.Interface, resyncPeriod time.Durati
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.CoreV1().Worker().List(context.TODO(), options)
+				return client.CoreV1().Worker().List(context.Background(), options)
 			},
 			WatchFunc: func(options meta.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.CoreV1().Worker().Watch(context.TODO(), options)
+				return client.CoreV1().Worker().Watch(context.Background(), options)
 			},
 		},
 		&meta.Worker{},

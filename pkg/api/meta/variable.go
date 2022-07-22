@@ -15,8 +15,7 @@ type Variable struct {
 }
 
 func (m *Variable) GetObjectKind() schema.ObjectKind {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 func (m *Variable) DeepCopyObject() runtime.Object {
@@ -31,8 +30,7 @@ type VariableList struct {
 }
 
 func (m *VariableList) GetObjectKind() schema.ObjectKind {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 func (m *VariableList) DeepCopyObject() runtime.Object {
