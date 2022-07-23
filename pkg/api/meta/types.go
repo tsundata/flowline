@@ -1,5 +1,7 @@
 package meta
 
+import "github.com/tsundata/flowline/pkg/runtime"
+
 // GetOptions is the standard query options to the standard REST get call.
 type GetOptions struct {
 	TypeMeta `json:",inline"`
@@ -10,6 +12,10 @@ type GetOptions struct {
 	// Defaults to unset
 	// +optional
 	ResourceVersion string `json:"resourceVersion,omitempty"`
+
+	// IgnoreNotFound determines what is returned if the requested object is not found. If
+	// true, a zero object is returned. If false, an error is returned.
+	IgnoreNotFound bool
 }
 
 // CreateOptions may be provided when creating an API object.
@@ -186,6 +192,96 @@ type ListOptions struct {
 	// This field is not supported when watch is true. Clients may start a watch from the last
 	// resourceVersion value returned by the server and not miss any modifications.
 	Continue string `json:"continue,omitempty"`
+
+	// Predicate provides the selection rules for the list operation.
+	Predicate SelectionPredicate
+	// Recursive determines whether the list or watch is defined for a single object located at the
+	// given key, or for the whole set of objects with the given key as a prefix.
+	Recursive bool
+	// ProgressNotify determines whether storage-originated bookmark (progress notify) events should
+	// be delivered to the users. The option is ignored for non-watch requests.
+	ProgressNotify bool
+
+	Label string
+	Field string
+}
+
+// AttrFunc returns label and field sets and the uninitialized flag for List or Watch to match.
+// In any failure to parse given object, it returns error.
+type AttrFunc func(obj runtime.Object) (map[string]string, map[string]string, error)
+
+func DefaultClusterScopedAttr(obj runtime.Object) (map[string]string, map[string]string, error) {
+	metadata, err := Accessor(obj)
+	if err != nil {
+		return nil, nil, err
+	}
+	fieldSet := map[string]string{
+		"metadata.name": metadata.GetName(),
+	}
+
+	return metadata.GetLabels(), fieldSet, nil
+}
+
+// SelectionPredicate is used to represent the way to select objects from api storage.
+type SelectionPredicate struct {
+	Label               string
+	Field               string
+	GetAttrs            AttrFunc
+	IndexLabels         []string
+	IndexFields         []string
+	Limit               int64
+	Continue            string
+	AllowWatchBookmarks bool
+}
+
+// Matches returns true if the given object's labels and fields (as
+// returned by s.GetAttrs) match s.Label and s.Field. An error is
+// returned if s.GetAttrs fails.
+func (s *SelectionPredicate) Matches(obj runtime.Object) (bool, error) {
+	if s.Empty() {
+		return true, nil
+	}
+	labels, fields, err := s.GetAttrs(obj)
+	if err != nil {
+		return false, err
+	}
+	matched := false
+	for _, label := range labels {
+		if s.Label == label {
+			matched = true
+		}
+	}
+	if matched && s.Field != "" {
+		matched2 := false
+		for _, field := range fields {
+			if s.Field == field {
+				matched2 = true
+			}
+		}
+		matched = matched && matched2
+	}
+	return matched, nil
+}
+
+// Empty returns true if the predicate performs no filtering.
+func (s *SelectionPredicate) Empty() bool {
+	return s.Label == "" && s.Field == ""
+}
+
+// MatchesSingle will return (name, true) if and only if s.Field matches on the object's
+// name.
+func (s *SelectionPredicate) MatchesSingle() (string, bool) {
+	if len(s.Field) == 0 {
+		return "", false
+	}
+	// field --> metadata.name
+	return s.Field, true
+}
+
+// Everything accepts all objects.
+var Everything = SelectionPredicate{
+	Label: "",
+	Field: "",
 }
 
 // UpdateOptions may be provided when updating an API object.

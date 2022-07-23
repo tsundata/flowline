@@ -96,7 +96,7 @@ func (s *store) Delete(ctx context.Context, key string, out runtime.Object, prec
 	return err
 }
 
-func (s *store) Watch(ctx context.Context, key string, opts storage.ListOptions) (watch.Interface, error) {
+func (s *store) Watch(ctx context.Context, key string, opts meta.ListOptions) (watch.Interface, error) {
 	rev, err := s.versioner.ParseResourceVersion(opts.ResourceVersion)
 	if err != nil {
 		return nil, err
@@ -105,7 +105,7 @@ func (s *store) Watch(ctx context.Context, key string, opts storage.ListOptions)
 	return s.watcher.Watch(ctx, key, int64(rev), opts.Recursive, opts.ProgressNotify, opts.Predicate)
 }
 
-func (s *store) Get(ctx context.Context, key string, opts storage.GetOptions, out runtime.Object) error {
+func (s *store) Get(ctx context.Context, key string, opts meta.GetOptions, out runtime.Object) error {
 	key = path.Join(s.pathPrefix, key)
 	// startTime := time.Now()
 	getResp, err := s.client.KV.Get(ctx, key)
@@ -124,7 +124,7 @@ func (s *store) Get(ctx context.Context, key string, opts storage.GetOptions, ou
 	return decode(s.codec, s.versioner, data, out, kv.ModRevision)
 }
 
-func (s *store) GetList(ctx context.Context, key string, opts storage.ListOptions, listObj runtime.Object) error {
+func (s *store) GetList(ctx context.Context, key string, opts meta.ListOptions, listObj runtime.Object) error {
 	recursive := opts.Recursive
 	pred := opts.Predicate
 	listPtr, err := meta.GetItemsPtr(listObj)
@@ -256,7 +256,7 @@ func decode(codec runtime.Codec, versioner storage.Versioner, value []byte, objP
 }
 
 // appendListItem decodes and appends the object (if it passes filter) to v, which must be a slice.
-func appendListItem(v reflect.Value, data []byte, rev uint64, _ storage.SelectionPredicate, codec runtime.Codec, versioner storage.Versioner, newItemFunc func() runtime.Object) error {
+func appendListItem(v reflect.Value, data []byte, rev uint64, _ meta.SelectionPredicate, codec runtime.Codec, versioner storage.Versioner, newItemFunc func() runtime.Object) error {
 	obj, _, err := codec.Decode(data, nil, newItemFunc())
 	if err != nil {
 		return err

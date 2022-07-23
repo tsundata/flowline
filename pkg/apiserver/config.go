@@ -1,20 +1,13 @@
 package apiserver
 
 import (
-	"fmt"
 	restfulspec "github.com/emicklei/go-restful-openapi/v2"
-	"github.com/emicklei/go-restful/v3"
 	"github.com/go-openapi/spec"
 	"github.com/tsundata/flowline/pkg/apiserver/filters"
-	"github.com/tsundata/flowline/pkg/apiserver/registry/rest"
 	"github.com/tsundata/flowline/pkg/apiserver/routes"
 	"github.com/tsundata/flowline/pkg/apiserver/routes/endpoints"
-	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"net/http"
-	"sort"
 )
-
-const DefaultAPIPrefix = "/api"
 
 type Config struct {
 	Host string
@@ -54,90 +47,15 @@ func installAPI(s *GenericAPIServer, c *Config) error {
 	if ss, ok := s.Storage["worker"]; ok {
 		routes.Worker{Storage: ss}.Install(s.Handler.NonRestfulMux)
 	}
-	err := installAPIGroup(s, c)
+
+	installer := endpoints.NewAPIInstaller(s.Storage)
+	ws, err := installer.Install()
 	if err != nil {
 		return err
 	}
-	return installAPISwagger(s)
-}
-
-func installAPIGroup(s *GenericAPIServer, _ *Config) error {
-	ws := endpoints.NewWebService(constant.GroupName, constant.Version)
-	paths := make([]string, len(s.Storage))
-	var i = 0
-	for path := range s.Storage {
-		paths[i] = path
-		i++
-	}
-	sort.Strings(paths)
-	for _, path := range paths {
-		err := registerResourceHandlers(path, s.Storage[path], ws)
-		if err != nil {
-			return err
-		}
-	}
-
 	s.Handler.RestfulContainer.Add(ws)
-	return nil
-}
 
-func registerResourceHandlers(resource string, storage rest.Storage, ws *restful.WebService) error {
-	tags := []string{resource}
-	var rs []*restful.RouteBuilder
-
-	uidParam := ws.PathParameter("uid", "uid of the resource").DataType("string")
-
-	getRoute := ws.GET(resource+"/{uid}").To(storage.GetHandler).
-		Doc(fmt.Sprintf("Get %s resource", resource)).
-		Operation(resource+"GetHandler").
-		Metadata(restfulspec.KeyOpenAPITags, tags).
-		Returns(http.StatusOK, "OK", storage.New())
-	getRoute.Param(uidParam)
-	rs = append(rs, getRoute)
-
-	postRoute := ws.POST(resource).To(storage.CreateHandler).
-		Doc(fmt.Sprintf("Create %s resource", resource)).
-		Operation(resource+"CreateHandler").
-		Metadata(restfulspec.KeyOpenAPITags, tags)
-	rs = append(rs, postRoute)
-
-	putRoute := ws.PUT(resource+"/{uid}").To(storage.UpdateHandler).
-		Doc(fmt.Sprintf("Update %s resource", resource)).
-		Operation(resource+"UpdateHandler").
-		Metadata(restfulspec.KeyOpenAPITags, tags)
-	putRoute.Param(uidParam)
-	rs = append(rs, putRoute)
-
-	deleteRoute := ws.DELETE(resource+"/{uid}").To(storage.DeleteHandler).
-		Doc(fmt.Sprintf("Delete %s resource", resource)).
-		Operation(resource+"DeleteHandler").
-		Metadata(restfulspec.KeyOpenAPITags, tags)
-	deleteRoute.Param(uidParam)
-	rs = append(rs, deleteRoute)
-
-	listRoute := ws.GET(resource+"/list").To(storage.ListHandler).
-		Doc(fmt.Sprintf("List %s resource", resource)).
-		Operation(resource+"ListHandler").
-		Metadata(restfulspec.KeyOpenAPITags, tags)
-	rs = append(rs, listRoute)
-
-	watchRoute := ws.GET(resource+"/{uid}/watch").To(storage.WatchHandler).
-		Doc(fmt.Sprintf("Watch %s resource", resource)).
-		Operation(resource+"WatchHandler").
-		Metadata(restfulspec.KeyOpenAPITags, tags)
-	rs = append(rs, watchRoute)
-
-	watchListRoute := ws.GET(resource+"/watch").To(storage.WatchListHandler).
-		Doc(fmt.Sprintf("Watch List %s resource", resource)).
-		Operation(resource+"WatchListHandler").
-		Metadata(restfulspec.KeyOpenAPITags, tags)
-	rs = append(rs, watchListRoute)
-
-	for _, route := range rs {
-		ws.Route(route)
-	}
-
-	return nil
+	return installAPISwagger(s)
 }
 
 func installAPISwagger(s *GenericAPIServer) error {

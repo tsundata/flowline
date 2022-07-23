@@ -7,7 +7,6 @@ import (
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/options"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest"
-	"github.com/tsundata/flowline/pkg/apiserver/storage"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"github.com/tsundata/flowline/pkg/util/flog"
@@ -61,7 +60,7 @@ type Store struct {
 	// PredicateFunc returns a matcher corresponding to the provided labels
 	// and fields. The SelectionPredicate returned should return true if the
 	// object matches the given field and label selectors.
-	PredicateFunc func(label string, field string) storage.SelectionPredicate
+	PredicateFunc func(label string, field string) meta.SelectionPredicate
 
 	// EnableGarbageCollection affects the handling of Update and Delete
 	// requests. Enabling garbage collection allows finalizers to do work to
@@ -166,11 +165,11 @@ func (e *Store) CompleteWithOptions(options *options.StoreOptions) error {
 
 	attrFunc := options.AttrFunc
 	if attrFunc == nil {
-		attrFunc = storage.DefaultClusterScopedAttr
+		attrFunc = meta.DefaultClusterScopedAttr
 	}
 	if e.PredicateFunc == nil {
-		e.PredicateFunc = func(label string, field string) storage.SelectionPredicate {
-			return storage.SelectionPredicate{
+		e.PredicateFunc = func(label string, field string) meta.SelectionPredicate {
+			return meta.SelectionPredicate{
 				Label:    label,
 				Field:    field,
 				GetAttrs: attrFunc,
@@ -248,11 +247,14 @@ func (e *Store) CompleteWithOptions(options *options.StoreOptions) error {
 	return nil
 }
 
-func (e *Store) Create(ctx context.Context, obj runtime.Object, createValidation rest.ValidateObjectFunc, options interface{}) (runtime.Object, error) {
+func (e *Store) Create(ctx context.Context, obj runtime.Object, createValidation rest.ValidateObjectFunc, options *meta.CreateOptions) (runtime.Object, error) {
 	if objectMeta, err := meta.Accessor(obj); err != nil {
 		return nil, err
 	} else {
 		rest.FillObjectMetaSystemFields(objectMeta)
+	}
+	if err := createValidation(ctx, obj); err != nil {
+		return nil, err
 	}
 
 	uid, err := e.ObjectUIDFunc(obj)
@@ -277,15 +279,24 @@ func (e *Store) Create(ctx context.Context, obj runtime.Object, createValidation
 	return out, nil
 }
 
-func (e *Store) Update(ctx context.Context, name string, objInfo runtime.Object, createValidation rest.ValidateObjectFunc, updateValidation interface{}, forceAllowCreate bool, options interface{}) (runtime.Object, bool, error) {
+func (e *Store) Update(ctx context.Context, name string, objInfo runtime.Object, createValidation rest.ValidateObjectFunc, updateValidation rest.ValidateObjectUpdateFunc, forceAllowCreate bool, options *meta.UpdateOptions) (runtime.Object, bool, error) {
 	key, err := e.KeyFunc(ctx, name)
 	if err != nil {
 		return nil, false, err
 	}
 
-	// todo forceAllowCreate
-
 	out := objInfo // fixme
+	if err := updateValidation(ctx, objInfo, out); err != nil {
+		return nil, false, err
+	}
+
+	// todo forceAllowCreate
+	if forceAllowCreate {
+		if err := createValidation(ctx, out); err != nil {
+			return nil, false, err
+		}
+	}
+
 	err = e.Storage.GuaranteedUpdate(ctx, key, out, true, nil, nil, false, nil)
 	if err != nil {
 		return nil, false, err
@@ -296,13 +307,13 @@ func (e *Store) Update(ctx context.Context, name string, objInfo runtime.Object,
 	return out, false, nil
 }
 
-func (e *Store) Get(ctx context.Context, name string, options *storage.GetOptions) (runtime.Object, error) {
+func (e *Store) Get(ctx context.Context, name string, options *meta.GetOptions) (runtime.Object, error) {
 	obj := e.NewFunc()
 	key, err := e.KeyFunc(ctx, name)
 	if err != nil {
 		return nil, err
 	}
-	if err = e.Storage.Get(ctx, key, storage.GetOptions{ResourceVersion: options.ResourceVersion}, obj); err != nil {
+	if err = e.Storage.Get(ctx, key, meta.GetOptions{ResourceVersion: options.ResourceVersion}, obj); err != nil {
 		return nil, err
 	}
 	if e.Decorator != nil {
@@ -311,13 +322,17 @@ func (e *Store) Get(ctx context.Context, name string, options *storage.GetOption
 	return obj, nil
 }
 
-func (e *Store) Delete(ctx context.Context, name string, deleteValidation rest.ValidateObjectFunc, options interface{}) (runtime.Object, bool, error) {
+func (e *Store) Delete(ctx context.Context, name string, deleteValidation rest.ValidateObjectFunc, options *meta.DeleteOptions) (runtime.Object, bool, error) {
 	key, err := e.KeyFunc(ctx, name)
 	if err != nil {
 		return nil, false, err
 	}
-	obj := e.NewFunc()
-	if err = e.Storage.Get(ctx, key, storage.GetOptions{}, obj); err != nil {
+	obj := e.NewFunc() //fixme
+	if err := deleteValidation(ctx, obj); err != nil {
+		return nil, false, err
+	}
+
+	if err = e.Storage.Get(ctx, key, meta.GetOptions{}, obj); err != nil {
 		return nil, false, fmt.Errorf("InterpretDeleteError %s", err)
 	}
 
@@ -330,8 +345,8 @@ func (e *Store) Delete(ctx context.Context, name string, deleteValidation rest.V
 
 // List returns a list of items matching labels and field according to the
 // store's PredicateFunc.
-func (e *Store) List(ctx context.Context, options *storage.ListOptions) (runtime.Object, error) {
-	out, err := e.ListPredicate(ctx, storage.SelectionPredicate{}, options)
+func (e *Store) List(ctx context.Context, options *meta.ListOptions) (runtime.Object, error) {
+	out, err := e.ListPredicate(ctx, meta.SelectionPredicate{}, options)
 	if err != nil {
 		return nil, err
 	}
@@ -343,11 +358,11 @@ func (e *Store) List(ctx context.Context, options *storage.ListOptions) (runtime
 
 // ListPredicate returns a list of all the items matching the given
 // SelectionPredicate.
-func (e *Store) ListPredicate(ctx context.Context, p storage.SelectionPredicate, options *storage.ListOptions) (runtime.Object, error) {
+func (e *Store) ListPredicate(ctx context.Context, p meta.SelectionPredicate, options *meta.ListOptions) (runtime.Object, error) {
 	p.Limit = options.Limit
 	p.Continue = options.Continue
 	list := e.NewListFunc()
-	storageOpts := storage.ListOptions{
+	storageOpts := meta.ListOptions{
 		ResourceVersion:      options.ResourceVersion,
 		ResourceVersionMatch: options.ResourceVersionMatch,
 		Predicate:            p,
@@ -364,7 +379,7 @@ func (e *Store) ListPredicate(ctx context.Context, p storage.SelectionPredicate,
 // WatchPredicate. If possible, you should customize PredicateFunc to produce
 // a matcher that matches by key. SelectionPredicate does this for you
 // automatically.
-func (e *Store) Watch(ctx context.Context, options *storage.ListOptions) (watch.Interface, error) {
+func (e *Store) Watch(ctx context.Context, options *meta.ListOptions) (watch.Interface, error) {
 	label := ""
 	if options != nil && options.Label != "" {
 		label = options.Label
@@ -389,8 +404,8 @@ func (e *Store) Watch(ctx context.Context, options *storage.ListOptions) (watch.
 }
 
 // WatchPredicate starts a watch for the items that matches.
-func (e *Store) WatchPredicate(ctx context.Context, p storage.SelectionPredicate, resourceVersion string, progressNotify bool) (watch.Interface, error) {
-	storageOpts := storage.ListOptions{ResourceVersion: resourceVersion, Predicate: p, Recursive: true, ProgressNotify: progressNotify}
+func (e *Store) WatchPredicate(ctx context.Context, p meta.SelectionPredicate, resourceVersion string, progressNotify bool) (watch.Interface, error) {
+	storageOpts := meta.ListOptions{ResourceVersion: resourceVersion, Predicate: p, Recursive: true, ProgressNotify: progressNotify}
 
 	key := e.KeyRootFunc(ctx)
 	if name, ok := p.MatchesSingle(); ok {

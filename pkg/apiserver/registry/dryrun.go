@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"fmt"
+	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver/storage"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/watch"
@@ -19,7 +20,7 @@ func (s *DryRunnableStorage) Versioner() storage.Versioner {
 
 func (s *DryRunnableStorage) Create(ctx context.Context, key string, obj, out runtime.Object, ttl uint64, dryRun bool) error {
 	if dryRun {
-		if err := s.Storage.Get(ctx, key, storage.GetOptions{}, out); err == nil {
+		if err := s.Storage.Get(ctx, key, meta.GetOptions{}, out); err == nil {
 			return fmt.Errorf("KeyExistsError %s", key)
 		}
 		return s.copyInto(obj, out)
@@ -31,15 +32,15 @@ func (s *DryRunnableStorage) Delete(ctx context.Context, key string, out runtime
 	return s.Storage.Delete(ctx, key, out, preconditions, deleteValidation, cachedExistingObject)
 }
 
-func (s *DryRunnableStorage) Watch(ctx context.Context, key string, opts storage.ListOptions) (watch.Interface, error) {
+func (s *DryRunnableStorage) Watch(ctx context.Context, key string, opts meta.ListOptions) (watch.Interface, error) {
 	return s.Storage.Watch(ctx, key, opts)
 }
 
-func (s *DryRunnableStorage) Get(ctx context.Context, key string, opts storage.GetOptions, objPtr runtime.Object) error {
+func (s *DryRunnableStorage) Get(ctx context.Context, key string, opts meta.GetOptions, objPtr runtime.Object) error {
 	return s.Storage.Get(ctx, key, opts, objPtr)
 }
 
-func (s *DryRunnableStorage) GetList(ctx context.Context, key string, opts storage.ListOptions, listObj runtime.Object) error {
+func (s *DryRunnableStorage) GetList(ctx context.Context, key string, opts meta.ListOptions, listObj runtime.Object) error {
 	return s.Storage.GetList(ctx, key, opts, listObj)
 }
 

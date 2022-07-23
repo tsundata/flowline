@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver/storage"
 	"github.com/tsundata/flowline/pkg/apiserver/storage/value"
 	"github.com/tsundata/flowline/pkg/runtime"
@@ -63,7 +64,7 @@ type watchChan struct {
 	initialRev        int64
 	recursive         bool
 	progressNotify    bool
-	internalPred      storage.SelectionPredicate
+	internalPred      meta.SelectionPredicate
 	ctx               context.Context
 	cancel            context.CancelFunc
 	incomingEventChan chan *event
@@ -94,7 +95,7 @@ func newWatcher(client *clientv3.Client, codec runtime.Codec, newFunc func() run
 // If recursive is false, it watches on given key.
 // If recursive is true, it watches any children and directories under the key, excluding the root key itself.
 // pred must be non-nil. Only if pred matches the change, it will be returned.
-func (w *watcher) Watch(ctx context.Context, key string, rev int64, recursive, progressNotify bool, pred storage.SelectionPredicate) (watch.Interface, error) {
+func (w *watcher) Watch(ctx context.Context, key string, rev int64, recursive, progressNotify bool, pred meta.SelectionPredicate) (watch.Interface, error) {
 	if recursive && !strings.HasSuffix(key, "/") {
 		key += "/"
 	}
@@ -111,7 +112,7 @@ func (w *watcher) Watch(ctx context.Context, key string, rev int64, recursive, p
 	return wc, nil
 }
 
-func (w *watcher) createWatchChan(ctx context.Context, key string, rev int64, recursive, progressNotify bool, pred storage.SelectionPredicate) *watchChan {
+func (w *watcher) createWatchChan(ctx context.Context, key string, rev int64, recursive, progressNotify bool, pred meta.SelectionPredicate) *watchChan {
 	wc := &watchChan{
 		watcher:           w,
 		key:               key,
@@ -125,7 +126,7 @@ func (w *watcher) createWatchChan(ctx context.Context, key string, rev int64, re
 	}
 	if pred.Empty() {
 		// The filter doesn't filter out any object.
-		wc.internalPred = storage.Everything
+		wc.internalPred = meta.Everything
 	}
 
 	// The etcd server waits until it cannot find a leader for 3 election

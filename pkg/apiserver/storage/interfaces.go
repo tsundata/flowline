@@ -34,14 +34,14 @@ type Interface interface {
 	// (e.g. reconnecting without missing any updates).
 	// If resource version is "0", this interface will get current object at given key
 	// and send it in an "ADDED" event, before watch starts.
-	Watch(ctx context.Context, key string, opts ListOptions) (watch.Interface, error)
+	Watch(ctx context.Context, key string, opts meta.ListOptions) (watch.Interface, error)
 
 	// Get unmarshals object found at key into objPtr. On a not found error, will either
 	// return a zero object of the requested type, or an error, depending on 'opts.ignoreNotFound'.
 	// Treats empty responses and nil response workers exactly like a not found error.
 	// The returned contents may be delayed, but it is guaranteed that they will
 	// match 'opts.ResourceVersion' according 'opts.ResourceVersionMatch'.
-	Get(ctx context.Context, key string, opts GetOptions, objPtr runtime.Object) error
+	Get(ctx context.Context, key string, opts meta.GetOptions, objPtr runtime.Object) error
 
 	// GetList unmarshalls objects found at key into a *List api object (an object
 	// that satisfies runtime.IsList definition).
@@ -49,7 +49,7 @@ type Interface interface {
 	// is true, 'key' is used as a prefix.
 	// The returned contents may be delayed, but it is guaranteed that they will
 	// match 'opts.ResourceVersion' according 'opts.ResourceVersionMatch'.
-	GetList(ctx context.Context, key string, opts ListOptions, listObj runtime.Object) error
+	GetList(ctx context.Context, key string, opts meta.ListOptions, listObj runtime.Object) error
 
 	// GuaranteedUpdate keeps calling 'tryUpdate()' to update key 'key' (of type 'destination')
 	// retrying the update until success if there is index conflict.
@@ -89,44 +89,6 @@ type Interface interface {
 
 	// Count returns number of different entries under the key (generally being path prefix).
 	Count(key string) (int64, error)
-}
-
-// GetOptions provides the options that may be provided for storage get operations.
-type GetOptions struct {
-	// IgnoreNotFound determines what is returned if the requested object is not found. If
-	// true, a zero object is returned. If false, an error is returned.
-	IgnoreNotFound bool
-	// ResourceVersion provides a resource version constraint to apply to the get operation
-	// as a "not older than" constraint: the result contains data at least as new as the provided
-	// ResourceVersion. The newest available data is preferred, but any data not older than this
-	// ResourceVersion may be served.
-	ResourceVersion string
-}
-
-// ListOptions provides the options that may be provided for storage list operations.
-type ListOptions struct {
-	// ResourceVersion provides a resource version constraint to apply to the list operation
-	// as a "not older than" constraint: the result contains data at least as new as the provided
-	// ResourceVersion. The newest available data is preferred, but any data not older than this
-	// ResourceVersion may be served.
-	ResourceVersion string
-	// ResourceVersionMatch provides the rule for how the resource version constraint applies. If set
-	// to the default value "" the legacy resource version semantic apply.
-	ResourceVersionMatch interface{}
-	// Predicate provides the selection rules for the list operation.
-	Predicate SelectionPredicate
-	// Recursive determines whether the list or watch is defined for a single object located at the
-	// given key, or for the whole set of objects with the given key as a prefix.
-	Recursive bool
-	// ProgressNotify determines whether storage-originated bookmark (progress notify) events should
-	// be delivered to the users. The option is ignored for non-watch requests.
-	ProgressNotify bool
-
-	Limit    int64
-	Continue string
-
-	Label string
-	Field string
 }
 
 // Versioner abstracts setting and retrieving metadata fields from database response
@@ -172,82 +134,4 @@ type ResponseMeta struct {
 	TTL int64
 	// The resource version of the worker that contained the returned object.
 	ResourceVersion uint64
-}
-
-// AttrFunc returns label and field sets and the uninitialized flag for List or Watch to match.
-// In any failure to parse given object, it returns error.
-type AttrFunc func(obj runtime.Object) (map[string]string, map[string]string, error)
-
-func DefaultClusterScopedAttr(obj runtime.Object) (map[string]string, map[string]string, error) {
-	metadata, err := meta.Accessor(obj)
-	if err != nil {
-		return nil, nil, err
-	}
-	fieldSet := map[string]string{
-		"metadata.name": metadata.GetName(),
-	}
-
-	return metadata.GetLabels(), fieldSet, nil
-}
-
-// SelectionPredicate is used to represent the way to select objects from api storage.
-type SelectionPredicate struct {
-	Label               string
-	Field               string
-	GetAttrs            AttrFunc
-	IndexLabels         []string
-	IndexFields         []string
-	Limit               int64
-	Continue            string
-	AllowWatchBookmarks bool
-}
-
-// Matches returns true if the given object's labels and fields (as
-// returned by s.GetAttrs) match s.Label and s.Field. An error is
-// returned if s.GetAttrs fails.
-func (s *SelectionPredicate) Matches(obj runtime.Object) (bool, error) {
-	if s.Empty() {
-		return true, nil
-	}
-	labels, fields, err := s.GetAttrs(obj)
-	if err != nil {
-		return false, err
-	}
-	matched := false
-	for _, label := range labels {
-		if s.Label == label {
-			matched = true
-		}
-	}
-	if matched && s.Field != "" {
-		matched2 := false
-		for _, field := range fields {
-			if s.Field == field {
-				matched2 = true
-			}
-		}
-		matched = matched && matched2
-	}
-	return matched, nil
-}
-
-// Empty returns true if the predicate performs no filtering.
-func (s *SelectionPredicate) Empty() bool {
-	return s.Label == "" && s.Field == ""
-}
-
-// MatchesSingle will return (name, true) if and only if s.Field matches on the object's
-// name.
-func (s *SelectionPredicate) MatchesSingle() (string, bool) {
-	if len(s.Field) == 0 {
-		return "", false
-	}
-	// field --> metadata.name
-	return s.Field, true
-}
-
-// Everything accepts all objects.
-var Everything = SelectionPredicate{
-	Label: "",
-	Field: "",
 }
