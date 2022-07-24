@@ -10,6 +10,11 @@ import (
 
 func getHandler(s rest.Getter, scope *registry.RequestScope) restful.RouteFunction {
 	return func(req *restful.Request, resp *restful.Response) {
+		subResource, isSubResource := s.(rest.SubResourceStorage)
+		if isSubResource {
+			subResource.Handle(scope)
+			return
+		}
 		ctx := req.Request.Context()
 		uid := req.PathParameter("uid")
 		out, err := s.Get(ctx, uid, &meta.GetOptions{}) // todo resourceVersion

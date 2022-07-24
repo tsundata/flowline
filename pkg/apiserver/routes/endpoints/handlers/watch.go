@@ -27,6 +27,11 @@ const timeout = 30 * 60 * time.Second
 
 func watchHandler(s rest.Watcher, scope *registry.RequestScope) restful.RouteFunction {
 	return func(req *restful.Request, resp *restful.Response) {
+		subResource, isSubResource := s.(rest.SubResourceStorage)
+		if isSubResource {
+			subResource.Handle(scope)
+			return
+		}
 		ctx := req.Request.Context()
 		uid := req.PathParameter("uid")
 
@@ -55,6 +60,11 @@ func WatchResource(s rest.Watcher, scope *registry.RequestScope) restful.RouteFu
 
 func watchListHandler(s rest.Watcher, scope *registry.RequestScope) restful.RouteFunction {
 	return func(req *restful.Request, resp *restful.Response) {
+		subResource, isSubResource := s.(rest.SubResourceStorage)
+		if isSubResource {
+			subResource.Handle(scope)
+			return
+		}
 		ctx := req.Request.Context()
 
 		outputMediaType, _, err := negotiation.NegotiateOutputMediaType(req.Request, scope.Serializer, scope)

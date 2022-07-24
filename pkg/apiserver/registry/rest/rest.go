@@ -2,6 +2,7 @@ package rest
 
 import (
 	"context"
+	"github.com/emicklei/go-restful/v3"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
@@ -190,4 +191,21 @@ type StorageMetadata interface {
 	// ProducesObject returns an object the specified HTTP verb respond with. It will overwrite storage object if
 	// it is not nil. Only the type of the return object matters, the value will be ignored.
 	ProducesObject(verb string) interface{}
+}
+
+type SubResourceStorage interface {
+	StandardStorage
+
+	Actions() []SubResourceAction
+
+	Handle(scope interface{})
+}
+
+type SubResourceAction struct {
+	Verb         string               // Verb identifying the action ("GET", "POST", "WATCH", "PROXY", etc).
+	SubResource  string               // The path of the action
+	Params       []*restful.Parameter // List of parameters associated with the action.
+	ReadSample   interface{}
+	WriteSample  interface{}
+	ReturnSample interface{}
 }

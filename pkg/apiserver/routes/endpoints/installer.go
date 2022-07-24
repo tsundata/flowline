@@ -9,6 +9,9 @@ import (
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest"
 	"github.com/tsundata/flowline/pkg/apiserver/routes/endpoints/handlers"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
+	"github.com/tsundata/flowline/pkg/runtime/schema"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"net/http"
 	"reflect"
 	"sort"
@@ -58,6 +61,7 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 	var rs []*restful.RouteBuilder
 
 	scope := registry.NewRequestScope()
+	scope.Resource = schema.GroupVersionResource{Resource: resource}
 
 	var params []*restful.Parameter
 	var actions []action
@@ -74,6 +78,7 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 	updater, isUpdater := storage.(rest.Updater)
 	patcher, isPatcher := storage.(rest.Patcher)
 	watcher, isWatcher := storage.(rest.Watcher)
+	subResource, isSubResource := storage.(rest.SubResourceStorage)
 	storageMeta, isMetadata := storage.(rest.StorageMetadata)
 	if !isMetadata {
 		storageMeta = defaultStorageMetadata{}
@@ -89,6 +94,8 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 	actions = appendIf(actions, action{"WATCH", resourcePath, resourceParams, UID}, isWatcher)
 
 	for _, action := range actions {
+		scope.Verb = action.Verb
+
 		producedObject := storageMeta.ProducesObject(action.Verb)
 		if producedObject == nil {
 			producedObject = meta.Unknown{}
@@ -169,6 +176,117 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 		}
 	}
 
+	// SubResource
+	if isSubResource {
+		for _, action := range subResource.Actions() {
+			scope.Verb = action.Verb
+			scope.Subresource = action.SubResource
+
+			producedObject := storageMeta.ProducesObject(action.Verb)
+			if producedObject == nil {
+				producedObject = meta.Unknown{}
+			}
+
+			casesTitle := cases.Title(language.English)
+			titleStr := casesTitle.String(action.SubResource)
+
+			uidParam := ws.PathParameter("uid", "uid of the resource").DataType("string")
+			switch action.Verb {
+			case "GET":
+				handler := handlers.GetResource(getter, scope)
+				getRoute := ws.GET(resource+"/{uid}/"+action.SubResource).To(handler).
+					Doc(fmt.Sprintf("Get %s resource to %s subresource", resource, action.SubResource)).
+					Operation(resource+"Get"+titleStr).
+					Metadata(restfulspec.KeyOpenAPITags, tags).
+					Returns(http.StatusOK, "OK", action.ReturnSample).
+					Writes(action.WriteSample)
+				getRoute.Param(uidParam)
+				for i := range action.Params {
+					getRoute.Param(action.Params[i])
+				}
+				rs = append(rs, getRoute)
+			case "LIST":
+				handler := handlers.ListResource(lister, scope)
+				listRoute := ws.GET(resource+"/list/"+action.SubResource).To(handler).
+					Doc(fmt.Sprintf("List %s resource to %s subresource", resource, action.SubResource)).
+					Operation(resource+"List"+titleStr).
+					Metadata(restfulspec.KeyOpenAPITags, tags).
+					Returns(http.StatusOK, "OK", producedObject).
+					Writes(producedObject)
+				for i := range action.Params {
+					listRoute.Param(action.Params[i])
+				}
+				rs = append(rs, listRoute)
+			case "POST":
+				handler := handlers.CreateResource(creater, scope)
+				postRoute := ws.POST(resource+"/"+action.SubResource).To(handler).
+					Doc(fmt.Sprintf("Create %s resource to %s subresource", resource, action.SubResource)).
+					Operation(resource+"Create"+titleStr).
+					Metadata(restfulspec.KeyOpenAPITags, tags).
+					Returns(http.StatusOK, "OK", action.ReadSample).
+					Reads(action.ReadSample).
+					Writes(action.WriteSample)
+				for i := range action.Params {
+					postRoute.Param(action.Params[i])
+				}
+				rs = append(rs, postRoute)
+			case "PUT":
+				handler := handlers.UpdateResource(updater, scope)
+				putRoute := ws.PUT(resource+"/{uid}/"+action.SubResource).To(handler).
+					Doc(fmt.Sprintf("Update %s resource", resource)).
+					Operation(resource+"Update"+titleStr).
+					Metadata(restfulspec.KeyOpenAPITags, tags).
+					Returns(http.StatusOK, "OK", producedObject).
+					Reads(producedObject).
+					Writes(producedObject)
+				putRoute.Param(uidParam)
+				for i := range action.Params {
+					putRoute.Param(action.Params[i])
+				}
+				rs = append(rs, putRoute)
+			case "DELETE":
+				handler := handlers.DeleteResource(deleter, scope)
+				deleteRoute := ws.DELETE(resource+"/{uid}/"+action.SubResource).To(handler).
+					Doc(fmt.Sprintf("Delete %s resource to %s subresource", resource, action.SubResource)).
+					Operation(resource+"Delete"+titleStr).
+					Metadata(restfulspec.KeyOpenAPITags, tags).
+					Returns(http.StatusOK, "OK", producedObject)
+				deleteRoute.Param(uidParam)
+				for i := range action.Params {
+					deleteRoute.Param(action.Params[i])
+				}
+				rs = append(rs, deleteRoute)
+			case "DELETECOLLECTION":
+				fmt.Println("DELETECOLLECTION", resource, collectionDeleter)
+			case "PATCH":
+				fmt.Println("PATCH", resource, patcher)
+			case "WATCH":
+				handler := handlers.WatchResource(watcher, scope)
+				watchRoute := ws.GET(resource+"/{uid}/watch/"+action.SubResource).To(handler).
+					Doc(fmt.Sprintf("Watch %s resource to %s subresource", resource, action.SubResource)).
+					Operation(resource+"Watch"+titleStr).
+					Metadata(restfulspec.KeyOpenAPITags, tags)
+				watchRoute.Param(uidParam)
+				for i := range action.Params {
+					watchRoute.Param(action.Params[i])
+				}
+				rs = append(rs, watchRoute)
+
+				handler = handlers.WatchListResource(watcher, scope)
+				watchListRoute := ws.GET(resource+"/watch/"+titleStr).To(handler).
+					Doc(fmt.Sprintf("Watch List %s resource to %s subresource", resource, action.SubResource)).
+					Operation(resource+"WatchList"+titleStr).
+					Metadata(restfulspec.KeyOpenAPITags, tags)
+				for i := range action.Params {
+					watchListRoute.Param(action.Params[i])
+				}
+				rs = append(rs, watchListRoute)
+			default:
+				return fmt.Errorf("unrecognized action verb: %s", action.Verb)
+			}
+		}
+	}
+
 	for _, route := range rs {
 		ws.Route(route)
 	}
@@ -189,11 +307,11 @@ type defaultStorageMetadata struct{}
 // defaultStorageMetadata implements rest.StorageMetadata
 var _ rest.StorageMetadata = defaultStorageMetadata{}
 
-func (defaultStorageMetadata) ProducesMIMETypes(verb string) []string {
+func (defaultStorageMetadata) ProducesMIMETypes(_ string) []string {
 	return nil
 }
 
-func (defaultStorageMetadata) ProducesObject(verb string) interface{} {
+func (defaultStorageMetadata) ProducesObject(_ string) interface{} {
 	return nil
 }
 

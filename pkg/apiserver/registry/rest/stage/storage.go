@@ -1,6 +1,7 @@
 package stage
 
 import (
+	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver/registry"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/options"
@@ -45,4 +46,27 @@ func NewREST(options *options.StoreOptions) (*REST, error) {
 	}
 
 	return &REST{store}, nil
+}
+
+func (r *REST) Actions() []rest.SubResourceAction {
+	return []rest.SubResourceAction{
+		{
+			Verb:         "GET",
+			SubResource:  "binding",
+			Params:       nil,
+			ReturnSample: meta.Binding{},
+		},
+		{
+			Verb:         "POST",
+			SubResource:  "binding",
+			Params:       nil,
+			ReadSample:   meta.Binding{},
+			WriteSample:  meta.Binding{},
+			ReturnSample: meta.Binding{},
+		},
+	}
+}
+
+func (r *REST) Handle(scope interface{}) {
+	fmt.Printf("subresource %+v", scope)
 }

@@ -31,6 +31,7 @@ type RequestScope struct {
 	Resource schema.GroupVersionResource
 	Kind     schema.GroupVersionKind
 
+	Verb        string
 	Subresource string
 
 	MetaGroupVersion schema.GroupVersion

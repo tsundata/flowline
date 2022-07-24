@@ -9,6 +9,11 @@ import (
 
 func createHandler(s rest.Creater, scope *registry.RequestScope) restful.RouteFunction {
 	return func(req *restful.Request, resp *restful.Response) {
+		subResource, isSubResource := s.(rest.SubResourceStorage)
+		if isSubResource {
+			subResource.Handle(scope)
+			return
+		}
 		ctx := req.Request.Context()
 		obj := s.New()
 		err := req.ReadEntity(&obj)

@@ -92,4 +92,19 @@ func enrichSwaggerObject(swo *spec.Swagger) {
 	swo.Tags = []spec.Tag{{TagProps: spec.TagProps{
 		Name:        "workflows",
 		Description: "Managing workflows"}}}
+	swo.SecurityDefinitions = map[string]*spec.SecurityScheme{
+		"BearerToken": {
+			SecuritySchemeProps: spec.SecuritySchemeProps{
+				Type:        "apiKey",
+				Name:        "authorization",
+				In:          "header",
+				Description: "Bearer Token authentication",
+			},
+		},
+	}
+	swo.Security = []map[string][]string{
+		{
+			"BearerToken": {},
+		},
+	}
 }

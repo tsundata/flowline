@@ -9,6 +9,11 @@ import (
 
 func updateHandler(s rest.Updater, scope *registry.RequestScope) restful.RouteFunction {
 	return func(req *restful.Request, resp *restful.Response) {
+		subResource, isSubResource := s.(rest.SubResourceStorage)
+		if isSubResource {
+			subResource.Handle(scope)
+			return
+		}
 		uid := req.PathParameter("uid")
 		ctx := req.Request.Context()
 		obj := s.New()
