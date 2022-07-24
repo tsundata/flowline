@@ -1,4 +1,4 @@
-package function
+package code
 
 // deploymentStrategy implements behavior for Deployments.
 type strategy struct{}

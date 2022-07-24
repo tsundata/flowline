@@ -1,4 +1,4 @@
-package function
+package code
 
 import (
 	"github.com/tsundata/flowline/pkg/api/meta"
@@ -9,16 +9,16 @@ import (
 	"github.com/tsundata/flowline/pkg/util/flog"
 )
 
-type FunctionStorage struct {
+type CodeStorage struct {
 	REST *REST
 }
 
-func NewStorage(options *options.StoreOptions) (FunctionStorage, error) {
+func NewStorage(options *options.StoreOptions) (CodeStorage, error) {
 	r, err := NewREST(options)
 	if err != nil {
-		return FunctionStorage{}, err
+		return CodeStorage{}, err
 	}
-	return FunctionStorage{REST: r}, nil
+	return CodeStorage{REST: r}, nil
 }
 
 type REST struct {
@@ -27,9 +27,11 @@ type REST struct {
 
 func NewREST(options *options.StoreOptions) (*REST, error) {
 	store := &registry.Store{
-		NewFunc:                  func() runtime.Object { return &meta.Function{} },
-		NewListFunc:              func() runtime.Object { return &meta.FunctionList{} },
-		DefaultQualifiedResource: rest.Resource("function"),
+		NewFunc:                  func() runtime.Object { return &meta.Code{} },
+		NewListFunc:              func() runtime.Object { return &meta.CodeList{} },
+		NewStructFunc:            func() interface{} { return meta.Code{} },
+		NewListStructFunc:        func() interface{} { return meta.CodeList{} },
+		DefaultQualifiedResource: rest.Resource("code"),
 
 		CreateStrategy:      Strategy,
 		UpdateStrategy:      Strategy,

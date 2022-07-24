@@ -77,7 +77,7 @@ func enrichSwaggerObject(swo *spec.Swagger) {
 				ContactInfoProps: spec.ContactInfoProps{
 					Name:  "sysatom",
 					Email: "sysatom@gmail.com",
-					URL:   "http://flowline.tsundata.com",
+					URL:   "https://flowline.tsundata.com",
 				},
 			},
 			License: &spec.License{

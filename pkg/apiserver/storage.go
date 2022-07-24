@@ -5,10 +5,10 @@ import (
 	"github.com/tsundata/flowline/pkg/apiserver/registry"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/options"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest"
+	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/code"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/connection"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/dag"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/event"
-	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/function"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/job"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/role"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/rolebinding"
@@ -26,10 +26,10 @@ import (
 
 func StorageMap() map[string]rest.Storage {
 	storageMap := make(map[string]rest.Storage)
+	codeRestStorage(storageMap)
 	connectionRestStorage(storageMap)
 	dagRestStorage(storageMap)
 	eventRestStorage(storageMap)
-	functionRestStorage(storageMap)
 	jobRestStorage(storageMap)
 	roleRestStorage(storageMap)
 	rolebindingRestStorage(storageMap)
@@ -39,6 +39,14 @@ func StorageMap() map[string]rest.Storage {
 	workerRestStorage(storageMap)
 	workflowRestStorage(storageMap)
 	return storageMap
+}
+
+func codeRestStorage(storageMap map[string]rest.Storage) {
+	s, err := code.NewREST(makeStoreOptions("code"))
+	if err != nil {
+		flog.Panic(err)
+	}
+	storageMap["code"] = s
 }
 
 func connectionRestStorage(storageMap map[string]rest.Storage) {
@@ -63,14 +71,6 @@ func eventRestStorage(storageMap map[string]rest.Storage) {
 		flog.Panic(err)
 	}
 	storageMap["event"] = s
-}
-
-func functionRestStorage(storageMap map[string]rest.Storage) {
-	s, err := function.NewREST(makeStoreOptions("function"))
-	if err != nil {
-		flog.Panic(err)
-	}
-	storageMap["function"] = s
 }
 
 func jobRestStorage(storageMap map[string]rest.Storage) {
@@ -153,7 +153,7 @@ func makeStoreOptions(resource string) *options.StoreOptions {
 			Decorator:               registry.StorageFactory(),
 			EnableGarbageCollection: false,
 			DeleteCollectionWorkers: 0,
-			ResourcePrefix:          fmt.Sprintf("%s/%s/%s", constant.GroupName, constant.Version, resource), //todo
+			ResourcePrefix:          fmt.Sprintf("%s/%s/%s", constant.GroupName, constant.Version, resource),
 			CountMetricPollPeriod:   0,
 		},
 	}

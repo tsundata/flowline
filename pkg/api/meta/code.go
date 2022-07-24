@@ -5,7 +5,7 @@ import (
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 )
 
-type Function struct {
+type Code struct {
 	TypeMeta
 	ObjectMeta
 
@@ -13,26 +13,26 @@ type Function struct {
 	Code    string `json:"code,omitempty"`
 }
 
-func (m *Function) GetObjectKind() schema.ObjectKind {
+func (m *Code) GetObjectKind() schema.ObjectKind {
 	return m
 }
 
-func (m *Function) DeepCopyObject() runtime.Object {
+func (m *Code) DeepCopyObject() runtime.Object {
 	//TODO implement me
 	panic("implement me")
 }
 
-type FunctionList struct {
+type CodeList struct {
 	TypeMeta
 	ListMeta
-	Items []Function
+	Items []Code
 }
 
-func (m *FunctionList) GetObjectKind() schema.ObjectKind {
+func (m *CodeList) GetObjectKind() schema.ObjectKind {
 	return m
 }
 
-func (m *FunctionList) DeepCopyObject() runtime.Object {
+func (m *CodeList) DeepCopyObject() runtime.Object {
 	//TODO implement me
 	panic("implement me")
 }

@@ -29,6 +29,8 @@ func NewREST(options *options.StoreOptions) (*REST, error) {
 	store := &registry.Store{
 		NewFunc:                  func() runtime.Object { return &meta.Dag{} },
 		NewListFunc:              func() runtime.Object { return &meta.DagList{} },
+		NewStructFunc:            func() interface{} { return meta.Dag{} },
+		NewListStructFunc:        func() interface{} { return meta.DagList{} },
 		DefaultQualifiedResource: rest.Resource("dag"),
 
 		CreateStrategy:      Strategy,

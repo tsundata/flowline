@@ -29,6 +29,8 @@ func NewREST(options *options.StoreOptions) (*REST, error) {
 	store := &registry.Store{
 		NewFunc:                  func() runtime.Object { return &meta.Workflow{} },
 		NewListFunc:              func() runtime.Object { return &meta.WorkflowList{} },
+		NewStructFunc:            func() interface{} { return meta.Workflow{} },
+		NewListStructFunc:        func() interface{} { return meta.WorkflowList{} },
 		DefaultQualifiedResource: rest.Resource("workflow"),
 
 		CreateStrategy:      Strategy,

@@ -4,11 +4,13 @@ import (
 	"fmt"
 	restfulspec "github.com/emicklei/go-restful-openapi/v2"
 	"github.com/emicklei/go-restful/v3"
+	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver/registry"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest"
 	"github.com/tsundata/flowline/pkg/apiserver/routes/endpoints/handlers"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"net/http"
+	"reflect"
 	"sort"
 )
 
@@ -72,6 +74,10 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 	updater, isUpdater := storage.(rest.Updater)
 	patcher, isPatcher := storage.(rest.Patcher)
 	watcher, isWatcher := storage.(rest.Watcher)
+	storageMeta, isMetadata := storage.(rest.StorageMetadata)
+	if !isMetadata {
+		storageMeta = defaultStorageMetadata{}
+	}
 
 	actions = appendIf(actions, action{"GET", resourcePath, resourceParams, UID}, isGetter)
 	actions = appendIf(actions, action{"LIST", resourcePath, resourceParams, UID}, isLister)
@@ -83,63 +89,79 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 	actions = appendIf(actions, action{"WATCH", resourcePath, resourceParams, UID}, isWatcher)
 
 	for _, action := range actions {
+		producedObject := storageMeta.ProducesObject(action.Verb)
+		if producedObject == nil {
+			producedObject = meta.Unknown{}
+		}
+
 		uidParam := ws.PathParameter("uid", "uid of the resource").DataType("string")
 		switch action.Verb {
 		case "GET":
 			handler := handlers.GetResource(getter, scope)
 			getRoute := ws.GET(resource+"/{uid}").To(handler).
 				Doc(fmt.Sprintf("Get %s resource", resource)).
-				Operation(resource+"GetHandler").
+				Operation(resource+"Get").
 				Metadata(restfulspec.KeyOpenAPITags, tags).
-				Returns(http.StatusOK, "OK", storage.New())
+				Returns(http.StatusOK, "OK", producedObject).
+				Writes(producedObject)
 			getRoute.Param(uidParam)
 			rs = append(rs, getRoute)
 		case "LIST":
 			handler := handlers.ListResource(lister, scope)
 			listRoute := ws.GET(resource+"/list").To(handler).
 				Doc(fmt.Sprintf("List %s resource", resource)).
-				Operation(resource+"ListHandler").
-				Metadata(restfulspec.KeyOpenAPITags, tags)
+				Operation(resource+"List").
+				Metadata(restfulspec.KeyOpenAPITags, tags).
+				Returns(http.StatusOK, "OK", producedObject).
+				Writes(producedObject)
 			rs = append(rs, listRoute)
 		case "POST":
 			handler := handlers.CreateResource(creater, scope)
 			postRoute := ws.POST(resource).To(handler).
 				Doc(fmt.Sprintf("Create %s resource", resource)).
-				Operation(resource+"CreateHandler").
-				Metadata(restfulspec.KeyOpenAPITags, tags)
+				Operation(resource+"Create").
+				Metadata(restfulspec.KeyOpenAPITags, tags).
+				Returns(http.StatusOK, "OK", producedObject).
+				Reads(producedObject).
+				Writes(producedObject)
 			rs = append(rs, postRoute)
 		case "PUT":
 			handler := handlers.UpdateResource(updater, scope)
 			putRoute := ws.PUT(resource+"/{uid}").To(handler).
 				Doc(fmt.Sprintf("Update %s resource", resource)).
-				Operation(resource+"UpdateHandler").
-				Metadata(restfulspec.KeyOpenAPITags, tags)
+				Operation(resource+"Update").
+				Metadata(restfulspec.KeyOpenAPITags, tags).
+				Returns(http.StatusOK, "OK", producedObject).
+				Reads(producedObject).
+				Writes(producedObject)
 			putRoute.Param(uidParam)
 			rs = append(rs, putRoute)
 		case "DELETE":
 			handler := handlers.DeleteResource(deleter, scope)
 			deleteRoute := ws.DELETE(resource+"/{uid}").To(handler).
 				Doc(fmt.Sprintf("Delete %s resource", resource)).
-				Operation(resource+"DeleteHandler").
-				Metadata(restfulspec.KeyOpenAPITags, tags)
+				Operation(resource+"Delete").
+				Metadata(restfulspec.KeyOpenAPITags, tags).
+				Returns(http.StatusOK, "OK", producedObject)
 			deleteRoute.Param(uidParam)
 			rs = append(rs, deleteRoute)
 		case "DELETECOLLECTION":
-			fmt.Println(collectionDeleter)
+			fmt.Println("DELETECOLLECTION", resource, collectionDeleter)
 		case "PATCH":
-			fmt.Println(patcher)
+			fmt.Println("PATCH", resource, patcher)
 		case "WATCH":
 			handler := handlers.WatchResource(watcher, scope)
 			watchRoute := ws.GET(resource+"/{uid}/watch").To(handler).
 				Doc(fmt.Sprintf("Watch %s resource", resource)).
-				Operation(resource+"WatchHandler").
+				Operation(resource+"Watch").
 				Metadata(restfulspec.KeyOpenAPITags, tags)
+			watchRoute.Param(uidParam)
 			rs = append(rs, watchRoute)
 
 			handler = handlers.WatchListResource(watcher, scope)
 			watchListRoute := ws.GET(resource+"/watch").To(handler).
 				Doc(fmt.Sprintf("Watch List %s resource", resource)).
-				Operation(resource+"WatchListHandler").
+				Operation(resource+"WatchList").
 				Metadata(restfulspec.KeyOpenAPITags, tags)
 			rs = append(rs, watchListRoute)
 		default:
@@ -159,4 +181,23 @@ func appendIf(actions []action, a action, shouldAppend bool) []action {
 		actions = append(actions, a)
 	}
 	return actions
+}
+
+// defaultStorageMetadata provides default answers to rest.StorageMetadata.
+type defaultStorageMetadata struct{}
+
+// defaultStorageMetadata implements rest.StorageMetadata
+var _ rest.StorageMetadata = defaultStorageMetadata{}
+
+func (defaultStorageMetadata) ProducesMIMETypes(verb string) []string {
+	return nil
+}
+
+func (defaultStorageMetadata) ProducesObject(verb string) interface{} {
+	return nil
+}
+
+// indirectArbitraryPointer returns *ptrToObject for an arbitrary pointer
+func indirectArbitraryPointer(ptrToObject interface{}) interface{} {
+	return reflect.Indirect(reflect.ValueOf(ptrToObject)).Interface()
 }

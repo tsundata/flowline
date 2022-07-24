@@ -29,6 +29,8 @@ func NewREST(options *options.StoreOptions) (*REST, error) {
 	store := &registry.Store{
 		NewFunc:                  func() runtime.Object { return &meta.Stage{} },
 		NewListFunc:              func() runtime.Object { return &meta.StageList{} },
+		NewStructFunc:            func() interface{} { return meta.Stage{} },
+		NewListStructFunc:        func() interface{} { return meta.StageList{} },
 		DefaultQualifiedResource: rest.Resource("stage"),
 
 		CreateStrategy:      Strategy,

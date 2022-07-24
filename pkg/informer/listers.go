@@ -20,12 +20,11 @@ func ListAll(store Store, selector interface{}, appendFn AppendFunc) error {
 			appendFn(m)
 			continue
 		}
-		metadata, err := meta.Accessor(m)
+		_, err := meta.Accessor(m)
 		if err != nil {
 			return err
 		}
 		if selector == nil {
-			fmt.Println(metadata)
 			appendFn(m)
 		}
 	}

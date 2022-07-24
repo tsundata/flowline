@@ -44,6 +44,8 @@ type Storage interface {
 	// New returns an empty object that can be used with Create and Update after request data has been put into it.
 	// This object must be a pointer type for use with Codec.DecodeInto([]byte, runtime.Object)
 	New() runtime.Object
+	// NewStruct return struct
+	NewStruct() interface{}
 
 	// Destroy cleans up its resources on shutdown.
 	// Destroy has to be implemented in thread-safe way and be prepared
@@ -56,6 +58,8 @@ type Lister interface {
 	// NewList returns an empty object that can be used with the List call.
 	// This object must be a pointer type for use with Codec.DecodeInto([]byte, runtime.Object)
 	NewList() runtime.Object
+	// NewListStruct return struct
+	NewListStruct() interface{}
 	// List selects resources in the storage which match to the selector. 'options' can be nil.
 	List(ctx context.Context, options *meta.ListOptions) (runtime.Object, error)
 }
@@ -174,4 +178,16 @@ type StandardStorage interface {
 	// Destroy has to be implemented in thread-safe way and be prepared
 	// for being called more than once.
 	Destroy()
+}
+
+// StorageMetadata is an optional interface that callers can implement to provide additional
+// information about their Storage objects.
+type StorageMetadata interface {
+	// ProducesMIMETypes returns a list of the MIME types the specified HTTP verb (GET, POST, DELETE,
+	// PATCH) can respond with.
+	ProducesMIMETypes(verb string) []string
+
+	// ProducesObject returns an object the specified HTTP verb respond with. It will overwrite storage object if
+	// it is not nil. Only the type of the return object matters, the value will be ignored.
+	ProducesObject(verb string) interface{}
 }

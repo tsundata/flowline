@@ -29,6 +29,8 @@ func NewREST(options *options.StoreOptions) (*REST, error) {
 	store := &registry.Store{
 		NewFunc:                  func() runtime.Object { return &meta.RoleBinding{} },
 		NewListFunc:              func() runtime.Object { return &meta.RoleBindingList{} },
+		NewStructFunc:            func() interface{} { return meta.RoleBinding{} },
+		NewListStructFunc:        func() interface{} { return meta.RoleBindingList{} },
 		DefaultQualifiedResource: rest.Resource("rolebinding"),
 
 		CreateStrategy:      Strategy,

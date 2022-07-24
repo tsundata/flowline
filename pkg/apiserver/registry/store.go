@@ -27,6 +27,12 @@ type Store struct {
 	// curl GET /apis/group/version/namespaces/my-ns/myresource
 	NewListFunc func() runtime.Object
 
+	// NewStructFunc return struct
+	NewStructFunc func() interface{}
+
+	// NewListStructFunc return struct
+	NewListStructFunc func() interface{}
+
 	// DefaultQualifiedResource is the pluralized name of the resource.
 	// This field is used if there is no request info present in the context.
 	// See qualifiedResourceFromContext for details.
@@ -111,9 +117,14 @@ type Store struct {
 	DestroyFunc func()
 }
 
-// New implements RESTStorage.New.
+// New implements rest.Storage
 func (e *Store) New() runtime.Object {
 	return e.NewFunc()
+}
+
+// NewStruct implements rest.Storage
+func (e *Store) NewStruct() interface{} {
+	return e.NewStructFunc()
 }
 
 // Destroy cleans up its resources on shutdown.
@@ -126,6 +137,28 @@ func (e *Store) Destroy() {
 // NewList implements rest.Lister.
 func (e *Store) NewList() runtime.Object {
 	return e.NewListFunc()
+}
+
+// NewListStruct implements rest.Lister.
+func (e *Store) NewListStruct() interface{} {
+	return e.NewListStructFunc()
+}
+
+// ProducesMIMETypes implements rest.StorageMetadata.
+func (e *Store) ProducesMIMETypes(verb string) []string {
+	return nil
+}
+
+// ProducesObject implements rest.StorageMetadata.
+func (e *Store) ProducesObject(verb string) interface{} {
+	switch verb {
+	case "GET", "POST", "PUT", "DELETE", "PATCH", "WATCH":
+		return e.NewStruct()
+	case "LIST", "DELETECOLLECTION":
+		return e.NewListStruct()
+	default:
+		return nil
+	}
 }
 
 // GetCreateStrategy implements GenericStore.
