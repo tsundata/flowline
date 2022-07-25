@@ -40,8 +40,7 @@ func (m *Stage) GetObjectKind() schema.ObjectKind {
 }
 
 func (m *Stage) DeepCopyObject() runtime.Object {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 type StageList struct {
@@ -55,6 +54,20 @@ func (m *StageList) GetObjectKind() schema.ObjectKind {
 }
 
 func (m *StageList) DeepCopyObject() runtime.Object {
-	//TODO implement me
-	panic("implement me")
+	return m
+}
+
+type Binding struct {
+	TypeMeta
+	ObjectMeta
+
+	Target Worker `json:"target,omitempty"`
+}
+
+func (m *Binding) GetObjectKind() schema.ObjectKind {
+	return m
+}
+
+func (m *Binding) DeepCopyObject() runtime.Object {
+	return m
 }

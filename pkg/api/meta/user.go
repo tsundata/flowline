@@ -10,6 +10,7 @@ type User struct {
 	ObjectMeta
 
 	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
 	Email    string `json:"email,omitempty"`
 	Active   bool   `json:"active,omitempty"`
 }
@@ -19,8 +20,7 @@ func (m *User) GetObjectKind() schema.ObjectKind {
 }
 
 func (m *User) DeepCopyObject() runtime.Object {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 type UserList struct {
@@ -34,6 +34,22 @@ func (m *UserList) GetObjectKind() schema.ObjectKind {
 }
 
 func (m *UserList) DeepCopyObject() runtime.Object {
-	//TODO implement me
-	panic("implement me")
+	return m
+}
+
+type UserSession struct {
+	TypeMeta
+	ObjectMeta
+
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+	Token    string `json:"token,omitempty"`
+}
+
+func (m *UserSession) GetObjectKind() schema.ObjectKind {
+	return m
+}
+
+func (m *UserSession) DeepCopyObject() runtime.Object {
+	return m
 }

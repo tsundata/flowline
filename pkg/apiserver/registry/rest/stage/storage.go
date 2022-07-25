@@ -1,13 +1,16 @@
 package stage
 
 import (
+	"errors"
 	"fmt"
+	"github.com/emicklei/go-restful/v3"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver/registry"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/options"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/util/flog"
+	"net/http"
 )
 
 type StageStorage struct {
@@ -51,12 +54,6 @@ func NewREST(options *options.StoreOptions) (*REST, error) {
 func (r *REST) Actions() []rest.SubResourceAction {
 	return []rest.SubResourceAction{
 		{
-			Verb:         "GET",
-			SubResource:  "binding",
-			Params:       nil,
-			ReturnSample: meta.Binding{},
-		},
-		{
 			Verb:         "POST",
 			SubResource:  "binding",
 			Params:       nil,
@@ -67,6 +64,20 @@ func (r *REST) Actions() []rest.SubResourceAction {
 	}
 }
 
-func (r *REST) Handle(scope interface{}) {
-	fmt.Printf("subresource %+v", scope)
+func (r *REST) Handle(verb, subresource string, req *restful.Request, resp *restful.Response) {
+	srRoute := rest.NewSubResourceRoute(verb, subresource, req, resp)
+	srRoute.Match("POST", "binding", stageBinding)
+	if !srRoute.Matched() {
+		_ = resp.WriteError(http.StatusBadRequest, errors.New("error subresource path"))
+	}
+}
+
+func stageBinding(req *restful.Request, resp *restful.Response) {
+	obj := meta.Binding{}
+	err := req.ReadEntity(&obj)
+	if err != nil {
+		flog.Error(err)
+	}
+	fmt.Printf("%+v \n", obj)
+	return
 }

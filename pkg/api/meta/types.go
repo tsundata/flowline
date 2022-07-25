@@ -139,11 +139,8 @@ type ListOptions struct {
 	AllowWatchBookmarks bool `json:"allowWatchBookmarks,omitempty"`
 
 	// resourceVersion sets a constraint on what resource versions a request may be served from.
-	// See https://kubernetes.io/docs/reference/using-api/api-concepts/#resource-versions for
-	// details.
 	//
 	// Defaults to unset
-	// +optional
 	ResourceVersion string `json:"resourceVersion,omitempty"`
 
 	// resourceVersionMatch determines how resourceVersion is applied to list calls.
@@ -153,11 +150,9 @@ type ListOptions struct {
 	// details.
 	//
 	// Defaults to unset
-	// +optional
 	ResourceVersionMatch string `json:"resourceVersionMatch,omitempty"`
 	// Timeout for the list/watch call.
 	// This limits the duration of the call, regardless of any activity or inactivity.
-	// +optional
 	TimeoutSeconds *int64 `json:"timeoutSeconds,omitempty"`
 
 	// limit is a maximum number of responses to return for a list call. If more items exist, the
@@ -202,7 +197,9 @@ type ListOptions struct {
 	// be delivered to the users. The option is ignored for non-watch requests.
 	ProgressNotify bool
 
+	// label
 	Label string
+	// field
 	Field string
 }
 

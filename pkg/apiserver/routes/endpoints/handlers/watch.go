@@ -28,8 +28,8 @@ const timeout = 30 * 60 * time.Second
 func watchHandler(s rest.Watcher, scope *registry.RequestScope) restful.RouteFunction {
 	return func(req *restful.Request, resp *restful.Response) {
 		subResource, isSubResource := s.(rest.SubResourceStorage)
-		if isSubResource {
-			subResource.Handle(scope)
+		if isSubResource && scope.Subresource != "" {
+			subResource.Handle(scope.Verb, scope.Subresource, req, resp)
 			return
 		}
 		ctx := req.Request.Context()
@@ -61,8 +61,8 @@ func WatchResource(s rest.Watcher, scope *registry.RequestScope) restful.RouteFu
 func watchListHandler(s rest.Watcher, scope *registry.RequestScope) restful.RouteFunction {
 	return func(req *restful.Request, resp *restful.Response) {
 		subResource, isSubResource := s.(rest.SubResourceStorage)
-		if isSubResource {
-			subResource.Handle(scope)
+		if isSubResource && scope.Subresource != "" {
+			subResource.Handle(scope.Verb, scope.Subresource, req, resp)
 			return
 		}
 		ctx := req.Request.Context()

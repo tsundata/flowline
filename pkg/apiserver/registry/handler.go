@@ -2,20 +2,21 @@ package registry
 
 import (
 	"github.com/tsundata/flowline/pkg/runtime"
+	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"github.com/tsundata/flowline/pkg/runtime/serializer/json"
 )
 
-func NewRequestScope() *RequestScope {
+func NewRequestScope(verb, resource, subresource string) *RequestScope {
 	return &RequestScope{
-		Serializer:          json.NewBasicNegotiatedSerializer(),
-		StandardSerializers: nil,
-		Resource:            schema.GroupVersionResource{},
-		Kind:                schema.GroupVersionKind{},
-		Subresource:         "",
-		MetaGroupVersion:    schema.GroupVersion{},
-		HubGroupVersion:     schema.GroupVersion{},
-		MaxRequestBodyBytes: 0,
+		Serializer: json.NewBasicNegotiatedSerializer(),
+		Resource: schema.GroupVersionResource{
+			Group:    constant.GroupName,
+			Version:  constant.Version,
+			Resource: resource,
+		},
+		Verb:        verb,
+		Subresource: subresource,
 	}
 }
 

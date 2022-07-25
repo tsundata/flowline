@@ -19,6 +19,8 @@ type Config struct {
 
 	JWTSecret string
 
+	CorsAllowedOriginPatterns []string
+
 	// APIServerID is the ID of this API server
 	APIServerID           string
 	BuildHandlerChainFunc func(apiHandler http.Handler, c *Config) http.Handler
@@ -26,15 +28,17 @@ type Config struct {
 	EnableIndex bool
 }
 
+// NewConfig Default Config
 func NewConfig() *Config {
 	return &Config{
-		BuildHandlerChainFunc: DefaultBuildHandlerChain,
+		BuildHandlerChainFunc:     DefaultBuildHandlerChain,
+		CorsAllowedOriginPatterns: []string{".*"},
 	}
 }
 
 //DefaultBuildHandlerChain set default filters
 func DefaultBuildHandlerChain(apiHandler http.Handler, config *Config) http.Handler {
-	handler := filters.WithCORS(apiHandler, nil, nil, nil, nil, "true")
+	handler := filters.WithCORS(apiHandler, config.CorsAllowedOriginPatterns, nil, nil, nil, "true")
 	// handler = filters.WithJWT(handler, config.JWTSecret)
 	return handler
 }

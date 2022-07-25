@@ -9,7 +9,6 @@ import (
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest"
 	"github.com/tsundata/flowline/pkg/apiserver/routes/endpoints/handlers"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
-	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"net/http"
@@ -60,9 +59,6 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 	tags := []string{resource}
 	var rs []*restful.RouteBuilder
 
-	scope := registry.NewRequestScope()
-	scope.Resource = schema.GroupVersionResource{Resource: resource}
-
 	var params []*restful.Parameter
 	var actions []action
 
@@ -94,8 +90,6 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 	actions = appendIf(actions, action{"WATCH", resourcePath, resourceParams, UID}, isWatcher)
 
 	for _, action := range actions {
-		scope.Verb = action.Verb
-
 		producedObject := storageMeta.ProducesObject(action.Verb)
 		if producedObject == nil {
 			producedObject = meta.Unknown{}
@@ -104,6 +98,7 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 		uidParam := ws.PathParameter("uid", "uid of the resource").DataType("string")
 		switch action.Verb {
 		case "GET":
+			scope := registry.NewRequestScope(action.Verb, resource, "")
 			handler := handlers.GetResource(getter, scope)
 			getRoute := ws.GET(resource+"/{uid}").To(handler).
 				Doc(fmt.Sprintf("Get %s resource", resource)).
@@ -114,6 +109,7 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 			getRoute.Param(uidParam)
 			rs = append(rs, getRoute)
 		case "LIST":
+			scope := registry.NewRequestScope(action.Verb, resource, "")
 			handler := handlers.ListResource(lister, scope)
 			listRoute := ws.GET(resource+"/list").To(handler).
 				Doc(fmt.Sprintf("List %s resource", resource)).
@@ -123,6 +119,7 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 				Writes(producedObject)
 			rs = append(rs, listRoute)
 		case "POST":
+			scope := registry.NewRequestScope(action.Verb, resource, "")
 			handler := handlers.CreateResource(creater, scope)
 			postRoute := ws.POST(resource).To(handler).
 				Doc(fmt.Sprintf("Create %s resource", resource)).
@@ -133,6 +130,7 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 				Writes(producedObject)
 			rs = append(rs, postRoute)
 		case "PUT":
+			scope := registry.NewRequestScope(action.Verb, resource, "")
 			handler := handlers.UpdateResource(updater, scope)
 			putRoute := ws.PUT(resource+"/{uid}").To(handler).
 				Doc(fmt.Sprintf("Update %s resource", resource)).
@@ -144,6 +142,7 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 			putRoute.Param(uidParam)
 			rs = append(rs, putRoute)
 		case "DELETE":
+			scope := registry.NewRequestScope(action.Verb, resource, "")
 			handler := handlers.DeleteResource(deleter, scope)
 			deleteRoute := ws.DELETE(resource+"/{uid}").To(handler).
 				Doc(fmt.Sprintf("Delete %s resource", resource)).
@@ -157,6 +156,7 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 		case "PATCH":
 			fmt.Println("PATCH", resource, patcher)
 		case "WATCH":
+			scope := registry.NewRequestScope(action.Verb, resource, "")
 			handler := handlers.WatchResource(watcher, scope)
 			watchRoute := ws.GET(resource+"/{uid}/watch").To(handler).
 				Doc(fmt.Sprintf("Watch %s resource", resource)).
@@ -179,9 +179,6 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 	// SubResource
 	if isSubResource {
 		for _, action := range subResource.Actions() {
-			scope.Verb = action.Verb
-			scope.Subresource = action.SubResource
-
 			producedObject := storageMeta.ProducesObject(action.Verb)
 			if producedObject == nil {
 				producedObject = meta.Unknown{}
@@ -193,6 +190,7 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 			uidParam := ws.PathParameter("uid", "uid of the resource").DataType("string")
 			switch action.Verb {
 			case "GET":
+				scope := registry.NewRequestScope(action.Verb, resource, action.SubResource)
 				handler := handlers.GetResource(getter, scope)
 				getRoute := ws.GET(resource+"/{uid}/"+action.SubResource).To(handler).
 					Doc(fmt.Sprintf("Get %s resource to %s subresource", resource, action.SubResource)).
@@ -206,24 +204,26 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 				}
 				rs = append(rs, getRoute)
 			case "LIST":
+				scope := registry.NewRequestScope(action.Verb, resource, action.SubResource)
 				handler := handlers.ListResource(lister, scope)
 				listRoute := ws.GET(resource+"/list/"+action.SubResource).To(handler).
 					Doc(fmt.Sprintf("List %s resource to %s subresource", resource, action.SubResource)).
 					Operation(resource+"List"+titleStr).
 					Metadata(restfulspec.KeyOpenAPITags, tags).
-					Returns(http.StatusOK, "OK", producedObject).
-					Writes(producedObject)
+					Returns(http.StatusOK, "OK", action.ReturnSample).
+					Writes(action.WriteSample)
 				for i := range action.Params {
 					listRoute.Param(action.Params[i])
 				}
 				rs = append(rs, listRoute)
 			case "POST":
+				scope := registry.NewRequestScope(action.Verb, resource, action.SubResource)
 				handler := handlers.CreateResource(creater, scope)
 				postRoute := ws.POST(resource+"/"+action.SubResource).To(handler).
 					Doc(fmt.Sprintf("Create %s resource to %s subresource", resource, action.SubResource)).
 					Operation(resource+"Create"+titleStr).
 					Metadata(restfulspec.KeyOpenAPITags, tags).
-					Returns(http.StatusOK, "OK", action.ReadSample).
+					Returns(http.StatusOK, "OK", action.ReturnSample).
 					Reads(action.ReadSample).
 					Writes(action.WriteSample)
 				for i := range action.Params {
@@ -231,26 +231,28 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 				}
 				rs = append(rs, postRoute)
 			case "PUT":
+				scope := registry.NewRequestScope(action.Verb, resource, action.SubResource)
 				handler := handlers.UpdateResource(updater, scope)
 				putRoute := ws.PUT(resource+"/{uid}/"+action.SubResource).To(handler).
 					Doc(fmt.Sprintf("Update %s resource", resource)).
 					Operation(resource+"Update"+titleStr).
 					Metadata(restfulspec.KeyOpenAPITags, tags).
-					Returns(http.StatusOK, "OK", producedObject).
-					Reads(producedObject).
-					Writes(producedObject)
+					Returns(http.StatusOK, "OK", action.ReturnSample).
+					Reads(action.ReadSample).
+					Writes(action.WriteSample)
 				putRoute.Param(uidParam)
 				for i := range action.Params {
 					putRoute.Param(action.Params[i])
 				}
 				rs = append(rs, putRoute)
 			case "DELETE":
+				scope := registry.NewRequestScope(action.Verb, resource, action.SubResource)
 				handler := handlers.DeleteResource(deleter, scope)
 				deleteRoute := ws.DELETE(resource+"/{uid}/"+action.SubResource).To(handler).
 					Doc(fmt.Sprintf("Delete %s resource to %s subresource", resource, action.SubResource)).
 					Operation(resource+"Delete"+titleStr).
 					Metadata(restfulspec.KeyOpenAPITags, tags).
-					Returns(http.StatusOK, "OK", producedObject)
+					Returns(http.StatusOK, "OK", action.ReturnSample)
 				deleteRoute.Param(uidParam)
 				for i := range action.Params {
 					deleteRoute.Param(action.Params[i])
@@ -261,6 +263,7 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 			case "PATCH":
 				fmt.Println("PATCH", resource, patcher)
 			case "WATCH":
+				scope := registry.NewRequestScope(action.Verb, resource, action.SubResource)
 				handler := handlers.WatchResource(watcher, scope)
 				watchRoute := ws.GET(resource+"/{uid}/watch/"+action.SubResource).To(handler).
 					Doc(fmt.Sprintf("Watch %s resource to %s subresource", resource, action.SubResource)).

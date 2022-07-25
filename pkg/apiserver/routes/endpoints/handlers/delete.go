@@ -10,8 +10,8 @@ import (
 func deleteHandler(s rest.Deleter, scope *registry.RequestScope) restful.RouteFunction {
 	return func(req *restful.Request, resp *restful.Response) {
 		subResource, isSubResource := s.(rest.SubResourceStorage)
-		if isSubResource {
-			subResource.Handle(scope)
+		if isSubResource && scope.Subresource != "" {
+			subResource.Handle(scope.Verb, scope.Subresource, req, resp)
 			return
 		}
 		uid := req.PathParameter("uid")

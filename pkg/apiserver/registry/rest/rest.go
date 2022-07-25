@@ -198,7 +198,7 @@ type SubResourceStorage interface {
 
 	Actions() []SubResourceAction
 
-	Handle(scope interface{})
+	Handle(verb, subresource string, req *restful.Request, resp *restful.Response)
 }
 
 type SubResourceAction struct {
@@ -208,4 +208,27 @@ type SubResourceAction struct {
 	ReadSample   interface{}
 	WriteSample  interface{}
 	ReturnSample interface{}
+}
+
+type SubResourceRoute struct {
+	Verb        string
+	SubResource string
+	Req         *restful.Request
+	Resp        *restful.Response
+	matched     bool
+}
+
+func NewSubResourceRoute(verb string, subResource string, req *restful.Request, resp *restful.Response) *SubResourceRoute {
+	return &SubResourceRoute{Verb: verb, SubResource: subResource, Req: req, Resp: resp}
+}
+
+func (r *SubResourceRoute) Match(verb, subresource string, rf restful.RouteFunction) {
+	if verb == r.Verb && subresource == r.SubResource {
+		rf(r.Req, r.Resp)
+		r.matched = true
+	}
+}
+
+func (r *SubResourceRoute) Matched() bool {
+	return r.matched
 }
