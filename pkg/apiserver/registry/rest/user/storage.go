@@ -90,24 +90,19 @@ type subResource struct {
 }
 
 func (r *subResource) userLogin(req *restful.Request, resp *restful.Response) {
-	pwd, err := bcrypt.GenerateFromPassword([]byte("123456"), 1)
-	if err != nil {
-		flog.Error(err)
-	}
-	flog.Info(string(pwd))
-
 	ctx := req.Request.Context()
 	login := meta.UserSession{}
-	err = req.ReadEntity(&login)
+	err := req.ReadEntity(&login)
 	if err != nil {
 		flog.Error(err)
+		_ = resp.WriteError(http.StatusBadRequest, errors.New("form error"))
+		return
 	}
-	fmt.Printf("%+v \n", login)
 
 	obj, err := r.store.List(ctx, &meta.ListOptions{})
 	if err != nil {
 		flog.Error(err)
-		_ = resp.WriteEntity(meta.Status{Status: meta.StatusFailure})
+		_ = resp.WriteError(http.StatusBadRequest, errors.New("user error"))
 		return
 	}
 
@@ -120,13 +115,13 @@ func (r *subResource) userLogin(req *restful.Request, resp *restful.Response) {
 			}
 		}
 		if user.Username == "" {
-			_ = resp.WriteEntity(meta.Status{Status: meta.StatusFailure})
+			_ = resp.WriteError(http.StatusBadRequest, errors.New("username or password error"))
 			return
 		}
 
 		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(login.Password))
 		if err != nil {
-			_ = resp.WriteEntity(meta.Status{Status: meta.StatusFailure})
+			_ = resp.WriteError(http.StatusBadRequest, errors.New("username or password error"))
 			return
 		}
 
@@ -140,14 +135,14 @@ func (r *subResource) userLogin(req *restful.Request, resp *restful.Response) {
 		token, err := jc.SignedString(secret)
 		if err != nil {
 			flog.Error(err)
-			_ = resp.WriteEntity(meta.Status{Status: meta.StatusFailure})
+			_ = resp.WriteError(http.StatusBadRequest, errors.New("token error"))
 			return
 		}
 
-		_ = resp.WriteEntity(meta.UserSession{Token: token})
+		_ = resp.WriteEntity(meta.UserSession{UserUID: user.UID, Token: token})
 		return
 	} else {
-		_ = resp.WriteEntity(meta.Status{Status: meta.StatusFailure})
+		_ = resp.WriteError(http.StatusBadRequest, errors.New("user error"))
 		return
 	}
 }

@@ -9,10 +9,12 @@ type User struct {
 	TypeMeta
 	ObjectMeta
 
-	Username string `json:"username,omitempty"`
-	Password string `json:"password,omitempty"`
-	Email    string `json:"email,omitempty"`
-	Active   bool   `json:"active,omitempty"`
+	Username    string `json:"username,omitempty"`
+	Password    string `json:"password,omitempty"`
+	Email       string `json:"email,omitempty"`
+	Active      bool   `json:"active,omitempty"`
+	Avatar      string `json:"avatar,omitempty"`
+	UnreadCount int    `json:"unreadCount,omitempty"`
 }
 
 func (m *User) GetObjectKind() schema.ObjectKind {
@@ -41,6 +43,7 @@ type UserSession struct {
 	TypeMeta
 	ObjectMeta
 
+	UserUID  string `json:"userUID,omitempty"`
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
 	Token    string `json:"token,omitempty"`
