@@ -1,11 +1,12 @@
 package apiserver
 
 import (
-	"fmt"
+	"github.com/tsundata/flowline/pkg/apiserver/config"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest"
 	"github.com/tsundata/flowline/pkg/util/flog"
+	"net"
 	"net/http"
-	"time"
+	"strconv"
 )
 
 type GenericAPIServer struct {
@@ -14,20 +15,20 @@ type GenericAPIServer struct {
 	httpServer *http.Server
 }
 
-func NewGenericAPIServer(name string, config *Config) *GenericAPIServer {
+func NewGenericAPIServer(name string, config *config.Config) *GenericAPIServer {
 	handlerChainBuilder := func(handler http.Handler) http.Handler {
 		return config.BuildHandlerChainFunc(handler, config)
 	}
 	apiServerHandler := NewAPIServerHandler(name, handlerChainBuilder, nil)
 	s := &GenericAPIServer{
 		Handler: apiServerHandler,
-		Storage: StorageMap(),
+		Storage: StorageMap(config),
 		httpServer: &http.Server{
-			Addr:           fmt.Sprintf("%s:%d", config.Host, config.Port),
+			Addr:           net.JoinHostPort(config.Host, strconv.Itoa(config.Port)),
 			Handler:        apiServerHandler,
-			ReadTimeout:    10 * time.Second, //todo
-			WriteTimeout:   10 * time.Second, //todo
-			MaxHeaderBytes: 1 << 20,          //todo
+			ReadTimeout:    config.HTTPReadTimeout,
+			WriteTimeout:   config.HTTPWriteTimeout,
+			MaxHeaderBytes: config.HTTPMaxHeaderBytes,
 		},
 	}
 

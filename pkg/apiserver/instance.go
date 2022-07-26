@@ -1,6 +1,7 @@
 package apiserver
 
 import (
+	"github.com/tsundata/flowline/pkg/apiserver/config"
 	"github.com/tsundata/flowline/pkg/apiserver/controller"
 	"github.com/tsundata/flowline/pkg/util/flog"
 )
@@ -10,7 +11,7 @@ type Instance struct {
 	AuthenticationInfo *controller.AuthenticationInfo
 }
 
-func NewInstance(config *Config) *Instance {
+func NewInstance(config *config.Config) *Instance {
 	return &Instance{
 		GenericAPIServer: NewGenericAPIServer("apiserver", config),
 	}

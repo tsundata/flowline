@@ -159,7 +159,7 @@ func (sched *Scheduler) extendersBinding(stage *meta.Stage, worker string) (bool
 		}
 		return true, extender.Bind(&meta.Binding{
 			ObjectMeta: meta.ObjectMeta{Name: stage.Name, UID: stage.UID},
-			Target:     &meta.Worker{ObjectMeta: meta.ObjectMeta{UID: worker}},
+			Target:     meta.Worker{ObjectMeta: meta.ObjectMeta{UID: worker}},
 		})
 	}
 	return false, nil

@@ -4,8 +4,14 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	restfulspec "github.com/emicklei/go-restful-openapi/v2"
 	"github.com/emicklei/go-restful/v3"
+	"github.com/go-openapi/spec"
 	"github.com/gorilla/mux"
+	"github.com/tsundata/flowline/pkg/apiserver/config"
+	"github.com/tsundata/flowline/pkg/apiserver/filters"
+	"github.com/tsundata/flowline/pkg/apiserver/routes"
+	"github.com/tsundata/flowline/pkg/apiserver/routes/endpoints"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"net/http"
@@ -113,4 +119,84 @@ func serviceErrorHandler(serviceError restful.ServiceError, _ *restful.Request, 
 
 func (a *APIServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	a.FullHandlerChain.ServeHTTP(w, r)
+}
+
+//DefaultBuildHandlerChain set default filters
+func DefaultBuildHandlerChain(apiHandler http.Handler, config *config.Config) http.Handler {
+	handler := filters.WithCORS(apiHandler, config.CorsAllowedOriginPatterns, nil, nil, nil, "true")
+	handler = filters.WithJWT(handler, []byte(config.JWTSecret), []string{
+		"/apidocs.json",
+		"/api/apps/v1/user/session",
+	})
+	return handler
+}
+
+//installAPI install routes
+func installAPI(s *GenericAPIServer, c *config.Config) error {
+	if c.EnableIndex {
+		routes.Index{}.Install(s.Handler.NonRestfulMux)
+	}
+	if ss, ok := s.Storage["worker"]; ok {
+		routes.Worker{Storage: ss}.Install(s.Handler.NonRestfulMux)
+	}
+
+	installer := endpoints.NewAPIInstaller(s.Storage)
+	ws, err := installer.Install()
+	if err != nil {
+		return err
+	}
+	s.Handler.RestfulContainer.Add(ws)
+
+	return installAPISwagger(s)
+}
+
+func installAPISwagger(s *GenericAPIServer) error {
+	c := restfulspec.Config{
+		WebServices:                   s.Handler.RestfulContainer.RegisteredWebServices(),
+		APIPath:                       "/apidocs.json",
+		PostBuildSwaggerObjectHandler: enrichSwaggerObject,
+	}
+	s.Handler.RestfulContainer.Add(restfulspec.NewOpenAPIService(c))
+	return nil
+}
+
+func enrichSwaggerObject(swo *spec.Swagger) {
+	swo.Info = &spec.Info{
+		InfoProps: spec.InfoProps{
+			Title:       "Flowline REST API",
+			Description: "Resource for flowline",
+			Contact: &spec.ContactInfo{
+				ContactInfoProps: spec.ContactInfoProps{
+					Name:  "sysatom",
+					Email: "sysatom@gmail.com",
+					URL:   "https://flowline.tsundata.com",
+				},
+			},
+			License: &spec.License{
+				LicenseProps: spec.LicenseProps{
+					Name: "MIT",
+					URL:  "https://github.com/tsundata/flowline/blob/main/LICENSE",
+				},
+			},
+			Version: "1.0.0",
+		},
+	}
+	swo.Tags = []spec.Tag{{TagProps: spec.TagProps{
+		Name:        "workflows",
+		Description: "Managing workflows"}}}
+	swo.SecurityDefinitions = map[string]*spec.SecurityScheme{
+		"BearerToken": {
+			SecuritySchemeProps: spec.SecuritySchemeProps{
+				Type:        "apiKey",
+				Name:        "authorization",
+				In:          "header",
+				Description: "Bearer Token authentication",
+			},
+		},
+	}
+	swo.Security = []map[string][]string{
+		{
+			"BearerToken": {},
+		},
+	}
 }

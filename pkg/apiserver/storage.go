@@ -2,6 +2,7 @@ package apiserver
 
 import (
 	"fmt"
+	"github.com/tsundata/flowline/pkg/apiserver/config"
 	"github.com/tsundata/flowline/pkg/apiserver/registry"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/options"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest"
@@ -17,14 +18,14 @@ import (
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/variable"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/worker"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/workflow"
-	"github.com/tsundata/flowline/pkg/apiserver/storage/config"
+	storageConfig "github.com/tsundata/flowline/pkg/apiserver/storage/config"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"github.com/tsundata/flowline/pkg/runtime/serializer/json"
 	"github.com/tsundata/flowline/pkg/util/flog"
 )
 
-func StorageMap() map[string]rest.Storage {
+func StorageMap(config *config.Config) map[string]rest.Storage {
 	storageMap := make(map[string]rest.Storage)
 	codeRestStorage(storageMap)
 	connectionRestStorage(storageMap)
@@ -34,7 +35,7 @@ func StorageMap() map[string]rest.Storage {
 	roleRestStorage(storageMap)
 	rolebindingRestStorage(storageMap)
 	stageRestStorage(storageMap)
-	userRestStorage(storageMap)
+	userRestStorage(config, storageMap)
 	variableRestStorage(storageMap)
 	workerRestStorage(storageMap)
 	workflowRestStorage(storageMap)
@@ -105,8 +106,8 @@ func stageRestStorage(storageMap map[string]rest.Storage) {
 	storageMap["stage"] = s
 }
 
-func userRestStorage(storageMap map[string]rest.Storage) {
-	s, err := user.NewREST(makeStoreOptions("user"))
+func userRestStorage(config *config.Config, storageMap map[string]rest.Storage) {
+	s, err := user.NewREST(config, makeStoreOptions("user"))
 	if err != nil {
 		flog.Panic(err)
 	}
@@ -141,8 +142,8 @@ func makeStoreOptions(resource string) *options.StoreOptions {
 	codec := json.NewSerializerWithOptions(json.DefaultMetaFactory, json.SerializerOptions{})
 	storeOptions := &options.StoreOptions{
 		RESTOptions: &options.RESTOptions{
-			StorageConfig: &config.ConfigForResource{
-				Config: config.Config{
+			StorageConfig: &storageConfig.ConfigForResource{
+				Config: storageConfig.Config{
 					Codec: codec,
 				},
 				GroupResource: schema.GroupResource{

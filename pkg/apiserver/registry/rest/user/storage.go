@@ -6,6 +6,7 @@ import (
 	"github.com/emicklei/go-restful/v3"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/tsundata/flowline/pkg/api/meta"
+	"github.com/tsundata/flowline/pkg/apiserver/config"
 	"github.com/tsundata/flowline/pkg/apiserver/registry"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/options"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest"
@@ -20,8 +21,8 @@ type UserStorage struct {
 	REST *REST
 }
 
-func NewStorage(options *options.StoreOptions) (UserStorage, error) {
-	r, err := NewREST(options)
+func NewStorage(config *config.Config, options *options.StoreOptions) (UserStorage, error) {
+	r, err := NewREST(config, options)
 	if err != nil {
 		return UserStorage{}, err
 	}
@@ -29,10 +30,11 @@ func NewStorage(options *options.StoreOptions) (UserStorage, error) {
 }
 
 type REST struct {
+	config *config.Config
 	*registry.Store
 }
 
-func NewREST(options *options.StoreOptions) (*REST, error) {
+func NewREST(config *config.Config, options *options.StoreOptions) (*REST, error) {
 	store := &registry.Store{
 		NewFunc:                  func() runtime.Object { return &meta.User{} },
 		NewListFunc:              func() runtime.Object { return &meta.UserList{} },
@@ -51,7 +53,7 @@ func NewREST(options *options.StoreOptions) (*REST, error) {
 		flog.Panic(err)
 	}
 
-	return &REST{store}, nil
+	return &REST{config, store}, nil
 }
 
 func (r *REST) Actions() []rest.SubResourceAction {
@@ -124,14 +126,22 @@ func (r *subResource) userLogin(req *restful.Request, resp *restful.Response) {
 			_ = resp.WriteError(http.StatusBadRequest, errors.New("username or password error"))
 			return
 		}
+		var jc = jwt.NewWithClaims(
+			jwt.SigningMethodHS512,
+			&meta.UserClaims{
+				RegisteredClaims: &jwt.RegisteredClaims{
+					ID:        user.UID,
+					ExpiresAt: jwt.NewNumericDate(time.Now().Add(8 * time.Hour)),
+					NotBefore: jwt.NewNumericDate(time.Now()),
+				},
+			},
+		)
+		if r.store.config.JWTSecret == "" {
+			_ = resp.WriteError(http.StatusBadRequest, errors.New("token error"))
+			return
+		}
 
-		jc := jwt.NewWithClaims(jwt.SigningMethodHS512, jwt.MapClaims{
-			"id":  user.UID,
-			"nbf": time.Now().Unix(),
-			"exp": time.Now().Add(8 * time.Hour).Unix(),
-		})
-
-		secret := []byte("abc") //fixme
+		secret := []byte(r.store.config.JWTSecret)
 		token, err := jc.SignedString(secret)
 		if err != nil {
 			flog.Error(err)

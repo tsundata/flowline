@@ -3,10 +3,12 @@ package app
 import (
 	"fmt"
 	"github.com/tsundata/flowline/pkg/apiserver"
+	"github.com/tsundata/flowline/pkg/apiserver/config"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/signal"
 	"github.com/tsundata/flowline/pkg/util/version"
 	"github.com/urfave/cli/v2"
+	"time"
 )
 
 func NewAPIServerCommand() *cli.App {
@@ -39,11 +41,18 @@ func NewAPIServerCommand() *cli.App {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			config := apiserver.NewConfig() // todo
-			config.Host = c.String("host")
-			config.Port = c.Int("port")
-			config.EnableIndex = true
-			return Run(config, signal.SetupSignalHandler())
+			conf := config.NewConfig()
+			conf.BuildHandlerChainFunc = apiserver.DefaultBuildHandlerChain
+			conf.Host = c.String("host")
+			conf.Port = c.Int("port")
+			conf.EnableIndex = true
+			conf.JWTSecret = "abc" // fixme
+
+			conf.HTTPReadTimeout = 10 * time.Second
+			conf.HTTPWriteTimeout = 10 * time.Second
+			conf.HTTPMaxHeaderBytes = 1 << 20
+
+			return Run(conf, signal.SetupSignalHandler())
 		},
 		Commands: []*cli.Command{
 			{
@@ -59,7 +68,7 @@ func NewAPIServerCommand() *cli.App {
 	}
 }
 
-func Run(c *apiserver.Config, stopCh <-chan struct{}) error {
+func Run(c *config.Config, stopCh <-chan struct{}) error {
 	flog.Info("apiserver running")
 
 	server, err := CreateServerChain(c)
@@ -70,6 +79,6 @@ func Run(c *apiserver.Config, stopCh <-chan struct{}) error {
 	return server.Run(stopCh)
 }
 
-func CreateServerChain(c *apiserver.Config) (*apiserver.Instance, error) {
+func CreateServerChain(c *config.Config) (*apiserver.Instance, error) {
 	return apiserver.NewInstance(c), nil
 }

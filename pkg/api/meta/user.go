@@ -1,6 +1,7 @@
 package meta
 
 import (
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 )
@@ -55,4 +56,8 @@ func (m *UserSession) GetObjectKind() schema.ObjectKind {
 
 func (m *UserSession) DeepCopyObject() runtime.Object {
 	return m
+}
+
+type UserClaims struct {
+	*jwt.RegisteredClaims
 }

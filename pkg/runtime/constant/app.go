@@ -11,3 +11,6 @@ const Version = "v1"
 
 // DefaultSchedulerName is default scheduler name
 const DefaultSchedulerName = "default-scheduler"
+
+// UserContextKey user context value key
+const UserContextKey = iota

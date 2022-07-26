@@ -19,11 +19,12 @@ type Workflow struct {
 	TypeMeta
 	ObjectMeta
 
+	Describe                string      `json:"describe,omitempty"`
 	Active                  bool        `json:"active,omitempty"`
 	Trigger                 TriggerType `json:"trigger,omitempty"`
-	TriggerParam            string      `json:"trigger_param,omitempty"`
-	LastTriggerTimestamp    *time.Time  `json:"last_trigger_timestamp,omitempty"`
-	CurrentTriggerTimestamp *time.Time  `json:"current_trigger_timestamp,omitempty"`
+	TriggerParam            string      `json:"triggerParam,omitempty"`
+	LastTriggerTimestamp    *time.Time  `json:"lastTriggerTimestamp,omitempty"`
+	CurrentTriggerTimestamp *time.Time  `json:"currentTriggerTimestamp,omitempty"`
 }
 
 func (m *Workflow) GetObjectKind() schema.ObjectKind {
@@ -31,8 +32,7 @@ func (m *Workflow) GetObjectKind() schema.ObjectKind {
 }
 
 func (m *Workflow) DeepCopyObject() runtime.Object {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 type WorkflowList struct {
@@ -46,6 +46,5 @@ func (m *WorkflowList) GetObjectKind() schema.ObjectKind {
 }
 
 func (m *WorkflowList) DeepCopyObject() runtime.Object {
-	//TODO implement me
-	panic("implement me")
+	return m
 }

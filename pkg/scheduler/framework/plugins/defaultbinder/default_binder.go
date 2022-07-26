@@ -35,7 +35,7 @@ func (b DefaultBinder) Bind(ctx context.Context, state *framework.CycleState, p 
 	flog.Infof("Attempting to bind stage to worker, %s %s : %s", p.Name, p.UID, workerUID)
 	binding := &meta.Binding{
 		ObjectMeta: meta.ObjectMeta{Name: p.Name, UID: p.UID},
-		Target: &meta.Worker{
+		Target: meta.Worker{
 			TypeMeta:   meta.TypeMeta{Kind: "worker", APIVersion: constant.Version},
 			ObjectMeta: meta.ObjectMeta{UID: workerUID},
 		},
