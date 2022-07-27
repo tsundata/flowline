@@ -16,35 +16,42 @@ type Dag struct {
 
 type Node struct {
 	Id        string `json:"id,omitempty"`
-	RenderKey string `json:"render_key,omitempty"`
+	X         int    `json:"x,omitempty"`
+	Y         int    `json:"y,omitempty"`
 	Width     int    `json:"width,omitempty"`
 	Height    int    `json:"height,omitempty"`
 	Label     string `json:"label,omitempty"`
+	RenderKey string `json:"renderKey,omitempty"`
+	IsGroup   bool   `json:"isGroup,omitempty"`
+	Group     string `json:"group,omitempty"`
+	ParentId  string `json:"parentId,omitempty"`
 	Ports     []struct {
-		Id      string `json:"id,omitempty"`
-		Type    string `json:"type,omitempty"`
-		Group   string `json:"group,omitempty"`
-		Tooltip string `json:"tooltip,omitempty"`
+		Id        string `json:"id,omitempty"`
+		Group     string `json:"group,omitempty"`
+		Type      string `json:"type,omitempty"`
+		Tooltip   string `json:"tooltip,omitempty"`
+		Connected bool   `json:"connected,omitempty"`
 	} `json:"ports,omitempty"`
-	X     int    `json:"x,omitempty"`
-	Y     int    `json:"y,omitempty"`
-	Order string `json:"_order,omitempty"`
+	Order int `json:"_order,omitempty"`
 }
 
 type Edge struct {
-	Id           string `json:"id,omitempty"`
-	Source       string `json:"source,omitempty"`
-	Target       string `json:"target,omitempty"`
-	SourcePortId string `json:"source_port_id,omitempty"`
-	TargetPortId string `json:"target_port_id,omitempty"`
-	Connector    struct {
+	Id                string `json:"id,omitempty"`
+	Source            string `json:"source,omitempty"`
+	Target            string `json:"target,omitempty"`
+	SourcePortId      string `json:"sourcePortId,omitempty"`
+	TargetPortId      string `json:"targetPortId,omitempty"`
+	Label             string `json:"label,omitempty"`
+	EdgeContentWidth  int    `json:"edgeContentWidth,omitempty"`
+	EdgeContentHeight int    `json:"edgeContentHeight,omitempty"`
+	Connector         struct {
 		Name string `json:"name,omitempty"`
 	} `json:"connector"`
 	Router struct {
 		Name string `json:"name,omitempty"`
 	} `json:"router"`
-	SourcePort string `json:"source_port,omitempty"`
-	TargetPort string `json:"target_port,omitempty"`
+	SourcePort string `json:"sourcePort,omitempty"`
+	TargetPort string `json:"targetPort,omitempty"`
 }
 
 func (m *Dag) GetObjectKind() schema.ObjectKind {
