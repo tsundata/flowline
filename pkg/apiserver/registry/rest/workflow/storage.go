@@ -11,6 +11,7 @@ import (
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/util/flog"
+	"github.com/tsundata/flowline/pkg/util/uid"
 	"net/http"
 )
 
@@ -116,10 +117,7 @@ func (r *subResource) workflowGetDag(req *restful.Request, resp *restful.Respons
 
 func (r *subResource) workflowUpdateDag(req *restful.Request, resp *restful.Response) {
 	ctx := req.Request.Context()
-	uid := req.PathParameter("uid")
-
-	// todo
-	fmt.Println(uid)
+	workflowUID := req.PathParameter("uid")
 
 	obj := meta.Dag{}
 	err := req.ReadEntity(&obj)
@@ -127,7 +125,33 @@ func (r *subResource) workflowUpdateDag(req *restful.Request, resp *restful.Resp
 		flog.Error(err)
 	}
 
-	err = r.store.Storage.GuaranteedUpdate(ctx, fmt.Sprintf("/%s/%s/dag/%s", constant.GroupName, constant.Version, obj.UID), &obj, false, nil, nil, false, nil)
+	// query created dag
+	list := &meta.DagList{}
+	err = r.store.Storage.GetList(ctx, fmt.Sprintf("/%s/%s/dag", constant.GroupName, constant.Version), meta.ListOptions{}, list)
+	if err != nil {
+		flog.Error(err)
+		_ = resp.WriteError(http.StatusBadRequest, errors.New("dag error"))
+		return
+	}
+	var dag *meta.Dag
+	for i, item := range list.Items {
+		if item.WorkflowUID == workflowUID {
+			dag = &list.Items[i]
+			break
+		}
+	}
+
+	if dag != nil {
+		// update
+		obj.WorkflowUID = workflowUID
+		obj.UID = dag.UID
+		err = r.store.Storage.GuaranteedUpdate(ctx, fmt.Sprintf("/%s/%s/dag/%s", constant.GroupName, constant.Version, dag.UID), &obj, false, nil, nil, false, nil)
+	} else {
+		// create
+		obj.WorkflowUID = workflowUID
+		obj.UID = uid.New()
+		err = r.store.Storage.Create(ctx, fmt.Sprintf("/%s/%s/dag/%s", constant.GroupName, constant.Version, obj.UID), &obj, &obj, 0, false)
+	}
 	if err != nil {
 		flog.Error(err)
 		_ = resp.WriteError(http.StatusBadRequest, errors.New("dag error"))
