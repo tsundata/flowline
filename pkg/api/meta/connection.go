@@ -17,14 +17,14 @@ type Connection struct {
 	TypeMeta
 	ObjectMeta
 
-	Type        ProviderType `json:"type,omitempty"`
-	Description string       `json:"description,omitempty"`
-	Host        string       `json:"host,omitempty"`
-	Schema      string       `json:"schema,omitempty"`
-	Login       string       `json:"login,omitempty"`
-	Password    string       `json:"password,omitempty"`
-	Port        int          `json:"port,omitempty"`
-	Extra       string       `json:"extra,omitempty"`
+	Type     ProviderType `json:"type,omitempty"`
+	Describe string       `json:"describe,omitempty"`
+	Host     string       `json:"host,omitempty"`
+	Schema   string       `json:"schema,omitempty"`
+	Login    string       `json:"login,omitempty"`
+	Password string       `json:"password,omitempty"`
+	Port     int          `json:"port,omitempty"`
+	Extra    string       `json:"extra,omitempty"`
 }
 
 func (m *Connection) GetObjectKind() schema.ObjectKind {
