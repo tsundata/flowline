@@ -17,8 +17,7 @@ func (m *Role) GetObjectKind() schema.ObjectKind {
 }
 
 func (m *Role) DeepCopyObject() runtime.Object {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 type RoleList struct {
@@ -32,6 +31,5 @@ func (m *RoleList) GetObjectKind() schema.ObjectKind {
 }
 
 func (m *RoleList) DeepCopyObject() runtime.Object {
-	//TODO implement me
-	panic("implement me")
+	return m
 }

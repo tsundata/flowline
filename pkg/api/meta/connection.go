@@ -32,8 +32,7 @@ func (m *Connection) GetObjectKind() schema.ObjectKind {
 }
 
 func (m *Connection) DeepCopyObject() runtime.Object {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 type ConnectionList struct {
@@ -47,6 +46,5 @@ func (m *ConnectionList) GetObjectKind() schema.ObjectKind {
 }
 
 func (m *ConnectionList) DeepCopyObject() runtime.Object {
-	//TODO implement me
-	panic("implement me")
+	return m
 }

@@ -6,6 +6,7 @@ import (
 )
 
 type RawExtension struct {
+	TypeMeta `json:",inline"`
 	// Raw is the underlying serialization of this object.
 	Raw []byte `json:"raw,omitempty"`
 	// Object can hold a representation of this extension - useful for working with versioned
@@ -14,13 +15,11 @@ type RawExtension struct {
 }
 
 func (m *RawExtension) GetObjectKind() schema.ObjectKind {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 func (m *RawExtension) DeepCopyObject() runtime.Object {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 type Unknown struct {
@@ -42,6 +41,5 @@ func (m *Unknown) GetObjectKind() schema.ObjectKind {
 }
 
 func (m *Unknown) DeepCopyObject() runtime.Object {
-	//TODO implement me
-	panic("implement me")
+	return m
 }

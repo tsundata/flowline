@@ -27,8 +27,7 @@ func (m *Worker) GetObjectKind() schema.ObjectKind {
 }
 
 func (m *Worker) DeepCopyObject() runtime.Object {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 type WorkerList struct {
@@ -42,6 +41,5 @@ func (m *WorkerList) GetObjectKind() schema.ObjectKind {
 }
 
 func (m *WorkerList) DeepCopyObject() runtime.Object {
-	//TODO implement me
-	panic("implement me")
+	return m
 }

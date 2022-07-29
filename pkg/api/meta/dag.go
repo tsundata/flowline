@@ -59,8 +59,7 @@ func (m *Dag) GetObjectKind() schema.ObjectKind {
 }
 
 func (m *Dag) DeepCopyObject() runtime.Object {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 type DagList struct {
@@ -74,6 +73,5 @@ func (m *DagList) GetObjectKind() schema.ObjectKind {
 }
 
 func (m *DagList) DeepCopyObject() runtime.Object {
-	//TODO implement me
-	panic("implement me")
+	return m
 }

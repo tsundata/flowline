@@ -35,8 +35,7 @@ func (m *Job) GetObjectKind() schema.ObjectKind {
 }
 
 func (m *Job) DeepCopyObject() runtime.Object {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 type JobList struct {
@@ -50,6 +49,5 @@ func (m *JobList) GetObjectKind() schema.ObjectKind {
 }
 
 func (m *JobList) DeepCopyObject() runtime.Object {
-	//TODO implement me
-	panic("implement me")
+	return m
 }

@@ -16,8 +16,7 @@ func (m *Event) GetObjectKind() schema.ObjectKind {
 }
 
 func (m *Event) DeepCopyObject() runtime.Object {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 type EventList struct {
@@ -27,13 +26,11 @@ type EventList struct {
 }
 
 func (m *EventList) GetObjectKind() schema.ObjectKind {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 func (m *EventList) DeepCopyObject() runtime.Object {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 type WatchEvent struct {

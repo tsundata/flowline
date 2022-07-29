@@ -9,8 +9,9 @@ type Code struct {
 	TypeMeta
 	ObjectMeta
 
-	Runtime string `json:"runtime,omitempty"`
-	Code    string `json:"code,omitempty"`
+	Describe string `json:"describe,omitempty"`
+	Runtime  string `json:"runtime,omitempty"`
+	Code     string `json:"code,omitempty"`
 }
 
 func (m *Code) GetObjectKind() schema.ObjectKind {
@@ -18,8 +19,7 @@ func (m *Code) GetObjectKind() schema.ObjectKind {
 }
 
 func (m *Code) DeepCopyObject() runtime.Object {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
 
 type CodeList struct {
@@ -33,6 +33,5 @@ func (m *CodeList) GetObjectKind() schema.ObjectKind {
 }
 
 func (m *CodeList) DeepCopyObject() runtime.Object {
-	//TODO implement me
-	panic("implement me")
+	return m
 }
