@@ -10,7 +10,6 @@ type User struct {
 	TypeMeta
 	ObjectMeta
 
-	Username    string `json:"username,omitempty"`
 	Password    string `json:"password,omitempty"`
 	Email       string `json:"email,omitempty"`
 	Active      bool   `json:"active,omitempty"`

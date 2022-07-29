@@ -111,12 +111,12 @@ func (r *subResource) userLogin(req *restful.Request, resp *restful.Response) {
 	if list, ok := obj.(*meta.UserList); ok {
 		var user meta.User
 		for _, item := range list.Items {
-			if item.Username == login.Username {
+			if item.Name == login.Username {
 				user = item
 				break
 			}
 		}
-		if user.Username == "" {
+		if user.Name == "" {
 			_ = resp.WriteError(http.StatusBadRequest, errors.New("username or password error"))
 			return
 		}
