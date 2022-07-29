@@ -32,7 +32,10 @@ type Node struct {
 		Tooltip   string `json:"tooltip,omitempty"`
 		Connected bool   `json:"connected,omitempty"`
 	} `json:"ports,omitempty"`
-	Order int `json:"_order,omitempty"`
+	Order       int      `json:"_order,omitempty"`
+	Code        string   `json:"code"`
+	Variables   []string `json:"variables"`
+	Connections []string `json:"connections"`
 }
 
 type Edge struct {
