@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"github.com/tsundata/flowline/pkg/manager/config"
 	"github.com/tsundata/flowline/pkg/util/flog"
 )
 
@@ -8,7 +9,7 @@ type Instance struct {
 	GenericControllerManagerServer *GenericControllerManagerServer
 }
 
-func NewInstance(config *Config) *Instance {
+func NewInstance(config *config.Config) *Instance {
 	return &Instance{
 		GenericControllerManagerServer: NewGenericControllerManagerServer("controller-manager", config),
 	}

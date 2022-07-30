@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+var ErrNotFound = errors.New("not found")
+
 type SharedInformer interface {
 	// AddEventHandler adds an event handler to the shared informer using the shared informer's resync
 	// period.  Events to a single handler are delivered sequentially, but there is no coordination
@@ -686,6 +688,21 @@ func WaitForCacheSync(stopCh <-chan struct{}, cacheSyncs ...InformerSynced) bool
 	}
 
 	flog.Infof("caches populated")
+	return true
+}
+
+// WaitForNamedCacheSync is a wrapper around WaitForCacheSync that generates log messages
+// indicating that the caller identified by name is waiting for syncs, followed by
+// either a successful or failed sync.
+func WaitForNamedCacheSync(controllerName string, stopCh <-chan struct{}, cacheSyncs ...InformerSynced) bool {
+	flog.Infof("Waiting for caches to sync for %s", controllerName)
+
+	if !WaitForCacheSync(stopCh, cacheSyncs...) {
+		flog.Error(fmt.Errorf("unable to sync caches for %s", controllerName))
+		return false
+	}
+
+	flog.Infof("Caches are synced for %s", controllerName)
 	return true
 }
 

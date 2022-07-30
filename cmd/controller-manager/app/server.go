@@ -1,9 +1,12 @@
 package app
 
 import (
+	"context"
 	"fmt"
-	"github.com/tsundata/flowline/pkg/manager"
+	"github.com/tsundata/flowline/pkg/manager/config"
+	"github.com/tsundata/flowline/pkg/manager/controller"
 	"github.com/tsundata/flowline/pkg/util/flog"
+	"github.com/tsundata/flowline/pkg/util/parallelizer"
 	"github.com/tsundata/flowline/pkg/util/signal"
 	"github.com/tsundata/flowline/pkg/util/version"
 	"github.com/urfave/cli/v2"
@@ -32,9 +35,9 @@ func NewControllerManagerCommand() *cli.App {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			config := manager.NewConfig() // todo
-			config.RestConfig.Host = c.String("api-url")
-			return Run(config, signal.SetupSignalHandler())
+			conf := config.NewConfig()
+			conf.RestConfig.Host = c.String("api-url")
+			return Run(conf, signal.SetupSignalHandler())
 		},
 		Commands: []*cli.Command{
 			{
@@ -50,17 +53,43 @@ func NewControllerManagerCommand() *cli.App {
 	}
 }
 
-func Run(c *manager.Config, stopCh <-chan struct{}) error {
-	flog.Info("controller-manager running")
-
-	server, err := CreateServerChain(c)
-	if err != nil {
-		return err
-	}
-
-	return server.Run(stopCh)
+// serviceAccountTokenControllerStarter is special because it must run first to set up permissions for other controllers.
+// It cannot use the "normal" client builder, so it tracks its own. It must also avoid being included in the "normal"
+// init map so that it can always run first.
+type serviceAccountTokenControllerStarter struct {
+	rootClientBuilder interface{}
 }
 
-func CreateServerChain(c *manager.Config) (*manager.Instance, error) {
-	return manager.NewInstance(c), nil
+func (s serviceAccountTokenControllerStarter) startServiceAccountTokenController() InitFunc {
+	return func(ctx context.Context, controllerCtx ControllerContext) (controller controller.Interface, enabled bool, err error) {
+		return nil, false, nil
+	}
+}
+
+func Run(c *config.Config, stopCh <-chan struct{}) error {
+	flog.Info("controller-manager running")
+
+	saTokenControllerInitFunc := serviceAccountTokenControllerStarter{}.startServiceAccountTokenController()
+
+	run := func(ctx context.Context, startSATokenController InitFunc, initializersFunc ControllerInitializersFunc) {
+		controllerContext, err := CreateControllerContext(c, ctx.Done())
+		if err != nil {
+			flog.Fatalf("error building controller context: %v", err)
+		}
+		controllerInitializers := initializersFunc()
+		if err := StartControllers(ctx, controllerContext, startSATokenController, controllerInitializers); err != nil {
+			flog.Fatalf("error starting controllers: %v", err)
+		}
+
+		controllerContext.InformerFactory.Start(stopCh)
+		close(controllerContext.InformersStarted)
+
+		<-ctx.Done()
+	}
+
+	ctx, _ := parallelizer.ContextForChannel(stopCh)
+	run(ctx, saTokenControllerInitFunc, NewControllerInitializers)
+
+	<-stopCh
+	return nil
 }

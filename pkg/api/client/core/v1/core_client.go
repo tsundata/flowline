@@ -9,12 +9,22 @@ import (
 
 type CoreV1Interface interface {
 	RESTClient() rest.Interface
+	WorkflowGetter
+	JobGetter
 	WorkerGetter
 	StageGetter
 }
 
 type CoreV1Client struct {
 	restClient rest.Interface
+}
+
+func (c *CoreV1Client) Workflow() WorkflowInterface {
+	return newWorkflow(c)
+}
+
+func (c *CoreV1Client) Job() JobInterface {
+	return newJob(c)
 }
 
 func (c *CoreV1Client) Worker() WorkerInterface {
