@@ -55,13 +55,30 @@ func NewController(jobInformer informerv1.JobInformer, workflowInformer informer
 		DeleteFunc: jm.deleteJob,
 	})
 
-	workflowInformer.Informer().AddEventHandler(informer.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			jm.enqueueController(obj)
+	workflowInformer.Informer().AddEventHandler(informer.FilteringResourceEventHandler{
+		FilterFunc: func(obj interface{}) bool {
+			switch t := obj.(type) {
+			case *meta.Workflow:
+				return t.Trigger == meta.TriggerCron
+			case informer.DeletedFinalStateUnknown:
+				if w, ok := t.Obj.(*meta.Workflow); ok {
+					return w.Trigger == meta.TriggerCron
+				}
+				flog.Errorf("unable to convert object %T to *meta.Workflow", obj)
+				return false
+			default:
+				flog.Errorf("unable to handle object in %T", obj)
+				return false
+			}
 		},
-		UpdateFunc: jm.updateWorkflow,
-		DeleteFunc: func(obj interface{}) {
-			jm.enqueueController(obj)
+		Handler: informer.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				jm.enqueueController(obj)
+			},
+			UpdateFunc: jm.updateWorkflow,
+			DeleteFunc: func(obj interface{}) {
+				jm.enqueueController(obj)
+			},
 		},
 	})
 
