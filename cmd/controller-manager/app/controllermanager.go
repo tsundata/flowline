@@ -16,6 +16,7 @@ import (
 func NewControllerInitializers() map[string]InitFunc {
 	controllers := make(map[string]InitFunc)
 	controllers["crontrigger"] = startCronTriggerController
+	controllers["dag"] = startDagController
 	return controllers
 }
 

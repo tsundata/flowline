@@ -65,7 +65,7 @@ func (c *stage) UpdateStatus(ctx context.Context, stage *meta.Stage, _ meta.Upda
 	var result = &meta.Stage{}
 	var err = c.client.Put().
 		Resource("stage").
-		Name(stage.Name).
+		Name(stage.UID).
 		SubResource("state").
 		Body(stage).
 		Do(ctx).
@@ -158,7 +158,7 @@ func (c *stage) Patch(ctx context.Context, name string, pt string, data []byte, 
 func (c *stage) Bind(ctx context.Context, binding *meta.Binding, _ meta.CreateOptions) error {
 	return c.client.Post().
 		Resource("stage").
-		Name(binding.Name).
+		Name(binding.UID).
 		SubResource("binding").
 		Body(binding).
 		Do(ctx).

@@ -8,7 +8,8 @@ import (
 type StageState string
 
 const (
-	StageDone StageState = "done"
+	StageCreate StageState = "create"
+	StageDone   StageState = "done"
 )
 
 type Stage struct {

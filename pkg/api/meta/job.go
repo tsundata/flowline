@@ -11,6 +11,7 @@ type JobState string
 const (
 	JobCreate          JobState = "create"
 	JobFailed          JobState = "failed"
+	JobStage           JobState = "stage"
 	JobQueued          JobState = "queued"
 	JobRunning         JobState = "running"
 	JobScheduled       JobState = "scheduled"

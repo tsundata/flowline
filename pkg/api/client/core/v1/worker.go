@@ -65,7 +65,7 @@ func (c *worker) UpdateStatus(ctx context.Context, worker *meta.Worker, _ meta.U
 	var result = &meta.Worker{}
 	var err = c.client.Put().
 		Resource("worker").
-		Name(worker.Name).
+		Name(worker.UID).
 		SubResource("state").
 		Body(worker).
 		Do(ctx).
@@ -158,7 +158,7 @@ func (c *worker) Patch(ctx context.Context, name string, pt string, data []byte,
 func (c *worker) Bind(ctx context.Context, binding *meta.Binding, _ meta.CreateOptions) error {
 	return c.client.Post().
 		Resource("worker").
-		Name(binding.Name).
+		Name(binding.UID).
 		SubResource("binding").
 		Body(binding).
 		Do(ctx).

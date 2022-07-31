@@ -17,6 +17,7 @@ type Config struct {
 	// allowed to sync concurrently. Larger number = more responsive jobs,
 	// but more CPU (and network) load.
 	ConcurrentCronTriggerSyncs int32
+	ConcurrentDagSyncs         int32
 }
 
 // GenericControllerManagerConfiguration holds configuration for a generic controller-manager
@@ -46,9 +47,13 @@ func NewConfig() *Config {
 			Impersonate:        rest.ImpersonationConfig{},
 		},
 		Generic: GenericControllerManagerConfiguration{
-			Controllers: []string{"*"},
+			Controllers: []string{
+				"*",
+				"-crontrigger",
+			},
 		},
 		ConcurrentCronTriggerSyncs: 1,
+		ConcurrentDagSyncs:         1,
 	}
 
 }

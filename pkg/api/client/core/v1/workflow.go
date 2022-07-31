@@ -29,6 +29,7 @@ type WorkflowInterface interface {
 // The WorkflowExpansion interface allows manually adding extra methods to the PodInterface.
 type WorkflowExpansion interface {
 	Bind(ctx context.Context, binding *meta.Binding, opts meta.CreateOptions) error
+	GetDag(ctx context.Context, name string, opts meta.GetOptions) (*meta.Dag, error)
 }
 
 type workflow struct {
@@ -158,9 +159,21 @@ func (c *workflow) Patch(ctx context.Context, name string, pt string, data []byt
 func (c *workflow) Bind(ctx context.Context, binding *meta.Binding, _ meta.CreateOptions) error {
 	return c.client.Post().
 		Resource("workflow").
-		Name(binding.Name).
+		Name(binding.UID).
 		SubResource("binding").
 		Body(binding).
 		Do(ctx).
 		Error()
+}
+
+func (c *workflow) GetDag(ctx context.Context, name string, _ meta.GetOptions) (*meta.Dag, error) {
+	var result = &meta.Dag{}
+	err := c.client.Get().
+		Resource("workflow").
+		Name(name).
+		SubResource("dag").
+		Do(ctx).
+		Into(result)
+
+	return result, err
 }
