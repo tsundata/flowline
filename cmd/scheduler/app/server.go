@@ -13,7 +13,6 @@ import (
 	"github.com/tsundata/flowline/pkg/util/signal"
 	"github.com/tsundata/flowline/pkg/util/version"
 	"github.com/urfave/cli/v2"
-	"time"
 )
 
 func NewSchedulerCommand() *cli.App {
@@ -104,7 +103,6 @@ func Setup(ctx context.Context, c *config.Config, outOfTreeRegistryOptions ...Op
 		Host:          c.Config.ApiHost,
 		ContentConfig: rest.ContentConfig{},
 		Impersonate:   rest.ImpersonationConfig{},
-		Timeout:       5 * time.Minute,
 	})
 	if err != nil {
 		return nil, nil, err

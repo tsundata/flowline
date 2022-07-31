@@ -65,7 +65,7 @@ func (c *workflow) UpdateStatus(ctx context.Context, workflow *meta.Workflow, _ 
 	var result = &meta.Workflow{}
 	var err = c.client.Put().
 		Resource("workflow").
-		Name(workflow.Name).
+		Name(workflow.UID).
 		SubResource("state").
 		Body(workflow).
 		Do(ctx).

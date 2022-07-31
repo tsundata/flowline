@@ -77,3 +77,17 @@ type StatusDetails struct {
 	// before taking the alternate action.
 	RetryAfterSeconds int32 `json:"retryAfterSeconds,omitempty"`
 }
+
+type State struct {
+	TypeMeta `json:",inline"`
+
+	State string `json:"state"`
+}
+
+func (m *State) GetObjectKind() schema.ObjectKind {
+	return m
+}
+
+func (m *State) DeepCopyObject() runtime.Object {
+	return m
+}

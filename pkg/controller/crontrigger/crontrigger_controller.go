@@ -236,11 +236,11 @@ func (jm *Controller) sync(ctx context.Context, cronJobKey string) (*time.Durati
 
 	cronJobCopy, requeueAfter, updateStatus, err := jm.syncCronJob(ctx, cronJob, jobsToBeReconciled)
 	if err != nil {
-		flog.Infof("Error reconciling cronjob %s %s", cronJob.GetName(), err)
+		flog.Infof("Error reconciling crontrigger %s %s", cronJob.GetName(), err)
 		if updateStatus {
 			fmt.Println(cronJobCopy)
 			if _, err := jm.workflowControl.UpdateStatus(ctx, cronJobCopy); err != nil {
-				flog.Infof("Unable to update status for cronjob %s %s %s", cronJob.GetName(), cronJob.ResourceVersion, err)
+				flog.Infof("Unable to update status for crontrigger %s %s %s", cronJob.GetName(), cronJob.ResourceVersion, err)
 				return nil, err
 			}
 		}
@@ -254,13 +254,13 @@ func (jm *Controller) sync(ctx context.Context, cronJobKey string) (*time.Durati
 	// Update the CronJob if needed
 	if updateStatus {
 		if _, err := jm.workflowControl.UpdateStatus(ctx, cronJobCopy); err != nil {
-			flog.Infof("Unable to update status for cronjob %s %s %s", cronJob.GetName(), cronJob.ResourceVersion, err)
+			flog.Infof("Unable to update status for crontrigger %s %s %s", cronJob.GetName(), cronJob.ResourceVersion, err)
 			return nil, err
 		}
 	}
 
 	if requeueAfter != nil {
-		flog.Infof("Re-queuing cronjob %s %s", cronJob.GetName(), requeueAfter)
+		flog.Infof("Re-queuing crontrigger %s %s", cronJob.GetName(), requeueAfter)
 		return requeueAfter, nil
 	}
 
@@ -439,7 +439,7 @@ func (jm *Controller) syncCronJob(
 	sched, err := cron.ParseStandard(cronJob.TriggerParam)
 	if err != nil {
 		// this is likely a user error in defining the spec value
-		// we should log the error and not reconcile this cronjob until an update to spec
+		// we should log the error and not reconcile this crontrigger until an update to spec
 		flog.Errorf("unparseable schedule: %q : %s", cronJob.TriggerParam, err)
 		return cronJob, nil, updateStatus, nil
 	}
@@ -447,7 +447,7 @@ func (jm *Controller) syncCronJob(
 	scheduledTime, err := getNextScheduleTime(*cronJob, now, sched)
 	if err != nil {
 		// this is likely a user error in defining the spec value
-		// we should log the error and not reconcile this cronjob until an update to spec
+		// we should log the error and not reconcile this crontrigger until an update to spec
 		flog.Errorf("invalid schedule: %s : %s", cronJob.TriggerParam, err)
 		return cronJob, nil, updateStatus, nil
 	}
@@ -478,7 +478,7 @@ func (jm *Controller) syncCronJob(
 		t := nextScheduledTimeDuration(*cronJob, sched, now)
 		return cronJob, t, updateStatus, nil
 	}
-	if cronJob.LastTriggerTimestamp.Equal(*scheduledTime) {
+	if cronJob.LastTriggerTimestamp != nil && cronJob.LastTriggerTimestamp.Equal(*scheduledTime) {
 		flog.Infof("Not starting job because the scheduled time is already processed %s %s", cronJob.GetName(), scheduledTime.UTC().Format(time.RFC1123Z))
 		t := nextScheduledTimeDuration(*cronJob, sched, now)
 		return cronJob, t, updateStatus, nil
@@ -514,7 +514,7 @@ func (jm *Controller) syncCronJob(
 }
 
 // getJobFromTemplate2 makes a Job from a CronJob. It converts the unix time into minutes from
-// epoch time and concatenates that to the job name, because the cronjob_controller v2 has the lowest
+// epoch time and concatenates that to the job name, because the crontrigger_controller v2 has the lowest
 // granularity of 1 minute for scheduling job.
 func getJobFromTemplate(cj *meta.Workflow, scheduledTime time.Time) (*meta.Job, error) {
 	// We want job names for a given nominal start time to have a deterministic name to avoid the same job being created twice

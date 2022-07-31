@@ -47,7 +47,6 @@ func newDelayingQueue(clock clock.WithTicker, q Interface, name string) *delayin
 		heartbeat:       clock.NewTicker(maxWait),
 		stopCh:          make(chan struct{}),
 		waitingForAddCh: make(chan *waitFor, 1000),
-		metrics:         nil,
 	}
 
 	go ret.waitingLoop()
@@ -71,13 +70,6 @@ type delayingType struct {
 
 	// waitingForAddCh is a buffered channel that feeds waitingForAdd
 	waitingForAddCh chan *waitFor
-
-	// metrics counts the number of retries
-	metrics retryMetrics
-}
-
-type retryMetrics interface {
-	retry()
 }
 
 // waitFor holds the data to add and the time it should be added
@@ -151,8 +143,6 @@ func (q *delayingType) AddAfter(item interface{}, duration time.Duration) {
 	if q.ShuttingDown() {
 		return
 	}
-
-	q.metrics.retry()
 
 	// immediately add things with no delay
 	if duration <= 0 {

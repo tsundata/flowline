@@ -70,6 +70,13 @@ func (r *REST) Actions() []rest.SubResourceAction {
 			ReadSample:   meta.Dag{},
 			ReturnSample: meta.Status{},
 		},
+		{
+			Verb:         "PUT",
+			SubResource:  "state",
+			Params:       nil,
+			ReadSample:   meta.Workflow{},
+			ReturnSample: meta.Workflow{},
+		},
 	}
 }
 
@@ -78,6 +85,7 @@ func (r *REST) Handle(verb, subresource string, req *restful.Request, resp *rest
 	srRoute := rest.NewSubResourceRoute(verb, subresource, req, resp)
 	srRoute.Match("GET", "dag", sr.workflowGetDag)
 	srRoute.Match("PUT", "dag", sr.workflowUpdateDag)
+	srRoute.Match("PUT", "state", sr.workflowUpdateState)
 	if !srRoute.Matched() {
 		_ = resp.WriteError(http.StatusBadRequest, errors.New("error subresource path"))
 	}
@@ -89,7 +97,7 @@ type subResource struct {
 
 func (r *subResource) workflowGetDag(req *restful.Request, resp *restful.Response) {
 	ctx := req.Request.Context()
-	uid := req.PathParameter("uid")
+	u := req.PathParameter("uid")
 
 	list := &meta.DagList{}
 	err := r.store.Storage.GetList(ctx, fmt.Sprintf("/%s/%s/dag", constant.GroupName, constant.Version), meta.ListOptions{}, list)
@@ -101,7 +109,7 @@ func (r *subResource) workflowGetDag(req *restful.Request, resp *restful.Respons
 
 	var dag *meta.Dag
 	for i, item := range list.Items {
-		if item.WorkflowUID == uid {
+		if item.WorkflowUID == u {
 			dag = &list.Items[i]
 			break
 		}
@@ -160,4 +168,14 @@ func (r *subResource) workflowUpdateDag(req *restful.Request, resp *restful.Resp
 
 	_ = resp.WriteEntity(meta.Status{Status: meta.StatusSuccess})
 	return
+}
+
+func (r *subResource) workflowUpdateState(req *restful.Request, resp *restful.Response) {
+	obj := meta.Workflow{}
+	err := req.ReadEntity(&obj)
+	if err != nil {
+		flog.Error(err)
+	}
+	// todo
+	_ = resp.WriteEntity(obj)
 }

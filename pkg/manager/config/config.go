@@ -44,11 +44,13 @@ func NewConfig() *Config {
 			DisableCompression: true,
 			ContentConfig:      rest.ContentConfig{},
 			Impersonate:        rest.ImpersonationConfig{},
-			Timeout:            5 * time.Minute,
 		},
 		Generic: GenericControllerManagerConfiguration{
 			Controllers: []string{"*"},
-		}}
+		},
+		ConcurrentCronTriggerSyncs: 1,
+	}
+
 }
 
 func (c *Config) Complete() *Config {
