@@ -25,9 +25,13 @@ type Job struct {
 	TypeMeta
 	ObjectMeta
 
-	State             JobState   `json:"state,omitempty"`
-	TriggerTimestamp  *time.Time `json:"triggerTimestamp,omitempty"`
-	ScheduleTimestamp *time.Time `json:"scheduleTimestamp,omitempty"`
+	WorkflowUID         string     `json:"workflowUID"`
+	State               JobState   `json:"state,omitempty"`
+	TriggerTimestamp    *time.Time `json:"triggerTimestamp,omitempty"`
+	ScheduleTimestamp   *time.Time `json:"scheduleTimestamp,omitempty"`
+	CompletionTimestamp *time.Time `json:"completionTimestamp,omitempty"`
+
+	StartTime *time.Time `json:"-"`
 }
 
 func (m *Job) GetObjectKind() schema.ObjectKind {

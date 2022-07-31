@@ -37,7 +37,7 @@ func NewControllerManagerCommand() *cli.App {
 		Action: func(c *cli.Context) error {
 			conf := config.NewConfig()
 			conf.RestConfig.Host = c.String("api-url")
-			return Run(conf, signal.SetupSignalHandler())
+			return Run(conf.Complete(), signal.SetupSignalHandler())
 		},
 		Commands: []*cli.Command{
 			{

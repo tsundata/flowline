@@ -12,6 +12,11 @@ type Config struct {
 	Client client.Interface
 
 	Generic GenericControllerManagerConfiguration
+
+	// ConcurrentCronJobSyncs is the number of cron job objects that are
+	// allowed to sync concurrently. Larger number = more responsive jobs,
+	// but more CPU (and network) load.
+	ConcurrentCronTriggerSyncs int32
 }
 
 // GenericControllerManagerConfiguration holds configuration for a generic controller-manager
@@ -34,9 +39,23 @@ type GenericControllerManagerConfiguration struct {
 }
 
 func NewConfig() *Config {
-	return &Config{RestConfig: &rest.Config{}}
+	return &Config{
+		RestConfig: &rest.Config{
+			DisableCompression: true,
+			ContentConfig:      rest.ContentConfig{},
+			Impersonate:        rest.ImpersonationConfig{},
+			Timeout:            5 * time.Minute,
+		},
+		Generic: GenericControllerManagerConfiguration{
+			Controllers: []string{"*"},
+		}}
 }
 
-func (c *Config) Complete() {
-	// todo
+func (c *Config) Complete() *Config {
+	var err error
+	c.Client, err = client.NewForConfig(c.RestConfig)
+	if err != nil {
+		panic(err)
+	}
+	return c
 }

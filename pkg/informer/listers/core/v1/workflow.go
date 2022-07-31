@@ -7,6 +7,7 @@ import (
 
 type WorkflowLister interface {
 	List(selector interface{}) (ret []*meta.Workflow, err error)
+	Get(name string) (*meta.Workflow, error)
 }
 
 type workflowLister struct {
@@ -22,4 +23,16 @@ func (s *workflowLister) List(selector interface{}) (ret []*meta.Workflow, err e
 		ret = append(ret, m.(*meta.Workflow))
 	})
 	return ret, err
+}
+
+func (s *workflowLister) Get(name string) (*meta.Workflow, error) {
+	obj, exists, err := s.indexer.GetByKey(name)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, informer.ErrNotFound
+	}
+
+	return obj.(*meta.Workflow), nil
 }

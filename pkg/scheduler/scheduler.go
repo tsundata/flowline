@@ -114,7 +114,7 @@ type Scheduler struct {
 	// Profiles are the scheduling profiles.
 	Profiles map[string]framework.Framework
 
-	client interface{}
+	client client.Interface
 
 	workerInfoSnapshot *cache.Snapshot
 
@@ -325,7 +325,7 @@ func newScheduler(
 	stopEverything <-chan struct{},
 	schedulingQueue queue.SchedulingQueue,
 	profiles map[string]framework.Framework,
-	client interface{},
+	client client.Interface,
 	workerInfoSnapshot *cache.Snapshot,
 	percentageOfWorkersToScore int32) *Scheduler {
 	sched := Scheduler{

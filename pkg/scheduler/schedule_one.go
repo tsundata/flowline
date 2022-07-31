@@ -3,6 +3,7 @@ package scheduler
 import (
 	"context"
 	"fmt"
+	"github.com/tsundata/flowline/pkg/api/client"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
@@ -195,7 +196,7 @@ func (sched *Scheduler) handleSchedulingFailure(ctx context.Context, fwk framewo
 }
 
 func (sched *Scheduler) frameworkForStage(stage *meta.Stage) (framework.Framework, error) {
-	stage.SchedulerName = constant.DefaultSchedulerName // fixme
+	stage.SchedulerName = constant.DefaultSchedulerName
 	fwk, ok := sched.Profiles[stage.SchedulerName]
 	if !ok {
 		return nil, fmt.Errorf("profile not found for scheduler name %q", stage.SchedulerName)
@@ -212,8 +213,11 @@ func (sched *Scheduler) skipStageSchedule(fwk framework.Framework, stage *meta.S
 	return isAssumed
 }
 
-func updateStage(ctx context.Context, client interface{}, stage *meta.Stage, condition interface{}, nominatingInfo *framework.NominatingInfo) error {
-	// todo  	_, err = cs.CoreV1().Stages(old.Namespace).Patch(ctx, old.Name, types.StrategicMergePatchType, patchBytes, metav1.PatchOptions{}, "status")
+func updateStage(ctx context.Context, client client.Interface, stage *meta.Stage, condition interface{}, nominatingInfo *framework.NominatingInfo) error {
+	_, err := client.CoreV1().Stage().UpdateStatus(ctx, stage, meta.UpdateOptions{})
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

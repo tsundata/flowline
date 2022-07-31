@@ -5,10 +5,10 @@ import (
 )
 
 type Interface interface {
-	Workers() WorkerInformer
 	Workflows() WorkflowInformer
 	Jobs() JobInformer
 	Stages() StageInformer
+	Workers() WorkerInformer
 }
 
 type version struct {
@@ -28,10 +28,10 @@ func (v *version) Jobs() JobInformer {
 	return &jobInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
-func (v *version) Workers() WorkerInformer {
-	return &workerInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
-}
-
 func (v *version) Stages() StageInformer {
 	return &stageInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+func (v *version) Workers() WorkerInformer {
+	return &workerInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
