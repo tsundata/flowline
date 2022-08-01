@@ -71,13 +71,12 @@ func addAllEventHandlers(sched *Scheduler, informerFactory informers.SharedInfor
 }
 
 func assignedStage(stage *meta.Stage) bool {
-	// fixme
-	return stage.WorkerUID != ""
+	return stage.State != meta.StageCreate || stage.WorkerUID != ""
 }
 
 func (sched *Scheduler) addStageToSchedulingQueue(obj interface{}) {
 	stage := obj.(*meta.Stage)
-	flog.Infof("Add event for unscheduled stage %v", stage)
+	flog.Infof("Add event for unscheduled stage %v", stage.UID)
 	if err := sched.SchedulingQueue.Add(stage); err != nil {
 		flog.Errorf("unable to queue %T: %v", obj, err)
 	}
@@ -161,10 +160,10 @@ func (sched *Scheduler) updateStageInCache(oldObj, newObj interface{}) {
 		return
 	}
 
-	flog.Infof("update event for scheduled stage %+v --> %+v", oldStage, newStage)
+	flog.Infof("update event for scheduled stage %+v --> %+v", oldStage.UID, newStage.UID)
 
 	if err := sched.Cache.UpdateStage(oldStage, newStage); err != nil {
-		flog.Errorf("scheduler cache updateStage failed %+v --> %+v", oldStage, newStage)
+		flog.Errorf("scheduler cache updateStage failed %+v --> %+v", oldStage.UID, newStage.UID)
 	}
 
 	sched.SchedulingQueue.AssignedStageUpdated(newStage)
@@ -201,7 +200,7 @@ func (sched *Scheduler) addWorkerToCache(obj interface{}) {
 		flog.Errorf("cannot convert to *meta.worker %T", obj)
 		return
 	}
-	flog.Infof("add event for worker %+v", worker)
+	flog.Infof("add event for worker %+v", worker.UID)
 	workerInfo := sched.Cache.AddWorker(worker)
 	sched.SchedulingQueue.MoveAllToActiveOrBackoffQueue(queue.WorkerAdd, preCheckForWorker(workerInfo))
 }
@@ -218,7 +217,7 @@ func (sched *Scheduler) updateWorkerToCache(oldObj, newObj interface{}) {
 		return
 	}
 
-	flog.Infof("update event for worker %+v --> %+v", oldWorker, newWorker)
+	flog.Infof("update event for worker %+v --> %+v", oldWorker.UID, newWorker.UID)
 
 	workerInfo := sched.Cache.UpdateWorker(oldWorker, newWorker)
 	if event := workerSchedulingPropertiesChange(newWorker, oldWorker); event != nil {

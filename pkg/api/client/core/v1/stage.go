@@ -157,7 +157,7 @@ func (c *stage) Patch(ctx context.Context, name string, pt string, data []byte, 
 }
 
 func (c *stage) Bind(ctx context.Context, binding *meta.Binding, _ meta.CreateOptions) error {
-	return c.client.Post().
+	return c.client.Put().
 		Resource("stage").
 		Name(binding.UID).
 		SubResource("binding").

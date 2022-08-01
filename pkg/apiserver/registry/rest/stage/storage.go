@@ -2,7 +2,6 @@ package stage
 
 import (
 	"errors"
-	"fmt"
 	"github.com/emicklei/go-restful/v3"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver/registry"
@@ -54,30 +53,58 @@ func NewREST(options *options.StoreOptions) (*REST, error) {
 func (r *REST) Actions() []rest.SubResourceAction {
 	return []rest.SubResourceAction{
 		{
-			Verb:         "POST",
+			Verb:         "PUT",
 			SubResource:  "binding",
 			Params:       nil,
 			ReadSample:   meta.Binding{},
-			WriteSample:  meta.Binding{},
-			ReturnSample: meta.Binding{},
+			ReturnSample: meta.Status{},
 		},
 	}
 }
 
 func (r *REST) Handle(verb, subresource string, req *restful.Request, resp *restful.Response) {
+	sr := &subResource{r}
 	srRoute := rest.NewSubResourceRoute(verb, subresource, req, resp)
-	srRoute.Match("POST", "binding", stageBinding)
+	srRoute.Match("PUT", "binding", sr.stageBinding)
 	if !srRoute.Matched() {
 		_ = resp.WriteError(http.StatusBadRequest, errors.New("error subresource path"))
 	}
 }
 
-func stageBinding(req *restful.Request, resp *restful.Response) {
+type subResource struct {
+	store *REST
+}
+
+func (r *subResource) stageBinding(req *restful.Request, resp *restful.Response) {
+	ctx := req.Request.Context()
 	obj := meta.Binding{}
 	err := req.ReadEntity(&obj)
 	if err != nil {
 		flog.Error(err)
 	}
-	fmt.Printf("%+v \n", obj)
+	uid := req.PathParameter("uid")
+
+	find, err := r.store.Get(ctx, uid, &meta.GetOptions{})
+	if err != nil {
+		flog.Error(err)
+		_ = resp.WriteError(http.StatusBadRequest, errors.New("error stage"))
+		return
+	}
+
+	stage, ok := find.(*meta.Stage)
+	if !ok {
+		_ = resp.WriteError(http.StatusBadRequest, errors.New("error stage"))
+		return
+	}
+
+	stage.WorkerUID = obj.Target.UID
+
+	_, _, err = r.store.Update(ctx, uid, stage, rest.ValidateAllObjectFunc, rest.ValidateAllObjectUpdateFunc, false, &meta.UpdateOptions{})
+	if err != nil {
+		_ = resp.WriteError(http.StatusBadRequest, errors.New("error update stage"))
+		return
+	}
+
+	_ = resp.WriteEntity(meta.Status{Status: meta.StatusSuccess})
 	return
 }

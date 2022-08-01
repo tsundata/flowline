@@ -203,10 +203,12 @@ func (sched *Scheduler) findWorkersThatFitStage(ctx context.Context, fwk framewo
 		UnschedulablePlugins: make(map[string]struct{}),
 	}
 
-	var allWorkers []*framework.WorkerInfo //fixme get all workers
+	allWorkers, err := sched.workerInfoSnapshot.WorkerInfos().List()
+	if err != nil {
+		return nil, diagnosis, err
+	}
 
 	workers := allWorkers
-	workers, err := sched.workerInfoSnapshot.List()
 	feasibleWorkers, err := sched.findWorkersThatPassFilters(ctx, fwk, state, stage, diagnosis, workers)
 	processedWorkers := len(feasibleWorkers) + len(diagnosis.WorkerToStatusMap)
 	sched.nextStartWorkerIndex = (sched.nextStartWorkerIndex + processedWorkers) % len(workers)

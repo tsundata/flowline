@@ -166,17 +166,18 @@ func (sched *Scheduler) extendersBinding(stage *meta.Stage, worker string) (bool
 	return false, nil
 }
 
-func (sched *Scheduler) finishBinding(fwk framework.Framework, assumed *meta.Stage, targetWorker string, err error) {
+func (sched *Scheduler) finishBinding(_ framework.Framework, assumed *meta.Stage, targetWorker string, err error) {
 	if finErr := sched.Cache.FinishBinding(assumed); finErr != nil {
 		flog.Error(finErr)
 	}
 	if err != nil {
 		flog.Error(err)
 	}
-	// todo fwk.EventRecorder "Scheduled"
+
+	flog.Infof("scheduled %s %s", assumed.Name, targetWorker)
 }
 
-func (sched *Scheduler) handleSchedulingFailure(ctx context.Context, fwk framework.Framework, stageInfo *framework.QueuedStageInfo, err error, reason string, nominatingInfo *framework.NominatingInfo) {
+func (sched *Scheduler) handleSchedulingFailure(ctx context.Context, _ framework.Framework, stageInfo *framework.QueuedStageInfo, err error, reason string, nominatingInfo *framework.NominatingInfo) {
 	sched.Error(stageInfo, err)
 
 	if sched.SchedulingQueue != nil {
@@ -184,7 +185,7 @@ func (sched *Scheduler) handleSchedulingFailure(ctx context.Context, fwk framewo
 	}
 
 	stage := stageInfo.Stage
-	// todo fwk.EventRecorder "FailedScheduling"
+	flog.Warnf("FailedScheduling %s %s", stage.Name, err.Error())
 	if err := updateStage(ctx, sched.client, stage, map[string]interface{}{
 		"Type":    "StageScheduled",
 		"Status":  "ConditionFalse",
@@ -204,16 +205,24 @@ func (sched *Scheduler) frameworkForStage(stage *meta.Stage) (framework.Framewor
 	return fwk, nil
 }
 
-func (sched *Scheduler) skipStageSchedule(fwk framework.Framework, stage *meta.Stage) bool {
+func (sched *Scheduler) skipStageSchedule(_ framework.Framework, stage *meta.Stage) bool {
+	// Case 1: stage is being deleted.
 	if stage.DeletionTimestamp != nil {
 		flog.Infof("skip schedule deleting stage %s", stage.UID)
 		return true
 	}
-	isAssumed := false // todo
+
+	// Case 2: stage that has been assumed could be skipped.
+	isAssumed, err := sched.Cache.IsAssumedStage(stage)
+	if err != nil {
+		flog.Errorf("failed to check whether stage %s is assumed: %v", stage.Name, err)
+		return false
+	}
+
 	return isAssumed
 }
 
-func updateStage(ctx context.Context, client client.Interface, stage *meta.Stage, condition interface{}, nominatingInfo *framework.NominatingInfo) error {
+func updateStage(ctx context.Context, client client.Interface, stage *meta.Stage, _ interface{}, _ *framework.NominatingInfo) error {
 	_, err := client.CoreV1().Stage().UpdateStatus(ctx, stage, meta.UpdateOptions{})
 	if err != nil {
 		return err
