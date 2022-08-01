@@ -18,7 +18,6 @@ import (
 	"github.com/tsundata/flowline/pkg/scheduler/queue"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
-	"github.com/tsundata/flowline/pkg/util/uid"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -429,35 +428,7 @@ func New(client client.Interface,
 		return nil, err
 	}
 
-	// todo stageLister := informerFactory.Core().V1().Stages().Lister()
-	// todo workerLister := informerFactory.Core().V1().Workers().Lister()
-
-	snapshot := cache.NewSnapshot([]*meta.Stage{}, []*meta.Worker{ // fixme
-		&meta.Worker{
-			TypeMeta: meta.TypeMeta{},
-			ObjectMeta: meta.ObjectMeta{
-				Name:            "worker1",
-				UID:             uid.New(),
-				ResourceVersion: "",
-				Generation:      0,
-			},
-			State:    meta.WorkerReady,
-			Host:     "127.0.0.1:6789",
-			Runtimes: []string{"javascript"},
-		},
-		&meta.Worker{
-			TypeMeta: meta.TypeMeta{},
-			ObjectMeta: meta.ObjectMeta{
-				Name:            "worker2",
-				UID:             uid.New(),
-				ResourceVersion: "",
-				Generation:      0,
-			},
-			State:    meta.WorkerReady,
-			Host:     "127.0.0.1:6780",
-			Runtimes: []string{"go", "javascript"},
-		},
-	})
+	snapshot := cache.NewSnapshot([]*meta.Stage{}, []*meta.Worker{})
 	snapshot = cache.NewEmptySnapshot()
 
 	stageLister := informerFactory.Core().V1().Stages().Lister()

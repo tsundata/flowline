@@ -2,7 +2,6 @@ package etcd
 
 import (
 	"context"
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime/serializer/json"
 	clientv3 "go.etcd.io/etcd/client/v3"
@@ -29,5 +28,4 @@ func TestEtcdStore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println(obj)
 }

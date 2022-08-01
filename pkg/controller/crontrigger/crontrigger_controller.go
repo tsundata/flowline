@@ -183,6 +183,13 @@ func (jm *Controller) enqueueController(obj interface{}) {
 		return
 	}
 
+	cur, _ := obj.(*meta.Workflow)
+	if !cur.Active {
+		flog.Infof("crontrigger forget workflow key %s", key)
+		jm.queue.Forget(key)
+		return
+	}
+
 	jm.queue.Add(key)
 }
 
@@ -255,7 +262,6 @@ func (jm *Controller) sync(ctx context.Context, cronJobKey string) (*time.Durati
 	if err != nil {
 		flog.Infof("Error reconciling crontrigger %s %s", cronJob.GetName(), err)
 		if updateStatus {
-			fmt.Println(cronJobCopy)
 			if _, err := jm.workflowControl.UpdateStatus(ctx, cronJobCopy); err != nil {
 				flog.Infof("Unable to update status for crontrigger %s %s %s", cronJob.GetName(), cronJob.ResourceVersion, err)
 				return nil, err

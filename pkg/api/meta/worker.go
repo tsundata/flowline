@@ -18,7 +18,7 @@ type Worker struct {
 	ObjectMeta
 
 	State    WorkerState `json:"state,omitempty"`
-	Host     string      `json:"host,omitempty"`
+	Hostname string      `json:"hostname,omitempty"`
 	Runtimes []string    `json:"runtimes,omitempty"`
 }
 

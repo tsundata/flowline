@@ -49,7 +49,6 @@ func NewConfig() *Config {
 		Generic: GenericControllerManagerConfiguration{
 			Controllers: []string{
 				"*",
-				"-crontrigger",
 			},
 		},
 		ConcurrentCronTriggerSyncs: 1,

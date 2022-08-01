@@ -195,7 +195,7 @@ func (h *HTTPExtender) Prioritize(stage *meta.Stage, workers []*meta.Worker) (ho
 	if h.prioritizeVerb == "" {
 		result := framework.HostPriorityList{}
 		for _, worker := range workers {
-			result = append(result, framework.HostPriority{Host: worker.Host, Score: 0})
+			result = append(result, framework.HostPriority{Host: worker.Hostname, Score: 0})
 		}
 		return &result, 0, nil
 	}

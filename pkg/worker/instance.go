@@ -2,13 +2,14 @@ package worker
 
 import (
 	"github.com/tsundata/flowline/pkg/util/flog"
+	"github.com/tsundata/flowline/pkg/worker/config"
 )
 
 type Instance struct {
 	GenericWorkerServer *GenericWorkerServer
 }
 
-func NewInstance(config *Config) *Instance {
+func NewInstance(config *config.Config) *Instance {
 	return &Instance{
 		GenericWorkerServer: NewGenericWorkerServer("worker", config),
 	}

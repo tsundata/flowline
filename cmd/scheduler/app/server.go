@@ -33,8 +33,8 @@ func NewSchedulerCommand() *cli.App {
 				Name:    "api-host",
 				Aliases: []string{"A"},
 				Value:   "127.0.0.1:5000",
-				Usage:   "apiserver host",
-				EnvVars: []string{"CONTROLLER_MANAGER_HOST"},
+				Usage:   "apiserver url",
+				EnvVars: []string{"API_HOST"},
 			},
 		},
 		Action: func(c *cli.Context) error {
@@ -44,17 +44,6 @@ func NewSchedulerCommand() *cli.App {
 			} // todo
 			cc.Config.ApiHost = c.String("api-host")
 			return runCommand(cc, signal.SetupSignalHandler())
-		},
-		Commands: []*cli.Command{
-			{
-				Name:    "info",
-				Aliases: []string{"I"},
-				Usage:   "print info",
-				Action: func(cCtx *cli.Context) error {
-					fmt.Println("manager")
-					return nil
-				},
-			},
 		},
 	}
 }

@@ -35,7 +35,9 @@ func Resource(resource string) schema.GroupResource {
 func FillObjectMetaSystemFields(o meta.Object) {
 	now := time.Now()
 	o.SetCreationTimestamp(&now)
-	o.SetUID(uid.New())
+	if !uid.IsValid(o.GetUID()) {
+		o.SetUID(uid.New())
+	}
 }
 
 // Storage is a generic interface for RESTful storage services.

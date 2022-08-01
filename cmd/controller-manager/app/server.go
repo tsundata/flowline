@@ -30,25 +30,14 @@ func NewControllerManagerCommand() *cli.App {
 				Name:    "api-url",
 				Aliases: []string{"A"},
 				Value:   "127.0.0.1:5000",
-				Usage:   "server host",
-				EnvVars: []string{"CONTROLLER_MANAGER_HOST"},
+				Usage:   "apiserver host",
+				EnvVars: []string{"API_HOST"},
 			},
 		},
 		Action: func(c *cli.Context) error {
 			conf := config.NewConfig()
 			conf.RestConfig.Host = c.String("api-url")
 			return Run(conf.Complete(), signal.SetupSignalHandler())
-		},
-		Commands: []*cli.Command{
-			{
-				Name:    "info",
-				Aliases: []string{"I"},
-				Usage:   "print info",
-				Action: func(cCtx *cli.Context) error {
-					fmt.Println("manager")
-					return nil
-				},
-			},
 		},
 	}
 }

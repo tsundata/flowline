@@ -6,6 +6,7 @@ import (
 	"github.com/tsundata/flowline/pkg/util/signal"
 	"github.com/tsundata/flowline/pkg/util/version"
 	"github.com/tsundata/flowline/pkg/worker"
+	"github.com/tsundata/flowline/pkg/worker/config"
 	"github.com/urfave/cli/v2"
 )
 
@@ -24,50 +25,31 @@ func NewWorkerCommand() *cli.App {
 		Version: version.Version,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:    "host",
-				Aliases: []string{"H"},
-				Value:   "127.0.0.1",
-				Usage:   "server host",
-				EnvVars: []string{"CONTROLLER_MANAGER_HOST"},
-			},
-			&cli.IntFlag{
-				Name:    "port",
-				Aliases: []string{"P"},
-				Value:   5001,
-				Usage:   "server port",
-				EnvVars: []string{"CONTROLLER_MANAGER_PORT"},
-			},
-			&cli.StringFlag{
-				Name:    "api-url",
+				Name:    "api-host",
 				Aliases: []string{"A"},
 				Value:   "127.0.0.1:5000",
-				Usage:   "server host",
-				EnvVars: []string{"CONTROLLER_MANAGER_HOST"},
+				Usage:   "apiserver host",
+				EnvVars: []string{"API_HOST"},
+			},
+			&cli.StringFlag{
+				Name:    "worker-id",
+				Aliases: []string{"I"},
+				Value:   "",
+				Usage:   "worker id",
+				EnvVars: []string{"WORKER_ID"},
 			},
 		},
 		Action: func(c *cli.Context) error {
-			config := worker.NewConfig() // todo
-			config.Host = c.String("host")
-			config.Port = c.Int("port")
-			config.RestConfig.Host = c.String("api-url")
-			config.StageWorkers = 10
-			return Run(config, signal.SetupSignalHandler())
-		},
-		Commands: []*cli.Command{
-			{
-				Name:    "info",
-				Aliases: []string{"I"},
-				Usage:   "print info",
-				Action: func(cCtx *cli.Context) error {
-					fmt.Println("manager")
-					return nil
-				},
-			},
+			conf := config.NewConfig()
+			conf.WorkerID = c.String("worker-id")
+			conf.RestConfig.Host = c.String("api-host")
+			conf.StageWorkers = 1
+			return Run(conf, signal.SetupSignalHandler())
 		},
 	}
 }
 
-func Run(c *worker.Config, stopCh <-chan struct{}) error {
+func Run(c *config.Config, stopCh <-chan struct{}) error {
 	flog.Info("worker running")
 
 	server, err := CreateServerChain(c)
@@ -78,6 +60,6 @@ func Run(c *worker.Config, stopCh <-chan struct{}) error {
 	return server.Run(stopCh)
 }
 
-func CreateServerChain(c *worker.Config) (*worker.Instance, error) {
+func CreateServerChain(c *config.Config) (*worker.Instance, error) {
 	return worker.NewInstance(c), nil
 }

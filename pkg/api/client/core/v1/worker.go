@@ -13,8 +13,8 @@ type WorkerGetter interface {
 }
 
 type WorkerInterface interface {
-	Create(ctx context.Context, pod *meta.Worker, opts meta.CreateOptions) (*meta.Worker, error)
-	Update(ctx context.Context, pod *meta.Worker, opts meta.UpdateOptions) (*meta.Worker, error)
+	Create(ctx context.Context, worker *meta.Worker, opts meta.CreateOptions) (*meta.Worker, error)
+	Update(ctx context.Context, worker *meta.Worker, opts meta.UpdateOptions) (*meta.Worker, error)
 	UpdateStatus(ctx context.Context, pod *meta.Worker, opts meta.UpdateOptions) (*meta.Worker, error)
 	Delete(ctx context.Context, name string, opts meta.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts meta.DeleteOptions, listOpts meta.ListOptions) error
@@ -29,6 +29,8 @@ type WorkerInterface interface {
 // The WorkerExpansion interface allows manually adding extra methods to the PodInterface.
 type WorkerExpansion interface {
 	Bind(ctx context.Context, binding *meta.Binding, opts meta.CreateOptions) error
+	Heartbeat(ctx context.Context, worker *meta.Worker, opts meta.UpdateOptions) (*meta.Status, error)
+	Register(ctx context.Context, worker *meta.Worker, opts meta.CreateOptions) (*meta.Worker, error)
 }
 
 type worker struct {
@@ -163,4 +165,29 @@ func (c *worker) Bind(ctx context.Context, binding *meta.Binding, _ meta.CreateO
 		Body(binding).
 		Do(ctx).
 		Error()
+}
+
+func (c *worker) Register(ctx context.Context, worker *meta.Worker, _ meta.CreateOptions) (*meta.Worker, error) {
+	var result = &meta.Worker{}
+	var err = c.client.Post().
+		Resource("worker").
+		SubResource("register").
+		Body(worker).
+		Do(ctx).
+		Into(result)
+
+	return result, err
+}
+
+func (c *worker) Heartbeat(ctx context.Context, worker *meta.Worker, _ meta.UpdateOptions) (*meta.Status, error) {
+	var result = &meta.Status{}
+	var err = c.client.Put().
+		Resource("worker").
+		Name(worker.UID).
+		SubResource("heartbeat").
+		Body(worker).
+		Do(ctx).
+		Into(result)
+
+	return result, err
 }

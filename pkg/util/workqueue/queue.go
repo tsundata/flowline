@@ -21,7 +21,7 @@ func New() *Type {
 	return NewNamed("")
 }
 
-func NewNamed(name string) *Type {
+func NewNamed(_ string) *Type {
 	rc := clock.RealClock{}
 	return newQueue(
 		rc,
@@ -243,12 +243,8 @@ func (q *Type) updateUnfinishedWorkLoop() {
 		if !func() bool {
 			q.cond.L.Lock()
 			defer q.cond.L.Unlock()
-			if !q.shuttingDown {
-				//q.metrics.updateUnfinishedWork()
-				return true
-			}
-			return false
 
+			return !q.shuttingDown
 		}() {
 			return
 		}

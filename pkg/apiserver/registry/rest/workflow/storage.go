@@ -176,6 +176,8 @@ func (r *subResource) workflowUpdateState(req *restful.Request, resp *restful.Re
 	if err != nil {
 		flog.Error(err)
 	}
-	// todo
-	_ = resp.WriteEntity(obj)
+
+	result, _, err := r.store.Update(req.Request.Context(), obj.UID, &obj, rest.ValidateAllObjectFunc, rest.ValidateAllObjectUpdateFunc, false, &meta.UpdateOptions{})
+
+	_ = resp.WriteEntity(result)
 }

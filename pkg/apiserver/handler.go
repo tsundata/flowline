@@ -136,9 +136,6 @@ func installAPI(s *GenericAPIServer, c *config.Config) error {
 	if c.EnableIndex {
 		routes.Index{}.Install(s.Handler.NonRestfulMux)
 	}
-	if ss, ok := s.Storage["worker"]; ok {
-		routes.Worker{Storage: ss}.Install(s.Handler.NonRestfulMux)
-	}
 
 	installer := endpoints.NewAPIInstaller(s.Storage)
 	ws, err := installer.Install()

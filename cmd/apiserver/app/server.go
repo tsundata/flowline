@@ -54,17 +54,6 @@ func NewAPIServerCommand() *cli.App {
 
 			return Run(conf, signal.SetupSignalHandler())
 		},
-		Commands: []*cli.Command{
-			{
-				Name:    "info",
-				Aliases: []string{"I"},
-				Usage:   "print info",
-				Action: func(cCtx *cli.Context) error {
-					fmt.Println("apiserver")
-					return nil
-				},
-			},
-		},
 	}
 }
 

@@ -192,8 +192,6 @@ func (jm *Controller) splitDag(_ context.Context, job *meta.Job, dag *meta.Dag) 
 	}
 	updateStatus := false
 	for i, item := range stages {
-		fmt.Println(item)
-
 		stageReq, err := getStageFromTemplate(job, item, i)
 		if err != nil {
 			flog.Errorf("unable to make job from template %s", job.Name)
@@ -253,14 +251,8 @@ func dagSort(dag *meta.Dag) ([]dagStage, error) {
 	}
 	flog.Infof("dag %s: %s", dag.UID, d.String())
 
-	roots := d.GetRoots()
 	var result []dagStage
 	for id, node := range nodeMap {
-		_, isReady := roots[id]
-		state := meta.StageCreate
-		if isReady {
-			state = meta.StageReady
-		}
 		parents, err := d.GetParents(id)
 		if err != nil {
 			return nil, err
@@ -273,7 +265,7 @@ func dagSort(dag *meta.Dag) ([]dagStage, error) {
 			DagUID:       dag.UID,
 			NodeId:       id,
 			DependNodeId: dependNodeId,
-			State:        state,
+			State:        meta.StageCreate,
 			Code:         node.Code,
 			Variables:    node.Variables,
 			Connections:  node.Connections,

@@ -81,6 +81,8 @@ func (r *subResource) jobUpdateState(req *restful.Request, resp *restful.Respons
 	if err != nil {
 		flog.Error(err)
 	}
-	// todo
-	_ = resp.WriteEntity(obj)
+
+	result, _, err := r.store.Update(req.Request.Context(), obj.UID, &obj, rest.ValidateAllObjectFunc, rest.ValidateAllObjectUpdateFunc, false, &meta.UpdateOptions{})
+
+	_ = resp.WriteEntity(result)
 }
