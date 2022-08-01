@@ -41,7 +41,7 @@ func addAllEventHandlers(sched *Scheduler, informerFactory informers.SharedInfor
 			FilterFunc: func(obj interface{}) bool {
 				switch t := obj.(type) {
 				case *meta.Stage:
-					return !assignedStage(t)
+					return readyStage(t)
 				case informer.DeletedFinalStateUnknown:
 					if _, ok := t.Obj.(*meta.Stage); ok {
 						return true
@@ -70,8 +70,14 @@ func addAllEventHandlers(sched *Scheduler, informerFactory informers.SharedInfor
 	)
 }
 
+func readyStage(stage *meta.Stage) bool {
+	return stage.State == meta.StageReady
+}
+
 func assignedStage(stage *meta.Stage) bool {
-	return stage.State != meta.StageCreate || stage.WorkerUID != ""
+	return stage.State == meta.StageBind ||
+		stage.State == meta.StageSuccess ||
+		stage.State == meta.StageFailed
 }
 
 func (sched *Scheduler) addStageToSchedulingQueue(obj interface{}) {

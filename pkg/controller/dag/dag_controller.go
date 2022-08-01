@@ -251,6 +251,7 @@ func dagSort(dag *meta.Dag) ([]dagStage, error) {
 	}
 	flog.Infof("dag %s: %s", dag.UID, d.String())
 
+	roots := d.GetRoots()
 	var result []dagStage
 	for id, node := range nodeMap {
 		parents, err := d.GetParents(id)
@@ -261,11 +262,16 @@ func dagSort(dag *meta.Dag) ([]dagStage, error) {
 		for pid := range parents {
 			dependNodeId = append(dependNodeId, pid)
 		}
+		state := meta.StageCreate
+		_, ok := roots[id]
+		if ok {
+			state = meta.StageReady
+		}
 		result = append(result, dagStage{
 			DagUID:       dag.UID,
 			NodeId:       id,
 			DependNodeId: dependNodeId,
-			State:        meta.StageCreate,
+			State:        state,
 			Code:         node.Code,
 			Variables:    node.Variables,
 			Connections:  node.Connections,

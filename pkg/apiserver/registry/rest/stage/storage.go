@@ -97,6 +97,7 @@ func (r *subResource) stageBinding(req *restful.Request, resp *restful.Response)
 		return
 	}
 
+	stage.State = meta.StageBind
 	stage.WorkerUID = obj.Target.UID
 
 	_, _, err = r.store.Update(ctx, uid, stage, rest.ValidateAllObjectFunc, rest.ValidateAllObjectUpdateFunc, false, &meta.UpdateOptions{})

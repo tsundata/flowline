@@ -48,10 +48,10 @@ func NewController(config *config.Config, stageInformer informerv1.StageInformer
 		FilterFunc: func(obj interface{}) bool {
 			switch t := obj.(type) {
 			case *meta.Stage:
-				return t.State == meta.StageReady && t.WorkerUID == config.WorkerID
+				return t.State == meta.StageBind && t.WorkerUID == config.WorkerID
 			case informer.DeletedFinalStateUnknown:
 				if w, ok := t.Obj.(*meta.Stage); ok {
-					return w.State == meta.StageReady && w.WorkerUID == config.WorkerID
+					return w.State == meta.StageBind && w.WorkerUID == config.WorkerID
 				}
 				flog.Errorf("unable to convert object %T to *meta.Job", obj)
 				return false

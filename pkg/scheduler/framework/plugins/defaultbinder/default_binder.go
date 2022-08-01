@@ -31,7 +31,7 @@ func (b DefaultBinder) Name() string {
 }
 
 // Bind binds stages to workers using the k8s client.
-func (b DefaultBinder) Bind(ctx context.Context, state *framework.CycleState, p *meta.Stage, workerUID string) *framework.Status {
+func (b DefaultBinder) Bind(ctx context.Context, _ *framework.CycleState, p *meta.Stage, workerUID string) *framework.Status {
 	flog.Infof("Attempting to bind stage to worker, %s %s : %s", p.Name, p.UID, workerUID)
 	binding := &meta.Binding{
 		ObjectMeta: meta.ObjectMeta{Name: p.Name, UID: p.UID},

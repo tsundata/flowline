@@ -10,6 +10,7 @@ type StageState string
 const (
 	StageCreate  StageState = "create"
 	StageReady   StageState = "ready"
+	StageBind    StageState = "bind"
 	StageSuccess StageState = "success"
 	StageFailed  StageState = "failed"
 )
