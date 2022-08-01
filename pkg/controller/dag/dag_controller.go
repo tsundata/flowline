@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	dagLib "github.com/heimdalr/dag"
 	"github.com/tsundata/flowline/pkg/api/client"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/informer"
@@ -184,24 +185,24 @@ func (jm *Controller) split(ctx context.Context, jobKey string) (bool, error) {
 	return true, nil
 }
 
-func (jm *Controller) splitDag(ctx context.Context, job *meta.Job, dag *meta.Dag) (*meta.Job, bool, error) {
-	sortDag, err := dagSort(dag) //fixme
+func (jm *Controller) splitDag(_ context.Context, job *meta.Job, dag *meta.Dag) (*meta.Job, bool, error) {
+	stages, err := dagSort(dag)
 	if err != nil {
 		return nil, false, err
 	}
 	updateStatus := false
-	for i, item := range sortDag {
+	for i, item := range stages {
 		fmt.Println(item)
 
 		stageReq, err := getStageFromTemplate(job, item, i)
 		if err != nil {
 			flog.Errorf("unable to make job from template %s", job.Name)
-			return job, updateStatus, err
+			return job, false, err
 		}
 		stageResp, err := jm.stageControl.CreateStage(stageReq)
 		if err != nil {
 			flog.Errorf("failed create stage %s", stageReq.Name)
-			return job, updateStatus, err
+			return job, false, err
 		}
 
 		flog.Infof("Created Stage %s %s", stageResp.GetName(), job.GetName())
@@ -215,29 +216,105 @@ func (jm *Controller) splitDag(ctx context.Context, job *meta.Job, dag *meta.Dag
 	return job, updateStatus, nil
 }
 
-func dagSort(dag *meta.Dag) ([]interface{}, error) {
-	return nil, nil
+type nodeId string
+
+func (n nodeId) ID() string {
+	return string(n)
+}
+
+type dagStage struct {
+	DagUID       string
+	NodeId       string
+	DependNodeId []string
+	State        meta.StageState
+	Code         string
+	Variables    []string
+	Connections  []string
+}
+
+func dagSort(dag *meta.Dag) ([]dagStage, error) {
+	d := dagLib.NewDAG()
+	nodeMap := make(map[string]meta.Node)
+	for i, node := range dag.Nodes {
+		if node.Code == "" {
+			return nil, fmt.Errorf("dag %s node %s not code error", dag.UID, node.Id)
+		}
+		_, err := d.AddVertex(nodeId(node.Id))
+		if err != nil {
+			return nil, err
+		}
+		nodeMap[node.Id] = dag.Nodes[i]
+	}
+	for _, edge := range dag.Edges {
+		err := d.AddEdge(edge.Source, edge.Target)
+		if err != nil {
+			return nil, err
+		}
+	}
+	flog.Infof("dag %s: %s", dag.UID, d.String())
+
+	roots := d.GetRoots()
+	var result []dagStage
+	for id, node := range nodeMap {
+		_, isReady := roots[id]
+		state := meta.StageCreate
+		if isReady {
+			state = meta.StageReady
+		}
+		parents, err := d.GetParents(id)
+		if err != nil {
+			return nil, err
+		}
+		var dependNodeId []string
+		for pid := range parents {
+			dependNodeId = append(dependNodeId, pid)
+		}
+		result = append(result, dagStage{
+			DagUID:       dag.UID,
+			NodeId:       id,
+			DependNodeId: dependNodeId,
+			State:        state,
+			Code:         node.Code,
+			Variables:    node.Variables,
+			Connections:  node.Connections,
+		})
+	}
+
+	return result, nil
 }
 
 // getJobFromTemplate2 makes a Job from a job. It converts the unix time into minutes from
 // epoch time and concatenates that to the job name, because the dag_controller v2 has the lowest
 // granularity of 1 minute for scheduling job.
-func getStageFromTemplate(cj *meta.Job, item interface{}, index int) (*meta.Stage, error) {
+func getStageFromTemplate(cj *meta.Job, item dagStage, index int) (*meta.Stage, error) {
 	// We want job names for a given nominal start time to have a deterministic name to avoid the same job being created twice
 	name := getStageName(cj, index)
 	now := time.Now()
 	stage := &meta.Stage{
 		TypeMeta: meta.TypeMeta{
-			Kind:       "job",
+			Kind:       "stage",
 			APIVersion: constant.Version,
 		},
 		ObjectMeta: meta.ObjectMeta{
 			Name:              name,
 			CreationTimestamp: &now,
 		},
-		// todo
-		State:  meta.StageCreate,
-		JobUID: cj.UID,
+
+		WorkflowUID: cj.WorkflowUID,
+		JobUID:      cj.UID,
+		DagUID:      item.DagUID,
+
+		State: item.State,
+
+		Runtime:     "javascript",  // fixme
+		Code:        "input() + 1", // fixme
+		Connections: nil,           // fixme
+		Variables:   nil,           // fixme
+
+		DependNodeId: item.DependNodeId,
+
+		Input:  nil,
+		Output: nil,
 	}
 
 	return stage, nil

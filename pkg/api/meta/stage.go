@@ -8,8 +8,10 @@ import (
 type StageState string
 
 const (
-	StageCreate StageState = "create"
-	StageDone   StageState = "done"
+	StageCreate  StageState = "create"
+	StageReady   StageState = "ready"
+	StageSuccess StageState = "success"
+	StageFailed  StageState = "failed"
 )
 
 type Stage struct {
@@ -21,19 +23,21 @@ type Stage struct {
 	WorkerUID     string `json:"workerUID,omitempty"`
 	WorkerHost    string `json:"workerHost,omitempty"`
 
-	JobUID string `json:"jobUID,omitempty"`
-	DagUID string `json:"dagUID,omitempty"`
+	WorkflowUID string `json:"workflowUID,omitempty"`
+	JobUID      string `json:"jobUID,omitempty"`
+	DagUID      string `json:"dagUID,omitempty"`
 
 	State StageState `json:"state,omitempty"`
 
-	Runtime string `json:"runtime,omitempty"`
-	Code    string `json:"code,omitempty"`
+	Runtime     string       `json:"runtime,omitempty"`
+	Code        string       `json:"code,omitempty"`
+	Connections []Connection `json:"connections,omitempty"`
+	Variables   []Variable   `json:"variables,omitempty"`
+
+	DependNodeId []string `json:"dependNodeId,omitempty"`
 
 	Input  interface{} `json:"input,omitempty"`
 	Output interface{} `json:"output,omitempty"`
-
-	Connection []Connection `json:"connection,omitempty"`
-	Variable   []Variable   `json:"variable,omitempty"`
 }
 
 func (m *Stage) GetObjectKind() schema.ObjectKind {
