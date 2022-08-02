@@ -13,8 +13,8 @@ type StageGetter interface {
 }
 
 type StageInterface interface {
-	Create(ctx context.Context, pod *meta.Stage, opts meta.CreateOptions) (*meta.Stage, error)
-	Update(ctx context.Context, pod *meta.Stage, opts meta.UpdateOptions) (*meta.Stage, error)
+	Create(ctx context.Context, stage *meta.Stage, opts meta.CreateOptions) (*meta.Stage, error)
+	Update(ctx context.Context, stage *meta.Stage, opts meta.UpdateOptions) (*meta.Stage, error)
 	Delete(ctx context.Context, name string, opts meta.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts meta.DeleteOptions, listOpts meta.ListOptions) error
 	Get(ctx context.Context, name string, opts meta.GetOptions) (*meta.Stage, error)
@@ -28,7 +28,8 @@ type StageInterface interface {
 // The StageExpansion interface allows manually adding extra methods to the PodInterface.
 type StageExpansion interface {
 	Bind(ctx context.Context, binding *meta.Binding, opts meta.CreateOptions) error
-	UpdateStatus(ctx context.Context, pod *meta.Stage, opts meta.UpdateOptions) (*meta.Stage, error)
+	UpdateStatus(ctx context.Context, stage *meta.Stage, opts meta.UpdateOptions) (*meta.Stage, error)
+	UpdateListStatus(ctx context.Context, list *meta.StageList, opts meta.UpdateOptions) (*meta.Status, error)
 }
 
 type stage struct {
@@ -69,6 +70,19 @@ func (c *stage) UpdateStatus(ctx context.Context, stage *meta.Stage, _ meta.Upda
 		Name(stage.UID).
 		SubResource("state").
 		Body(stage).
+		Do(ctx).
+		Into(result)
+
+	return result, err
+}
+
+func (c *stage) UpdateListStatus(ctx context.Context, list *meta.StageList, _ meta.UpdateOptions) (*meta.Status, error) {
+	var result = &meta.Status{}
+	var err = c.client.Put().
+		Resource("stage").
+		Name("all").
+		SubResource("list").
+		Body(list).
 		Do(ctx).
 		Into(result)
 

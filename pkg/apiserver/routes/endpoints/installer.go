@@ -234,7 +234,7 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 				scope := registry.NewRequestScope(action.Verb, resource, action.SubResource)
 				handler := handlers.UpdateResource(updater, scope)
 				putRoute := ws.PUT(resource+"/{uid}/"+action.SubResource).To(handler).
-					Doc(fmt.Sprintf("Update %s resource", resource)).
+					Doc(fmt.Sprintf("Update %s resource to %s", resource, action.SubResource)).
 					Operation(resource+"Update"+titleStr).
 					Metadata(restfulspec.KeyOpenAPITags, tags).
 					Returns(http.StatusOK, "OK", action.ReturnSample).

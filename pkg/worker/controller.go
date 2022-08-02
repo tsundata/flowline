@@ -217,16 +217,22 @@ func (jm *Controller) executeCode(_ context.Context, stage *meta.Stage) (result 
 	result = stage
 
 	rt := sandbox.Factory(sandbox.RuntimeType(result.Runtime))
-	out, err := rt.Run(result.Code, 1000) // fixme
+	var input interface{}
+	if stage.Input != nil {
+		input = stage.Input
+	} else {
+		input = 0 // fixme
+	}
+	out, err := rt.Run(result.Code, input) // fixme
 	if err != nil {
 		flog.Error(err)
 		result.State = meta.StageFailed
 		return
 	}
-	result.Output = out
 
 	// ------------------------------------------------------------------ //
-	stage.State = meta.StageSuccess
+	result.State = meta.StageSuccess
+	result.Output = out
 
 	return
 }

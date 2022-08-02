@@ -59,6 +59,13 @@ func (r *REST) Actions() []rest.SubResourceAction {
 			ReadSample:   meta.Binding{},
 			ReturnSample: meta.Status{},
 		},
+		{
+			Verb:         "PUT",
+			SubResource:  "list",
+			Params:       nil,
+			ReadSample:   meta.StageList{},
+			ReturnSample: meta.Status{},
+		},
 	}
 }
 
@@ -66,6 +73,7 @@ func (r *REST) Handle(verb, subresource string, req *restful.Request, resp *rest
 	sr := &subResource{r}
 	srRoute := rest.NewSubResourceRoute(verb, subresource, req, resp)
 	srRoute.Match("PUT", "binding", sr.stageBinding)
+	srRoute.Match("PUT", "list", sr.stageUpdateList)
 	if !srRoute.Matched() {
 		_ = resp.WriteError(http.StatusBadRequest, errors.New("error subresource path"))
 	}
@@ -104,6 +112,26 @@ func (r *subResource) stageBinding(req *restful.Request, resp *restful.Response)
 	if err != nil {
 		_ = resp.WriteError(http.StatusBadRequest, errors.New("error update stage"))
 		return
+	}
+
+	_ = resp.WriteEntity(meta.Status{Status: meta.StatusSuccess})
+	return
+}
+
+func (r *subResource) stageUpdateList(req *restful.Request, resp *restful.Response) {
+	ctx := req.Request.Context()
+	obj := meta.StageList{}
+	err := req.ReadEntity(&obj)
+	if err != nil {
+		flog.Error(err)
+	}
+
+	for i, item := range obj.Items {
+		_, _, err = r.store.Update(ctx, item.UID, &obj.Items[i], rest.ValidateAllObjectFunc, rest.ValidateAllObjectUpdateFunc, false, &meta.UpdateOptions{})
+		if err != nil {
+			_ = resp.WriteError(http.StatusBadRequest, errors.New("error update stage"))
+			return
+		}
 	}
 
 	_ = resp.WriteEntity(meta.Status{Status: meta.StatusSuccess})

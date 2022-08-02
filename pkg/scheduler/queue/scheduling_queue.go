@@ -685,7 +685,7 @@ func (npm *nominator) add(pi *framework.StageInfo, nominatingInfo *framework.Nom
 		//If the stage was removed or if it was already scheduled, don't nominate it.
 		updatedStage, err := npm.stageLister.Get(pi.Stage.UID)
 		if err != nil {
-			flog.Errorf("Stage doesn't exist in stageLister, aborted adding it to the nominator %T", pi.Stage)
+			flog.Errorf("Stage doesn't exist in stageLister, aborted adding it to the nominator %T %s", pi.Stage, pi.Stage.UID)
 			return
 		}
 		if updatedStage.WorkerUID != "" {

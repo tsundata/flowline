@@ -13,7 +13,7 @@ func startDagController(ctx context.Context, controllerContext ControllerContext
 		controllerContext.ComponentConfig.Client,
 	)
 	if err != nil {
-		return nil, true, fmt.Errorf("error creating crontrigger controller %v", err)
+		return nil, true, fmt.Errorf("error creating dag controller %v", err)
 	}
 
 	go cj.Run(ctx, int(controllerContext.ComponentConfig.ConcurrentDagSyncs))

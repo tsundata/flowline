@@ -18,6 +18,7 @@ type Config struct {
 	// but more CPU (and network) load.
 	ConcurrentCronTriggerSyncs int32
 	ConcurrentDagSyncs         int32
+	ConcurrentStageSyncs       int32
 }
 
 // GenericControllerManagerConfiguration holds configuration for a generic controller-manager
@@ -53,6 +54,7 @@ func NewConfig() *Config {
 		},
 		ConcurrentCronTriggerSyncs: 1,
 		ConcurrentDagSyncs:         1,
+		ConcurrentStageSyncs:       1,
 	}
 
 }

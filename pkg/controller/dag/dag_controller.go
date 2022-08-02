@@ -301,6 +301,7 @@ func getStageFromTemplate(cj *meta.Job, item dagStage, index int) (*meta.Stage, 
 		WorkflowUID: cj.WorkflowUID,
 		JobUID:      cj.UID,
 		DagUID:      item.DagUID,
+		NodeID:      item.NodeId,
 
 		State: item.State,
 

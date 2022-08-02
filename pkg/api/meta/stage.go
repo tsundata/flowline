@@ -27,6 +27,7 @@ type Stage struct {
 	WorkflowUID string `json:"workflowUID,omitempty"`
 	JobUID      string `json:"jobUID,omitempty"`
 	DagUID      string `json:"dagUID,omitempty"`
+	NodeID      string `json:"nodeID,omitempty"`
 
 	State StageState `json:"state,omitempty"`
 
