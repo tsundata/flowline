@@ -115,7 +115,6 @@ func (r *subResource) stageBinding(req *restful.Request, resp *restful.Response)
 	}
 
 	_ = resp.WriteEntity(meta.Status{Status: meta.StatusSuccess})
-	return
 }
 
 func (r *subResource) stageUpdateList(req *restful.Request, resp *restful.Response) {
@@ -135,5 +134,4 @@ func (r *subResource) stageUpdateList(req *restful.Request, resp *restful.Respon
 	}
 
 	_ = resp.WriteEntity(meta.Status{Status: meta.StatusSuccess})
-	return
 }

@@ -15,7 +15,7 @@ type WorkerGetter interface {
 type WorkerInterface interface {
 	Create(ctx context.Context, worker *meta.Worker, opts meta.CreateOptions) (*meta.Worker, error)
 	Update(ctx context.Context, worker *meta.Worker, opts meta.UpdateOptions) (*meta.Worker, error)
-	UpdateStatus(ctx context.Context, pod *meta.Worker, opts meta.UpdateOptions) (*meta.Worker, error)
+	UpdateStatus(ctx context.Context, worker *meta.Worker, opts meta.UpdateOptions) (*meta.Worker, error)
 	Delete(ctx context.Context, name string, opts meta.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts meta.DeleteOptions, listOpts meta.ListOptions) error
 	Get(ctx context.Context, name string, opts meta.GetOptions) (*meta.Worker, error)
@@ -26,7 +26,7 @@ type WorkerInterface interface {
 	WorkerExpansion
 }
 
-// The WorkerExpansion interface allows manually adding extra methods to the PodInterface.
+// The WorkerExpansion interface allows manually adding extra methods to the WorkerInterface.
 type WorkerExpansion interface {
 	Bind(ctx context.Context, binding *meta.Binding, opts meta.CreateOptions) error
 	Heartbeat(ctx context.Context, worker *meta.Worker, opts meta.UpdateOptions) (*meta.Status, error)

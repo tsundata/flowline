@@ -84,7 +84,7 @@ const (
 	// for longer than this value, the stage will be moved from unschedulableStages to
 	// backoffQ or activeQ. If this value is empty, the default value (5min)
 	// will be used.
-	DefaultStageMaxInUnschedulableStagesDuration time.Duration = 5 * time.Minute
+	DefaultStageMaxInUnschedulableStagesDuration = 5 * time.Minute
 
 	queueClosed = "scheduling queue is closed"
 )
@@ -93,11 +93,11 @@ const (
 	// DefaultStageInitialBackoffDuration is the default value for the initial backoff duration
 	// for unschedulable stages. To change the default stageInitialBackoffDurationSeconds used by the
 	// scheduler, update the ComponentConfig value in defaults.go
-	DefaultStageInitialBackoffDuration time.Duration = 1 * time.Second
+	DefaultStageInitialBackoffDuration = 1 * time.Second
 	// DefaultStageMaxBackoffDuration is the default value for the max backoff duration
 	// for unschedulable stages. To change the default stageMaxBackoffDurationSeconds used by the
 	// scheduler, update the ComponentConfig value in defaults.go
-	DefaultStageMaxBackoffDuration time.Duration = 10 * time.Second
+	DefaultStageMaxBackoffDuration = 10 * time.Second
 )
 
 var defaultPriorityQueueOptions = priorityQueueOptions{
@@ -238,7 +238,7 @@ func (p *PriorityQueue) activate(stage *meta.Stage) bool {
 		return false
 	}
 	p.unschedulableStages.delete(stage)
-	p.stageBackoffQ.Delete(pInfo)
+	_ = p.stageBackoffQ.Delete(pInfo)
 	p.StageNominator.AddNominatedStage(pInfo.StageInfo, nil)
 	return true
 }
@@ -434,7 +434,7 @@ func (p *PriorityQueue) Delete(stage *meta.Stage) error {
 	p.StageNominator.DeleteNominatedStageIfExists(stage)
 	if err := p.activeQ.Delete(newQueuedStageInfoForLookup(stage)); err != nil {
 		// The item was probably not found in the activeQ.
-		p.stageBackoffQ.Delete(newQueuedStageInfoForLookup(stage))
+		_ = p.stageBackoffQ.Delete(newQueuedStageInfoForLookup(stage))
 		p.unschedulableStages.delete(stage)
 	}
 	return nil
@@ -517,7 +517,7 @@ func (p *PriorityQueue) stageMatchesEvent(stageInfo *framework.QueuedStageInfo, 
 // getUnschedulableStagesWithMatchingAffinityTerm returns unschedulable stages which have
 // any affinity term that matches "stage".
 // NOTE: this function assumes lock has been acquired in caller.
-func (p *PriorityQueue) getUnschedulableStagesWithMatchingAffinityTerm(stage *meta.Stage) []*framework.QueuedStageInfo {
+func (p *PriorityQueue) getUnschedulableStagesWithMatchingAffinityTerm(_ *meta.Stage) []*framework.QueuedStageInfo {
 	var stagesToMove []*framework.QueuedStageInfo
 	for _, pInfo := range p.unschedulableStages.stageInfoMap {
 		///for _, term := range pInfo.RequiredAffinityTerms {
@@ -589,7 +589,7 @@ func (p *PriorityQueue) flushBackoffQCompleted() {
 			flog.Errorf("Unable to pop stage from backoff queue despite backoff completion, %v", stage)
 			break
 		}
-		p.activeQ.Add(rawStageInfo)
+		_ = p.activeQ.Add(rawStageInfo)
 		activated = true
 	}
 

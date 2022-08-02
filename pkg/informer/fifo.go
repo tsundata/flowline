@@ -67,7 +67,7 @@ type Queue interface {
 // unless you really really really really know what you are doing.
 func Pop(queue Queue) interface{} {
 	var result interface{}
-	queue.Pop(func(obj interface{}) error {
+	_, _ = queue.Pop(func(obj interface{}) error {
 		result = obj
 		return nil
 	})
@@ -293,7 +293,7 @@ func (f *FIFO) Pop(process PopProcessFunc) (interface{}, error) {
 // 'f' takes ownership of the map, you should not reference the map again
 // after calling this function. f's queue is reset, too; upon return, it
 // will contain the items in the map, in no particular order.
-func (f *FIFO) Replace(list []interface{}, resourceVersion string) error {
+func (f *FIFO) Replace(list []interface{}, _ string) error {
 	items := make(map[string]interface{}, len(list))
 	for _, item := range list {
 		key, err := f.keyFunc(item)

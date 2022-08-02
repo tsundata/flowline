@@ -41,8 +41,7 @@ func (sched *Scheduler) scheduleOne(ctx context.Context) {
 	defer cancel()
 	scheduleResult, err := sched.ScheduleStage(schedulingCycleCtx, fwk, state, stage)
 	if err != nil {
-		var nominatingInfo *framework.NominatingInfo
-		nominatingInfo = clearNominatedWorker
+		nominatingInfo := clearNominatedWorker
 		sched.handleSchedulingFailure(ctx, fwk, stageInfo, err, "Unschedulable", nominatingInfo)
 		return
 	}

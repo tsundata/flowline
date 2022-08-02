@@ -83,6 +83,11 @@ func (r *subResource) jobUpdateState(req *restful.Request, resp *restful.Respons
 	}
 
 	result, _, err := r.store.Update(req.Request.Context(), obj.UID, &obj, rest.ValidateAllObjectFunc, rest.ValidateAllObjectUpdateFunc, false, &meta.UpdateOptions{})
+	if err != nil {
+		flog.Error(err)
+		_ = resp.WriteError(http.StatusBadRequest, errors.New("job update state error"))
+		return
+	}
 
 	_ = resp.WriteEntity(result)
 }

@@ -146,9 +146,13 @@ func (s *Serializer) doEncode(obj runtime.Object, w io.Writer) error {
 	return encoder.Encode(obj)
 }
 
-func (s *Serializer) unmarshal(into runtime.Object, data, originalData []byte) (strictErrs []error, err error) {
+func (s *Serializer) unmarshal(into runtime.Object, _, originalData []byte) (strictErrs []error, err error) {
 	var strictJSONErrs []error
 	err = json.Unmarshal(originalData, &into)
+	if err != nil {
+		flog.Error(err)
+		return
+	}
 
 	strictErrs = append(strictErrs, strictJSONErrs...)
 	return strictErrs, nil

@@ -25,7 +25,7 @@ type StageInterface interface {
 	StageExpansion
 }
 
-// The StageExpansion interface allows manually adding extra methods to the PodInterface.
+// The StageExpansion interface allows manually adding extra methods to the StageInterface.
 type StageExpansion interface {
 	Bind(ctx context.Context, binding *meta.Binding, opts meta.CreateOptions) error
 	UpdateStatus(ctx context.Context, stage *meta.Stage, opts meta.UpdateOptions) (*meta.Stage, error)

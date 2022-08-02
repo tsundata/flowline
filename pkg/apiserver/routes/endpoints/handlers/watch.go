@@ -208,7 +208,7 @@ func (s *WatchServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	flusher.Flush()
 
 	var unknown meta.Unknown
-	outEvent := &meta.WatchEvent{}
+	// outEvent := &meta.WatchEvent{}
 	buf := &bytes.Buffer{}
 	ch := s.Watching.ResultChan()
 	done := req.Context().Done()
@@ -250,7 +250,7 @@ func (s *WatchServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			unknown.Raw = buf.Bytes()
 			event.Object = &unknown
 
-			outEvent = &meta.WatchEvent{}
+			outEvent := &meta.WatchEvent{}
 			outEvent.Kind = kind
 			outEvent.APIVersion = version
 

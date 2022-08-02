@@ -32,7 +32,7 @@ var (
 	longThrottleLatency = 50 * time.Millisecond
 
 	// extraLongThrottleLatency defines the threshold for logging requests at log level 2.
-	extraLongThrottleLatency = 1 * time.Second
+	// extraLongThrottleLatency = 1 * time.Second
 )
 
 // HTTPClient is an interface for testing a request object.

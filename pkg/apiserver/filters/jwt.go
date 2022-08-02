@@ -35,7 +35,7 @@ func WithJWT(handler http.Handler, secret []byte, whitelist []string) http.Handl
 		}
 		if claims, ok := token.Claims.(*meta.UserClaims); ok {
 			ctx := context.WithValue(req.Context(), constant.UserUID, claims.ID)
-			req.WithContext(ctx)
+			req = req.WithContext(ctx)
 			handler.ServeHTTP(w, req)
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)

@@ -32,11 +32,11 @@ type URLBackoff struct {
 type NoBackoff struct {
 }
 
-func (n *NoBackoff) UpdateBackoff(actualUrl *url.URL, err error, responseCode int) {
+func (n *NoBackoff) UpdateBackoff(_ *url.URL, _ error, _ int) {
 	// do nothing.
 }
 
-func (n *NoBackoff) CalculateBackoff(actualUrl *url.URL) time.Duration {
+func (n *NoBackoff) CalculateBackoff(_ *url.URL) time.Duration {
 	return 0 * time.Second
 }
 
@@ -55,7 +55,7 @@ func (b *URLBackoff) Disable() {
 // For example, 127.0.0.1:8080/api/v2/abcde -> 127.0.0.1:8080.
 func (b *URLBackoff) baseUrlKey(rawurl *url.URL) string {
 	// Simple implementation for now, just the host.
-	// We may backoff specific paths (i.e. "pods") differentially
+	// We may backoff specific paths (i.e. "stages") differentially
 	// in the future.
 	host, err := url.Parse(rawurl.String())
 	if err != nil {

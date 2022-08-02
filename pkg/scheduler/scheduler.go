@@ -430,8 +430,7 @@ func New(client client.Interface,
 		return nil, err
 	}
 
-	snapshot := cache.NewSnapshot([]*meta.Stage{}, []*meta.Worker{})
-	snapshot = cache.NewEmptySnapshot()
+	snapshot := cache.NewEmptySnapshot()
 
 	stageLister := informerFactory.Core().V1().Stages().Lister()
 	nominator := queue.NewStageNominator(stageLister)
@@ -508,9 +507,7 @@ func buildExtenders(extenders []config.Extender, profiles []config.Profile) ([]f
 		} else {
 			ignorableExtenders = append(ignorableExtenders, extender)
 		}
-		for _, r := range extenders[i].ManagedResources {
-			ignoredExtendedResources = append(ignoredExtendedResources, r)
-		}
+		ignoredExtendedResources = append(ignoredExtendedResources, extenders[i].ManagedResources...)
 	}
 	// place ignorable extenders to the tail of extenders
 	fExtenders = append(fExtenders, ignorableExtenders...)

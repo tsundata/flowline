@@ -120,7 +120,6 @@ func (r *subResource) workflowGetDag(req *restful.Request, resp *restful.Respons
 	}
 
 	_ = resp.WriteEntity(dag)
-	return
 }
 
 func (r *subResource) workflowUpdateDag(req *restful.Request, resp *restful.Response) {
@@ -167,7 +166,6 @@ func (r *subResource) workflowUpdateDag(req *restful.Request, resp *restful.Resp
 	}
 
 	_ = resp.WriteEntity(meta.Status{Status: meta.StatusSuccess})
-	return
 }
 
 func (r *subResource) workflowUpdateState(req *restful.Request, resp *restful.Response) {
@@ -178,6 +176,11 @@ func (r *subResource) workflowUpdateState(req *restful.Request, resp *restful.Re
 	}
 
 	result, _, err := r.store.Update(req.Request.Context(), obj.UID, &obj, rest.ValidateAllObjectFunc, rest.ValidateAllObjectUpdateFunc, false, &meta.UpdateOptions{})
+	if err != nil {
+		flog.Error(err)
+		_ = resp.WriteError(http.StatusBadRequest, errors.New("workflow update state error"))
+		return
+	}
 
 	_ = resp.WriteEntity(result)
 }

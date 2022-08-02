@@ -254,6 +254,9 @@ func (jm *Controller) dependStage(ctx context.Context, upperStage *meta.Stage) (
 			return nil, nil
 		}
 		_, err = d.DescendantsFlow(upperStage.NodeID, nil, flowCallback)
+		if err != nil {
+			return nil, false, err
+		}
 	}
 
 	// ------------------------------------------------------------------ //

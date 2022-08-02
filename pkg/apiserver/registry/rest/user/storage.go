@@ -164,5 +164,4 @@ func (r *subResource) userLogout(req *restful.Request, resp *restful.Response) {
 		flog.Error(err)
 	}
 	fmt.Printf("%+v \n", obj)
-	return
 }

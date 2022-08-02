@@ -11,6 +11,7 @@ import (
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/watch"
 	clientv3 "go.etcd.io/etcd/client/v3"
+	"net/http"
 	"os"
 	"reflect"
 	"strconv"
@@ -373,8 +374,13 @@ func (wc *watchChan) transform(e *event) (res *watch.Event) {
 func transformErrorToEvent(err error) *watch.Event {
 	err = interpretWatchError(err)
 	return &watch.Event{
-		Type:   watch.Error,
-		Object: nil,
+		Type: watch.Error,
+		Object: &meta.Status{
+			Status:  meta.StatusFailure,
+			Message: err.Error(),
+			Reason:  err.Error(),
+			Code:    http.StatusBadRequest, // todo
+		},
 	}
 }
 

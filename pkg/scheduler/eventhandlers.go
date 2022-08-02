@@ -266,7 +266,7 @@ func workerStateChanged(newWorker, oldWorker *meta.Worker) bool {
 }
 
 func preCheckForWorker(_ *framework.WorkerInfo) queue.PreEnqueueCheck {
-	return func(pod *meta.Stage) bool {
+	return func(stage *meta.Stage) bool {
 		return true
 	}
 }

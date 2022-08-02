@@ -13,9 +13,9 @@ type WorkflowGetter interface {
 }
 
 type WorkflowInterface interface {
-	Create(ctx context.Context, pod *meta.Workflow, opts meta.CreateOptions) (*meta.Workflow, error)
-	Update(ctx context.Context, pod *meta.Workflow, opts meta.UpdateOptions) (*meta.Workflow, error)
-	UpdateStatus(ctx context.Context, pod *meta.Workflow, opts meta.UpdateOptions) (*meta.Workflow, error)
+	Create(ctx context.Context, workflow *meta.Workflow, opts meta.CreateOptions) (*meta.Workflow, error)
+	Update(ctx context.Context, workflow *meta.Workflow, opts meta.UpdateOptions) (*meta.Workflow, error)
+	UpdateStatus(ctx context.Context, workflow *meta.Workflow, opts meta.UpdateOptions) (*meta.Workflow, error)
 	Delete(ctx context.Context, name string, opts meta.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts meta.DeleteOptions, listOpts meta.ListOptions) error
 	Get(ctx context.Context, name string, opts meta.GetOptions) (*meta.Workflow, error)
@@ -26,7 +26,7 @@ type WorkflowInterface interface {
 	WorkflowExpansion
 }
 
-// The WorkflowExpansion interface allows manually adding extra methods to the PodInterface.
+// The WorkflowExpansion interface allows manually adding extra methods to the WorkflowInterface.
 type WorkflowExpansion interface {
 	Bind(ctx context.Context, binding *meta.Binding, opts meta.CreateOptions) error
 	GetDag(ctx context.Context, name string, opts meta.GetOptions) (*meta.Dag, error)

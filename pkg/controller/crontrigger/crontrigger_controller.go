@@ -292,7 +292,7 @@ func (jm *Controller) sync(ctx context.Context, cronJobKey string) (*time.Durati
 
 // cleanupFinishedJobs cleanups finished jobs created by a CronJob
 // It returns a bool to indicate an update to api-server is needed
-func (jm *Controller) cleanupFinishedJobs(ctx context.Context, cj *meta.Workflow, js []*meta.Job) bool {
+func (jm *Controller) cleanupFinishedJobs(_ context.Context, cj *meta.Workflow, js []*meta.Job) bool {
 	// If neither limits are active, there is no need to do anything.
 	if cj.FailedJobsHistoryLimit == nil && cj.SuccessfulJobsHistoryLimit == nil {
 		return false
@@ -333,7 +333,7 @@ func (jm *Controller) removeOldestJobs(cj *meta.Workflow, js []*meta.Job, maxJob
 	updateStatus := false
 	numToDelete := len(js) - int(maxJobs)
 	if numToDelete <= 0 {
-		return updateStatus
+		return false
 	}
 
 	flog.Infof("Cleaning up jobs from CronJob list %d %d %s", numToDelete, len(js), cj.GetName())
@@ -348,7 +348,7 @@ func (jm *Controller) removeOldestJobs(cj *meta.Workflow, js []*meta.Job, maxJob
 	return updateStatus
 }
 
-// deleteJob reaps a job, deleting the job, the pods and the reference in the active list
+// deleteJob reaps a job, deleting the job, the workflow and the reference in the active list
 func deleteJob(cj *meta.Workflow, job *meta.Job, jc jobControlInterface) bool {
 	nameForLog := cj.Name
 
@@ -569,7 +569,7 @@ func getTimeHashInMinutes(scheduledTime time.Time) int64 {
 	return scheduledTime.Unix() / 60
 }
 
-func deleteFromActiveList(cj *meta.Workflow, uid string) {
+func deleteFromActiveList(cj *meta.Workflow, _ string) {
 	if cj == nil {
 		return
 	}

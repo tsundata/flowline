@@ -13,9 +13,9 @@ type JobGetter interface {
 }
 
 type JobInterface interface {
-	Create(ctx context.Context, pod *meta.Job, opts meta.CreateOptions) (*meta.Job, error)
-	Update(ctx context.Context, pod *meta.Job, opts meta.UpdateOptions) (*meta.Job, error)
-	UpdateStatus(ctx context.Context, pod *meta.Job, opts meta.UpdateOptions) (*meta.Job, error)
+	Create(ctx context.Context, job *meta.Job, opts meta.CreateOptions) (*meta.Job, error)
+	Update(ctx context.Context, job *meta.Job, opts meta.UpdateOptions) (*meta.Job, error)
+	UpdateStatus(ctx context.Context, job *meta.Job, opts meta.UpdateOptions) (*meta.Job, error)
 	Delete(ctx context.Context, name string, opts meta.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts meta.DeleteOptions, listOpts meta.ListOptions) error
 	Get(ctx context.Context, name string, opts meta.GetOptions) (*meta.Job, error)
@@ -26,7 +26,7 @@ type JobInterface interface {
 	JobExpansion
 }
 
-// The JobExpansion interface allows manually adding extra methods to the PodInterface.
+// The JobExpansion interface allows manually adding extra methods to the JobInterface.
 type JobExpansion interface {
 	Bind(ctx context.Context, binding *meta.Binding, opts meta.CreateOptions) error
 }
