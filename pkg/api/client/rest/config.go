@@ -153,6 +153,8 @@ type ClientContentConfig struct {
 	// Negotiator is used for obtaining encoders and decoders for multiple
 	// supported media types.
 	Negotiator runtime.ClientNegotiator
+	// BearerToken
+	BearerToken string
 }
 
 func RESTClientFor(config *Config) (*RESTClient, error) {
@@ -226,6 +228,7 @@ func RESTClientForConfigAndClient(config *Config, httpClient *http.Client) (*RES
 		ContentType:        config.ContentType,
 		GroupVersion:       gv,
 		Negotiator:         runtime.NewClientNegotiator(config.NegotiatedSerializer, gv),
+		BearerToken:        config.BearerToken,
 	}
 
 	restClient, err := NewRESTClient(baseURL, versionedAPIPath, clientContent, rateLimiter, httpClient)

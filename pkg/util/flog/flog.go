@@ -29,6 +29,10 @@ func Debug(msg string, fields ...interface{}) {
 	l.Debug(msg, kvs...)
 }
 
+func Debugf(format string, a ...interface{}) {
+	l.Debug(fmt.Sprintf(format, a...))
+}
+
 func Info(msg string, fields ...interface{}) {
 	kvs := zapFields(fields)
 	l.Info(msg, kvs...)

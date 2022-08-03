@@ -33,10 +33,17 @@ func NewControllerManagerCommand() *cli.App {
 				Usage:   "apiserver host",
 				EnvVars: []string{"API_HOST"},
 			},
+			&cli.StringFlag{
+				Name:    "token",
+				Aliases: []string{"T"},
+				Usage:   "auth token",
+				EnvVars: []string{"AUTH_TOKEN"},
+			},
 		},
 		Action: func(c *cli.Context) error {
 			conf := config.NewConfig()
 			conf.RestConfig.Host = c.String("api-url")
+			conf.RestConfig.BearerToken = c.String("token")
 			return Run(conf.Complete(), signal.SetupSignalHandler())
 		},
 	}

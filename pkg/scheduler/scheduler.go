@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/tsundata/flowline/pkg/api/client"
+	"github.com/tsundata/flowline/pkg/api/client/rest"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/informer/informers"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
@@ -41,7 +42,7 @@ func WithProfiles(p ...config.Profile) Option {
 	}
 }
 
-func WithConfig(cfg *Config) Option {
+func WithConfig(cfg *rest.Config) Option {
 	return func(o *schedulerOptions) {
 		o.config = cfg
 	}
@@ -123,7 +124,7 @@ type Scheduler struct {
 
 type schedulerOptions struct {
 	componentConfigVersion                string
-	config                                interface{} //*restclient.Config
+	config                                *rest.Config
 	percentageOfWorkersToScore            int32
 	stageInitialBackoffSeconds            int64
 	stageMaxBackoffSeconds                int64

@@ -124,10 +124,10 @@ func (a *APIServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 //DefaultBuildHandlerChain set default filters
 func DefaultBuildHandlerChain(apiHandler http.Handler, config *config.Config) http.Handler {
 	handler := filters.WithCORS(apiHandler, config.CorsAllowedOriginPatterns, nil, nil, nil, "true")
-	//handler = filters.WithJWT(handler, []byte(config.JWTSecret), []string{ fixme
-	//	"/apidocs.json",
-	//	"/api/apps/v1/user/session",
-	//})
+	handler = filters.WithJWT(handler, []byte(config.JWTSecret), []string{
+		"/apidocs.json",
+		"/api/apps/v1/user/session",
+	})
 	return handler
 }
 

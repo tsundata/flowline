@@ -1,7 +1,10 @@
 package app
 
 import (
+	"errors"
 	"fmt"
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver"
 	"github.com/tsundata/flowline/pkg/apiserver/config"
 	"github.com/tsundata/flowline/pkg/util/flog"
@@ -39,6 +42,17 @@ func NewAPIServerCommand() *cli.App {
 				Usage:   "server port",
 				EnvVars: []string{"APISERVER_PORT"},
 			},
+			&cli.StringFlag{
+				Name:    "secret",
+				Aliases: []string{"S"},
+				Usage:   "jwt secret",
+				EnvVars: []string{"APISERVER_SECRET"},
+			},
+			&cli.StringFlag{
+				Name:    "user",
+				Aliases: []string{"U"},
+				Usage:   "user uid",
+			},
 		},
 		Action: func(c *cli.Context) error {
 			conf := config.NewConfig()
@@ -46,13 +60,39 @@ func NewAPIServerCommand() *cli.App {
 			conf.Host = c.String("host")
 			conf.Port = c.Int("port")
 			conf.EnableIndex = true
-			conf.JWTSecret = "abc" // fixme
+			conf.JWTSecret = c.String("secret")
 
 			conf.HTTPReadTimeout = 10 * time.Second
 			conf.HTTPWriteTimeout = 10 * time.Second
 			conf.HTTPMaxHeaderBytes = 1 << 20
 
 			return Run(conf, signal.SetupSignalHandler())
+		},
+		Commands: []*cli.Command{
+			{
+				Name:    "token",
+				Aliases: []string{"T"},
+				Usage:   "generate token",
+				Action: func(c *cli.Context) error {
+					var jc = jwt.NewWithClaims(
+						jwt.SigningMethodHS512,
+						&meta.UserClaims{
+							RegisteredClaims: &jwt.RegisteredClaims{
+								ID: c.String("user"),
+							},
+						},
+					)
+					if c.String("secret") == "" {
+						return errors.New("error secret")
+					}
+					token, err := jc.SignedString([]byte(c.String("secret")))
+					if err != nil {
+						return err
+					}
+					fmt.Println(token)
+					return nil
+				},
+			},
 		},
 	}
 }

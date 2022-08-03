@@ -36,14 +36,21 @@ func NewSchedulerCommand() *cli.App {
 				Usage:   "apiserver url",
 				EnvVars: []string{"API_HOST"},
 			},
+			&cli.StringFlag{
+				Name:    "token",
+				Aliases: []string{"T"},
+				Usage:   "auth token",
+				EnvVars: []string{"AUTH_TOKEN"},
+			},
 		},
 		Action: func(c *cli.Context) error {
-			cc := &config.Config{
+			conf := &config.Config{
 				ComponentConfig: config.Configuration{},
-				Config:          &scheduler.Config{},
-			} // todo
-			cc.Config.ApiHost = c.String("api-host")
-			return runCommand(cc, signal.SetupSignalHandler())
+				RestConfig:      &rest.Config{},
+			}
+			conf.RestConfig.Host = c.String("api-host")
+			conf.RestConfig.BearerToken = c.String("token")
+			return runCommand(conf, signal.SetupSignalHandler())
 		},
 	}
 }
@@ -88,11 +95,7 @@ func Setup(ctx context.Context, c *config.Config, outOfTreeRegistryOptions ...Op
 	}
 
 	var err error
-	c.Client, err = client.NewForConfig(&rest.Config{
-		Host:          c.Config.ApiHost,
-		ContentConfig: rest.ContentConfig{},
-		Impersonate:   rest.ImpersonationConfig{},
-	})
+	c.Client, err = client.NewForConfig(c.RestConfig)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -106,7 +109,7 @@ func Setup(ctx context.Context, c *config.Config, outOfTreeRegistryOptions ...Op
 		nil,
 		nil,
 		ctx.Done(),
-		scheduler.WithConfig(c.Config),
+		scheduler.WithConfig(c.RestConfig),
 		//scheduler.WithProfiles(cc.ComponentConfig.Profiles...),
 		scheduler.WithPercentageOfWorkersToScore(c.ComponentConfig.PercentageOfWorksToScore),
 		scheduler.WithFrameworkOutOfTreeRegistry(outOfTreeRegistry),

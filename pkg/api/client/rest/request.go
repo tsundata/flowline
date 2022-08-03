@@ -119,6 +119,9 @@ func NewRequest(c *RESTClient) *Request {
 	case len(c.content.ContentType) > 0:
 		r.SetHeader("Accept", c.content.ContentType+", */*")
 	}
+	if len(c.content.BearerToken) > 0 {
+		r.SetHeader("Authorization", "Bearer "+c.content.BearerToken)
+	}
 	return r
 }
 

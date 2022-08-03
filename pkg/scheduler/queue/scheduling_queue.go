@@ -679,6 +679,7 @@ func (npm *nominator) add(pi *framework.StageInfo, nominatingInfo *framework.Nom
 		//	return
 		//}
 		//workerName = pi.Stage.Status.NominatedWorkerName
+		flog.Debugf("%+v", nominatingInfo.Mode())
 	}
 
 	if npm.stageLister != nil {

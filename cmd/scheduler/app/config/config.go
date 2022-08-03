@@ -2,8 +2,8 @@ package config
 
 import (
 	"github.com/tsundata/flowline/pkg/api/client"
+	"github.com/tsundata/flowline/pkg/api/client/rest"
 	"github.com/tsundata/flowline/pkg/informer/informers"
-	"github.com/tsundata/flowline/pkg/scheduler"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/config"
 	"time"
 )
@@ -63,7 +63,7 @@ type Config struct {
 	//SecureServing  *apiserver.SecureServingInfo
 
 	Client          client.Interface
-	Config          *scheduler.Config
+	RestConfig      *rest.Config
 	InformerFactory informers.SharedInformerFactory
 	//DynInformerFactory dynamicinformer.DynamicSharedInformerFactory
 
