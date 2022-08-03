@@ -31,7 +31,6 @@ func newCache(ttl, period time.Duration, stop <-chan struct{}) *cacheImpl {
 		workerTree:    newWorkerTree(nil),
 		assumedStages: make(map[string]struct{}),
 		stageStates:   make(map[string]*stageState),
-		imageStates:   make(map[string]*imageState),
 	}
 }
 
@@ -52,8 +51,6 @@ type cacheImpl struct {
 	// head of the linked list.
 	headWorker *workerInfoListItem
 	workerTree *workerTree
-	// A map from image name to its imageState.
-	imageStates map[string]*imageState
 }
 
 func (c *cacheImpl) WorkerCount() int {
@@ -459,7 +456,6 @@ func (c *cacheImpl) UpdateSnapshot(workerSnapshot *Snapshot) error {
 
 	if updateAllLists {
 		c.updateWorkerInfoSnapshotList(workerSnapshot, updateAllLists)
-		return nil // fixme
 	}
 
 	if len(workerSnapshot.workerInfoList) != c.workerTree.numWorkers {
@@ -580,11 +576,4 @@ type workerInfoListItem struct {
 	info *framework.WorkerInfo
 	next *workerInfoListItem
 	prev *workerInfoListItem
-}
-
-type imageState struct {
-	// Size of the image
-	size int64
-	// A set of worker names for workers having this image present
-	workers map[string]struct{}
 }

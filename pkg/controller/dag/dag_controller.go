@@ -94,16 +94,6 @@ func (jm *Controller) enqueueController(obj interface{}) {
 	jm.queue.Add(key)
 }
 
-func (jm *Controller) enqueueControllerAfter(obj interface{}, t time.Duration) {
-	key, err := informer.DeletionHandlingMetaNamespaceKeyFunc(obj)
-	if err != nil {
-		flog.Errorf("couldn't get key for object %s", err)
-		return
-	}
-
-	jm.queue.AddAfter(key, t)
-}
-
 func (jm *Controller) Run(ctx context.Context, workers int) {
 	defer parallelizer.HandleCrash()
 	defer jm.queue.ShutDown()

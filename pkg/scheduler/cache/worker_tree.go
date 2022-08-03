@@ -92,12 +92,12 @@ func (nt *workerTree) updateWorker(old, new *meta.Worker) {
 	if oldZone == newZone {
 		return
 	}
-	nt.removeWorker(old) // No error checking. We ignore whether the old worker exists or not.
+	_ = nt.removeWorker(old) // No error checking. We ignore whether the old worker exists or not.
 	nt.addWorker(new)
 }
 
 // list returns the list of names of the worker. WorkerTree iterates over zones and in each zone iterates
-// over workers in a round robin fashion.
+// over workers in a round-robin fashion.
 func (nt *workerTree) list() ([]string, error) {
 	if len(nt.zones) == 0 {
 		return nil, nil
@@ -135,8 +135,8 @@ func GetZoneKey(worker *meta.Worker) string {
 		return ""
 	}
 
-	zone, _ := labels[LabelTopologyZone]
-	region, _ := labels[LabelTopologyRegion]
+	zone, _ := labels[LabelTopologyZone]     //nolint
+	region, _ := labels[LabelTopologyRegion] //nolint
 
 	if region == "" && zone == "" {
 		return ""

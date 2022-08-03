@@ -11,7 +11,6 @@ import (
 // If 'list' doesn't have an Items member, it's not really a list type
 // and an error will be returned.
 // This function will either return a pointer to a slice, or an error, but not both.
-// TODO: this will be replaced with an interface in the future
 func GetItemsPtr(list runtime.Object) (interface{}, error) {
 	obj, err := getItemsPtr(list)
 	if err != nil {

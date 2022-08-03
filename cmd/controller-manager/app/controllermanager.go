@@ -39,13 +39,7 @@ const (
 	ControllerStartJitter = 1.0
 )
 
-func StartControllers(ctx context.Context, controllerCtx ControllerContext, startSATokenController InitFunc, controllers map[string]InitFunc) error {
-	if startSATokenController != nil {
-		if _, _, err := startSATokenController(ctx, controllerCtx); err != nil {
-			return err
-		}
-	}
-
+func StartControllers(ctx context.Context, controllerCtx ControllerContext, controllers map[string]InitFunc) error {
 	for controllerName, initFn := range controllers {
 		if !controllerCtx.IsControllerEnabled(controllerName) {
 			flog.Warnf("%q is disabled", controllerName)

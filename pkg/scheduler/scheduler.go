@@ -8,12 +8,10 @@ import (
 	"github.com/tsundata/flowline/pkg/api/client/rest"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/informer/informers"
-	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/scheduler/cache"
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/config"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/plugins"
-	"github.com/tsundata/flowline/pkg/scheduler/framework/plugins/names"
 	frameworkruntime "github.com/tsundata/flowline/pkg/scheduler/framework/runtime"
 	"github.com/tsundata/flowline/pkg/scheduler/profile"
 	"github.com/tsundata/flowline/pkg/scheduler/queue"
@@ -123,7 +121,6 @@ type Scheduler struct {
 }
 
 type schedulerOptions struct {
-	componentConfigVersion                string
 	config                                *rest.Config
 	percentageOfWorkersToScore            int32
 	stageInitialBackoffSeconds            int64
@@ -381,44 +378,7 @@ func New(client client.Interface,
 	}
 
 	if options.applyDefaultProfile {
-		options.profiles = []config.Profile{ // fixme
-			{
-				SchedulerName: constant.DefaultSchedulerName,
-				Plugins: &config.Plugins{
-					QueueSort: config.PluginSet{
-						Enabled: []config.Plugin{
-							{Name: names.PrioritySort, Weight: 1},
-						},
-						Disabled: nil,
-					},
-					Filter: config.PluginSet{
-						Enabled: []config.Plugin{
-							{Name: names.WorkerRuntime, Weight: 1},
-						},
-						Disabled: nil,
-					},
-					Score: config.PluginSet{
-						Enabled: []config.Plugin{
-							{Name: names.DefaultScore, Weight: 1},
-						},
-						Disabled: nil,
-					},
-					Permit: config.PluginSet{
-						Enabled: []config.Plugin{
-							{Name: names.DefaultPermit, Weight: 1},
-						},
-						Disabled: nil,
-					},
-					Bind: config.PluginSet{
-						Enabled: []config.Plugin{
-							{Name: names.DefaultBinder, Weight: 1},
-						},
-						Disabled: nil,
-					},
-				},
-				PluginConfig: nil,
-			},
-		}
+		options.profiles = plugins.DefaultProfile
 	}
 
 	registry := plugins.NewInTreeRegistry()

@@ -12,7 +12,6 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"net/http"
-	"reflect"
 	"sort"
 )
 
@@ -179,11 +178,6 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 	// SubResource
 	if isSubResource {
 		for _, action := range subResource.Actions() {
-			producedObject := storageMeta.ProducesObject(action.Verb)
-			if producedObject == nil {
-				producedObject = meta.Unknown{}
-			}
-
 			casesTitle := cases.Title(language.English)
 			titleStr := casesTitle.String(action.SubResource)
 
@@ -316,9 +310,4 @@ func (defaultStorageMetadata) ProducesMIMETypes(_ string) []string {
 
 func (defaultStorageMetadata) ProducesObject(_ string) interface{} {
 	return nil
-}
-
-// indirectArbitraryPointer returns *ptrToObject for an arbitrary pointer
-func indirectArbitraryPointer(ptrToObject interface{}) interface{} {
-	return reflect.Indirect(reflect.ValueOf(ptrToObject)).Interface()
 }

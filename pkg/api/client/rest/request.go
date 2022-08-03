@@ -594,7 +594,7 @@ func (r *Request) transformResponse(resp *http.Response, req *http.Request) Resu
 // introduce a level of uncertainty to the responses returned by servers that in common use result in
 // unexpected responses. The rough structure is:
 //
-// 1. Assume the server sends you something sane - JSON + well defined error objects + proper codes
+// 1. Assume the server sends you something sane - JSON + well-defined error objects + proper codes
 //    - this is the happy path
 //    - when you get this output, trust what the server sends
 // 2. Guard against empty fields / bodies in received JSON and attempt to cull sufficient info from them to
@@ -723,7 +723,9 @@ func (r *Request) Stream(ctx context.Context) (io.ReadCloser, error) {
 
 		default:
 			done, transformErr := func() (bool, error) {
-				defer resp.Body.Close()
+				defer func() {
+					_ = resp.Body.Close()
+				}()
 
 				if retry.IsNextRetry(ctx, r, req, resp, err, neverRetryError) {
 					return false, nil
@@ -828,7 +830,7 @@ func (r *Request) request(ctx context.Context, fn func(*http.Request, *http.Resp
 		done := func() bool {
 			defer readAndCloseResponseBody(resp)
 
-			// if the the server returns an error in err, the response will be nil.
+			// if the server returns an error in err, the response will be nil.
 			f := func(req *http.Request, resp *http.Response) {
 				if resp == nil {
 					return

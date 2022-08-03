@@ -52,7 +52,7 @@ type WithRetry interface {
 	// resp: the response sent from the server, it is set if err is nil
 	// err: the server sent this error to us, if err is set then resp is nil.
 	// f: a IsRetryableErrorFunc function provided by the client that determines
-	//    if the err sent by the server is retryable.
+	//    if to err sent by the server is retryable.
 	IsNextRetry(ctx context.Context, restReq *Request, httpReq *http.Request, resp *http.Response, err error, f IsRetryableErrorFunc) bool
 
 	// Before should be invoked prior to each attempt, including
@@ -104,7 +104,7 @@ type withRetry struct {
 	attempts   int
 
 	// retry after parameters that pertain to the attempt that is to
-	// be made soon, so as to enable 'Before' and 'After' to refer
+	// be made soon, to enable 'Before' and 'After' to refer
 	// to the retry parameters.
 	//  - for the first attempt, it will always be nil
 	//  - for consecutive attempts, it is non nil and holds the
@@ -230,7 +230,7 @@ func (r *withRetry) Before(ctx context.Context, request *Request) error {
 		}
 	}
 
-	// if we are here, we have made attempt(s) al least once before.
+	// if we are here, we have made attempt(s) al the least once before.
 	if request.backoff != nil {
 		delay := request.backoff.CalculateBackoff(u)
 		if r.retryAfter.Wait > delay {
@@ -317,7 +317,9 @@ func readAndCloseResponseBody(resp *http.Response) {
 	// before we reconnect, so that we reuse the same TCP
 	// connection.
 	const maxBodySlurpSize = 2 << 10
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.ContentLength <= maxBodySlurpSize {
 		_, _ = io.Copy(ioutil.Discard, &io.LimitedReader{R: resp.Body, N: maxBodySlurpSize})

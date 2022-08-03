@@ -711,8 +711,8 @@ func (npm *nominator) DeleteNominatedStageIfExists(stage *meta.Stage) {
 	npm.Unlock()
 }
 
-func NominatedStageName(stage *meta.Stage) string {
-	return stage.Name // fixme stage.Status.NominatedWorkerName
+func NominatedWorkerName(stage *meta.Stage) string {
+	return stage.WorkerUID
 }
 
 func (npm *nominator) UpdateNominatedStage(oldStage *meta.Stage, newStageInfo *framework.StageInfo) {
@@ -726,7 +726,7 @@ func (npm *nominator) UpdateNominatedStage(oldStage *meta.Stage, newStageInfo *f
 	// (1) NominatedWorker info is added
 	// (2) NominatedWorker info is updated
 	// (3) NominatedWorker info is removed
-	if NominatedStageName(oldStage) == "" && NominatedStageName(newStageInfo.Stage) == "" {
+	if NominatedWorkerName(oldStage) == "" && NominatedWorkerName(newStageInfo.Stage) == "" {
 		if nnn, ok := npm.nominatedStageToWorker[oldStage.UID]; ok {
 			// This is the only case we should continue reserving the NominatedWorker
 			nominatingInfo = &framework.NominatingInfo{
@@ -850,11 +850,6 @@ func (u *UnschedulableStages) get(stage *meta.Stage) *framework.QueuedStageInfo 
 		return pInfo
 	}
 	return nil
-}
-
-// Clear removes all the entries from the unschedulable stageInfoMap.
-func (u *UnschedulableStages) clear() {
-	u.stageInfoMap = make(map[string]*framework.QueuedStageInfo)
 }
 
 func stageInfoKeyFunc(obj interface{}) (string, error) {

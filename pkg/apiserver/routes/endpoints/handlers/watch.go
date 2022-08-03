@@ -275,7 +275,9 @@ func (s *WatchServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s *WatchServer) handleWS(ws *websocket.Conn) {
-	defer ws.Close()
+	defer func() {
+		_ = ws.Close()
+	}()
 	done := make(chan struct{})
 
 	go func() {
@@ -341,7 +343,7 @@ func ConvertInternalEventToWatchEvent(in *watch.Event, out *meta.WatchEvent) err
 
 var (
 	// connectionUpgradeRegex matches any Connection header value that includes upgrade
-	connectionUpgradeRegex = regexp.MustCompile("(^|.*,\\s*)upgrade($|\\s*,)")
+	connectionUpgradeRegex = regexp.MustCompile(`(^|.*,\s*)upgrade($|\s*,)`)
 )
 
 func IsWebSocketRequest(req *http.Request) bool {

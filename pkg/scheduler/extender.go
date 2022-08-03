@@ -78,7 +78,7 @@ type Victims struct {
 
 func NewHTTPExtender(config *config.Extender) (framework.Extender, error) {
 	if config.HTTPTimeout.Nanoseconds() == 0 {
-		config.HTTPTimeout = time.Duration(5 * time.Second)
+		config.HTTPTimeout = 5 * time.Second
 	}
 
 	client := &http.Client{
@@ -234,7 +234,7 @@ func (h *HTTPExtender) Bind(binding *meta.Binding) error {
 		"StageName": binding.Name,
 		"StageUID":  binding.UID,
 		"Worker":    binding.Target,
-	} // fixme
+	}
 	if err := h.send(h.bindVerb, req, &result); err != nil {
 		return err
 	}
@@ -258,7 +258,7 @@ func (h *HTTPExtender) IsInterested(stage *meta.Stage) bool {
 	return false
 }
 
-func (h *HTTPExtender) ProcessPreemption(stage *meta.Stage, workerNameToVictims map[string]interface{}, workerInfos interface{}) (map[string]interface{}, error) {
+func (h *HTTPExtender) ProcessPreemption(_ *meta.Stage, _ map[string]interface{}, _ interface{}) (map[string]interface{}, error) {
 	return nil, nil
 }
 
@@ -270,7 +270,7 @@ func (h *HTTPExtender) IsIgnorable() bool {
 	return h.ignorable
 }
 
-func (h *HTTPExtender) hasManagedResources(resources interface{}) bool {
+func (h *HTTPExtender) hasManagedResources(_ interface{}) bool {
 	return false // todo
 }
 
@@ -294,7 +294,9 @@ func (h *HTTPExtender) send(action string, args interface{}, result interface{})
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed %v with extender at URL %v, code %v", action, url, resp.StatusCode)

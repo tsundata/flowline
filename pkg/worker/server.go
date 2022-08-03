@@ -54,10 +54,8 @@ func (g *GenericWorkerServer) Run(stopCh <-chan struct{}) error {
 	// start informer
 	g.config.InformerFactory.Start(stopCh)
 
-	select {
-	case <-stopCh:
-		flog.Info("stop worker server")
-	}
+	<-stopCh
+	flog.Info("stop worker server")
 	return nil
 }
 

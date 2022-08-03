@@ -318,12 +318,11 @@ func (e *Store) Update(ctx context.Context, name string, objInfo runtime.Object,
 		return nil, false, err
 	}
 
-	out := objInfo // fixme
+	out := e.NewFunc()
 	if err := updateValidation(ctx, objInfo, out); err != nil {
 		return nil, false, err
 	}
 
-	// todo forceAllowCreate
 	if forceAllowCreate {
 		if err := createValidation(ctx, out); err != nil {
 			return nil, false, err
@@ -360,7 +359,7 @@ func (e *Store) Delete(ctx context.Context, name string, deleteValidation rest.V
 	if err != nil {
 		return nil, false, err
 	}
-	obj := e.NewFunc() //fixme
+	obj := e.NewFunc()
 	if err := deleteValidation(ctx, obj); err != nil {
 		return nil, false, err
 	}

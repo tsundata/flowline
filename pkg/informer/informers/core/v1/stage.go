@@ -22,10 +22,6 @@ type stageInformer struct {
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 }
 
-func newStageInformer(client client.Interface, resyncPeriod time.Duration, indexers informer.Indexers) informer.SharedIndexInformer {
-	return NewFilteredStageInformer(client, resyncPeriod, indexers, nil)
-}
-
 func NewFilteredStageInformer(client client.Interface, resyncPeriod time.Duration, indexers informer.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) informer.SharedIndexInformer {
 	return informer.NewSharedIndexInformer(
 		&informer.ListWatch{

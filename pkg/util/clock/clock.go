@@ -103,7 +103,7 @@ func (RealClock) AfterFunc(d time.Duration, f func()) Timer {
 // This method does not allow to free/GC the backing ticker. Use
 // NewTicker instead.
 func (RealClock) Tick(d time.Duration) <-chan time.Time {
-	return time.Tick(d)
+	return time.Tick(d) //nolint
 }
 
 // NewTicker returns a new Ticker.

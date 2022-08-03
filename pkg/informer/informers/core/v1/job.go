@@ -22,10 +22,6 @@ type jobInformer struct {
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 }
 
-func newJobInformer(client client.Interface, resyncPeriod time.Duration, indexers informer.Indexers) informer.SharedIndexInformer {
-	return NewFilteredJobInformer(client, resyncPeriod, indexers, nil)
-}
-
 func NewFilteredJobInformer(client client.Interface, resyncPeriod time.Duration, indexers informer.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) informer.SharedIndexInformer {
 	return informer.NewSharedIndexInformer(
 		&informer.ListWatch{

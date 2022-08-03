@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/tsundata/flowline/pkg/runtime"
+	"reflect"
 	"time"
 )
 
@@ -66,7 +67,7 @@ type ListInterface interface {
 	SetRemainingItemCount(c *int64)
 }
 
-func ListAccessor(obj interface{}) (List, error) { //fixme
+func ListAccessor(obj interface{}) (List, error) {
 	switch t := obj.(type) {
 	case List:
 		return t, nil
@@ -74,13 +75,18 @@ func ListAccessor(obj interface{}) (List, error) { //fixme
 		if m := t.GetListMeta(); m != nil {
 			return m, nil
 		}
-		return nil, errors.New("error list type")
+		return nil, errors.New("object does not implement the List interfaces")
 	default:
-		return nil, errors.New("error list type")
+		return nil, errors.New("object does not implement the List interfaces")
 	}
 }
 
-func SetZeroValue(obj interface{}) error { //fixme
+func SetZeroValue(objPtr runtime.Object) error {
+	v, err := EnforcePtr(objPtr)
+	if err != nil {
+		return err
+	}
+	v.Set(reflect.Zero(v.Type()))
 	return nil
 }
 

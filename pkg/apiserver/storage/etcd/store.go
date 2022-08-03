@@ -107,7 +107,6 @@ func (s *store) Watch(ctx context.Context, key string, opts meta.ListOptions) (w
 
 func (s *store) Get(ctx context.Context, key string, opts meta.GetOptions, out runtime.Object) error {
 	key = path.Join(s.pathPrefix, key)
-	// startTime := time.Now()
 	getResp, err := s.client.KV.Get(ctx, key)
 	if err != nil {
 		return err

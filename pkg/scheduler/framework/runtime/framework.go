@@ -22,17 +22,16 @@ const (
 )
 
 type frameworkOptions struct {
-	componentConfigVersion string
-	clientSet              client.Interface
-	config                 interface{}
-	eventRecorder          interface{}
-	informerFactory        interface{}
-	snapshotSharedLister   interface{}
-	stageNominator         framework.StageNominator
-	extenders              []framework.Extender
-	captureProfile         CaptureProfile
-	clusterEventMap        map[framework.ClusterEvent]map[string]struct{}
-	parallelizer           parallelizer.Parallelizer
+	clientSet       client.Interface
+	config          interface{}
+	eventRecorder   interface{}
+	informerFactory interface{}
+	// snapshotSharedLister   interface{}
+	stageNominator  framework.StageNominator
+	extenders       []framework.Extender
+	captureProfile  CaptureProfile
+	clusterEventMap map[framework.ClusterEvent]map[string]struct{}
+	parallelizer    parallelizer.Parallelizer
 }
 
 // Option for the frameworkImpl.

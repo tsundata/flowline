@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/tsundata/flowline/pkg/manager/config"
-	"github.com/tsundata/flowline/pkg/manager/controller"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
 	"github.com/tsundata/flowline/pkg/util/signal"
@@ -49,31 +48,16 @@ func NewControllerManagerCommand() *cli.App {
 	}
 }
 
-// serviceAccountTokenControllerStarter is special because it must run first to set up permissions for other controllers.
-// It cannot use the "normal" client builder, so it tracks its own. It must also avoid being included in the "normal"
-// init map so that it can always run first.
-type serviceAccountTokenControllerStarter struct {
-	rootClientBuilder interface{}
-}
-
-func (s serviceAccountTokenControllerStarter) startServiceAccountTokenController() InitFunc {
-	return func(ctx context.Context, controllerCtx ControllerContext) (controller controller.Interface, enabled bool, err error) {
-		return nil, false, nil
-	}
-}
-
 func Run(c *config.Config, stopCh <-chan struct{}) error {
 	flog.Info("controller-manager running")
 
-	saTokenControllerInitFunc := serviceAccountTokenControllerStarter{}.startServiceAccountTokenController()
-
-	run := func(ctx context.Context, startSATokenController InitFunc, initializersFunc ControllerInitializersFunc) {
+	run := func(ctx context.Context, initializersFunc ControllerInitializersFunc) {
 		controllerContext, err := CreateControllerContext(c, ctx.Done())
 		if err != nil {
 			flog.Fatalf("error building controller context: %v", err)
 		}
 		controllerInitializers := initializersFunc()
-		if err := StartControllers(ctx, controllerContext, startSATokenController, controllerInitializers); err != nil {
+		if err := StartControllers(ctx, controllerContext, controllerInitializers); err != nil {
 			flog.Fatalf("error starting controllers: %v", err)
 		}
 
@@ -84,7 +68,7 @@ func Run(c *config.Config, stopCh <-chan struct{}) error {
 	}
 
 	ctx, _ := parallelizer.ContextForChannel(stopCh)
-	run(ctx, saTokenControllerInitFunc, NewControllerInitializers)
+	run(ctx, NewControllerInitializers)
 
 	<-stopCh
 	return nil

@@ -17,7 +17,7 @@ type Decoder struct {
 	embeddedDecoder runtime.Decoder
 }
 
-// NewDecoder creates an Decoder for the given writer and codec.
+// NewDecoder creates a Decoder for the given writer and codec.
 func NewDecoder(decoder streaming.Decoder, embeddedDecoder runtime.Decoder) *Decoder {
 	return &Decoder{
 		decoder:         decoder,
@@ -52,5 +52,5 @@ func (d *Decoder) Decode() (watch.EventType, runtime.Object, error) {
 
 // Close closes the underlying r.
 func (d *Decoder) Close() {
-	d.decoder.Close()
+	_ = d.decoder.Close()
 }
