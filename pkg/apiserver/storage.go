@@ -27,79 +27,79 @@ import (
 
 func StorageMap(config *config.Config) map[string]rest.Storage {
 	storageMap := make(map[string]rest.Storage)
-	codeRestStorage(storageMap)
-	connectionRestStorage(storageMap)
-	dagRestStorage(storageMap)
-	eventRestStorage(storageMap)
-	jobRestStorage(storageMap)
-	roleRestStorage(storageMap)
-	rolebindingRestStorage(storageMap)
-	stageRestStorage(storageMap)
+	codeRestStorage(config, storageMap)
+	connectionRestStorage(config, storageMap)
+	dagRestStorage(config, storageMap)
+	eventRestStorage(config, storageMap)
+	jobRestStorage(config, storageMap)
+	roleRestStorage(config, storageMap)
+	rolebindingRestStorage(config, storageMap)
+	stageRestStorage(config, storageMap)
 	userRestStorage(config, storageMap)
-	variableRestStorage(storageMap)
-	workerRestStorage(storageMap)
-	workflowRestStorage(storageMap)
+	variableRestStorage(config, storageMap)
+	workerRestStorage(config, storageMap)
+	workflowRestStorage(config, storageMap)
 	return storageMap
 }
 
-func codeRestStorage(storageMap map[string]rest.Storage) {
-	s, err := code.NewREST(makeStoreOptions("code"))
+func codeRestStorage(config *config.Config, storageMap map[string]rest.Storage) {
+	s, err := code.NewREST(makeStoreOptions(config, "code"))
 	if err != nil {
 		flog.Panic(err)
 	}
 	storageMap["code"] = s
 }
 
-func connectionRestStorage(storageMap map[string]rest.Storage) {
-	s, err := connection.NewREST(makeStoreOptions("connection"))
+func connectionRestStorage(config *config.Config, storageMap map[string]rest.Storage) {
+	s, err := connection.NewREST(makeStoreOptions(config, "connection"))
 	if err != nil {
 		flog.Panic(err)
 	}
 	storageMap["connection"] = s
 }
 
-func dagRestStorage(storageMap map[string]rest.Storage) {
-	s, err := dag.NewREST(makeStoreOptions("dag"))
+func dagRestStorage(config *config.Config, storageMap map[string]rest.Storage) {
+	s, err := dag.NewREST(makeStoreOptions(config, "dag"))
 	if err != nil {
 		flog.Panic(err)
 	}
 	storageMap["dag"] = s
 }
 
-func eventRestStorage(storageMap map[string]rest.Storage) {
-	s, err := event.NewREST(makeStoreOptions("event"))
+func eventRestStorage(config *config.Config, storageMap map[string]rest.Storage) {
+	s, err := event.NewREST(makeStoreOptions(config, "event"))
 	if err != nil {
 		flog.Panic(err)
 	}
 	storageMap["event"] = s
 }
 
-func jobRestStorage(storageMap map[string]rest.Storage) {
-	s, err := job.NewREST(makeStoreOptions("job"))
+func jobRestStorage(config *config.Config, storageMap map[string]rest.Storage) {
+	s, err := job.NewREST(makeStoreOptions(config, "job"))
 	if err != nil {
 		flog.Panic(err)
 	}
 	storageMap["job"] = s
 }
 
-func roleRestStorage(storageMap map[string]rest.Storage) {
-	s, err := role.NewREST(makeStoreOptions("role"))
+func roleRestStorage(config *config.Config, storageMap map[string]rest.Storage) {
+	s, err := role.NewREST(makeStoreOptions(config, "role"))
 	if err != nil {
 		flog.Panic(err)
 	}
 	storageMap["role"] = s
 }
 
-func rolebindingRestStorage(storageMap map[string]rest.Storage) {
-	s, err := rolebinding.NewREST(makeStoreOptions("rolebinding"))
+func rolebindingRestStorage(config *config.Config, storageMap map[string]rest.Storage) {
+	s, err := rolebinding.NewREST(makeStoreOptions(config, "rolebinding"))
 	if err != nil {
 		flog.Panic(err)
 	}
 	storageMap["rolebinding"] = s
 }
 
-func stageRestStorage(storageMap map[string]rest.Storage) {
-	s, err := stage.NewREST(makeStoreOptions("stage"))
+func stageRestStorage(config *config.Config, storageMap map[string]rest.Storage) {
+	s, err := stage.NewREST(makeStoreOptions(config, "stage"))
 	if err != nil {
 		flog.Panic(err)
 	}
@@ -107,44 +107,45 @@ func stageRestStorage(storageMap map[string]rest.Storage) {
 }
 
 func userRestStorage(config *config.Config, storageMap map[string]rest.Storage) {
-	s, err := user.NewREST(config, makeStoreOptions("user"))
+	s, err := user.NewREST(config, makeStoreOptions(config, "user"))
 	if err != nil {
 		flog.Panic(err)
 	}
 	storageMap["user"] = s
 }
 
-func variableRestStorage(storageMap map[string]rest.Storage) {
-	s, err := variable.NewREST(makeStoreOptions("variable"))
+func variableRestStorage(config *config.Config, storageMap map[string]rest.Storage) {
+	s, err := variable.NewREST(makeStoreOptions(config, "variable"))
 	if err != nil {
 		flog.Panic(err)
 	}
 	storageMap["variable"] = s
 }
 
-func workerRestStorage(storageMap map[string]rest.Storage) {
-	s, err := worker.NewREST(makeStoreOptions("worker"))
+func workerRestStorage(config *config.Config, storageMap map[string]rest.Storage) {
+	s, err := worker.NewREST(makeStoreOptions(config, "worker"))
 	if err != nil {
 		flog.Panic(err)
 	}
 	storageMap["worker"] = s
 }
 
-func workflowRestStorage(storageMap map[string]rest.Storage) {
-	s, err := workflow.NewREST(makeStoreOptions("workflow"))
+func workflowRestStorage(config *config.Config, storageMap map[string]rest.Storage) {
+	s, err := workflow.NewREST(makeStoreOptions(config, "workflow"))
 	if err != nil {
 		flog.Panic(err)
 	}
 	storageMap["workflow"] = s
 }
 
-func makeStoreOptions(resource string) *options.StoreOptions {
+func makeStoreOptions(config *config.Config, resource string) *options.StoreOptions {
 	codec := json.NewSerializerWithOptions(json.DefaultMetaFactory, json.SerializerOptions{})
 	storeOptions := &options.StoreOptions{
 		RESTOptions: &options.RESTOptions{
 			StorageConfig: &storageConfig.ConfigForResource{
 				Config: storageConfig.Config{
-					Codec: codec,
+					Codec:     codec,
+					Transport: config.ETCDConfig,
 				},
 				GroupResource: schema.GroupResource{
 					Group:    constant.GroupName,

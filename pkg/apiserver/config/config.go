@@ -1,20 +1,23 @@
 package config
 
 import (
+	"github.com/tsundata/flowline/pkg/apiserver/storage/config"
 	"net/http"
 	"time"
 )
 
 type Config struct {
+	// server
 	Host string
 	Port int
 
-	EtcdHost     string
-	EtcdUsername string
-	EtcdPassword string
+	// etcd
+	ETCDConfig config.TransportConfig
 
+	// jwt
 	JWTSecret string
 
+	// cors
 	CorsAllowedOriginPatterns []string
 
 	// APIServerID is the ID of this API server
@@ -32,5 +35,6 @@ type Config struct {
 func NewConfig() *Config {
 	return &Config{
 		CorsAllowedOriginPatterns: []string{".*"},
+		ETCDConfig:                config.TransportConfig{},
 	}
 }

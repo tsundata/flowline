@@ -10,7 +10,7 @@ import (
 // Interface offers a common interface for object marshaling/unmarshaling operations and
 // hides all the storage-related operations behind it.
 type Interface interface {
-	// Returns Versioner associated with this interface.
+	// Versioner Returns Versioner associated with this interface.
 	Versioner() Versioner
 
 	// Create adds a new object at a key unless it already exists. 'ttl' is time-to-live

@@ -49,6 +49,12 @@ func NewAPIServerCommand() *cli.App {
 				EnvVars: []string{"APISERVER_SECRET"},
 			},
 			&cli.StringFlag{
+				Name:    "etcd",
+				Aliases: []string{"E"},
+				Usage:   "etcd server host",
+				EnvVars: []string{"APISERVER_ETCD"},
+			},
+			&cli.StringFlag{
 				Name:    "user",
 				Aliases: []string{"U"},
 				Usage:   "user uid",
@@ -61,6 +67,7 @@ func NewAPIServerCommand() *cli.App {
 			conf.Port = c.Int("port")
 			conf.EnableIndex = true
 			conf.JWTSecret = c.String("secret")
+			conf.ETCDConfig.ServerList = []string{c.String("etcd")}
 
 			conf.HTTPReadTimeout = 10 * time.Second
 			conf.HTTPWriteTimeout = 10 * time.Second
