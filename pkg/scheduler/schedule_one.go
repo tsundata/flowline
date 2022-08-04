@@ -130,7 +130,7 @@ func (sched *Scheduler) assume(assumed *meta.Stage, uid string) error {
 	return nil
 }
 
-// bind binds a stage to a given worker defined in a binding object.
+// bind a stage to a given worker defined in a binding object.
 // The precedence for binding is: (1) extenders and (2) framework plugins.
 // We expect this to run asynchronously, so we handle binding metrics internally.
 func (sched *Scheduler) bind(ctx context.Context, fwk framework.Framework, assumed *meta.Stage, targetWorker string, state *framework.CycleState) (err error) {

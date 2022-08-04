@@ -7,6 +7,7 @@ import (
 	"github.com/tsundata/flowline/pkg/apiserver/registry"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/options"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest"
+	"github.com/tsundata/flowline/pkg/apiserver/storage"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"net/http"
@@ -110,9 +111,9 @@ func (r *subResource) workerRegister(req *restful.Request, resp *restful.Respons
 	obj.State = meta.WorkerReady
 
 	find, err := r.store.Get(ctx, obj.UID, &meta.GetOptions{})
-	if err != nil {
+	if err != nil && !errors.Is(err, storage.ErrKeyNotFound) {
 		flog.Error(err)
-		_ = resp.WriteError(http.StatusBadRequest, errors.New("found error"))
+		_ = resp.WriteError(http.StatusBadRequest, errors.New("register error"))
 		return
 	}
 

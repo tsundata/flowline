@@ -11,16 +11,10 @@ import (
 	"github.com/tsundata/flowline/pkg/scheduler/queue"
 )
 
-// RecorderFactory builds an EventRecorder for a given scheduler name.
-type RecorderFactory func(string) interface{}
-
 // newProfile builds a Profile for the given configuration.
-func newProfile(cfg config.Profile, r frameworkruntime.Registry, recorderFact RecorderFactory,
+func newProfile(cfg config.Profile, r frameworkruntime.Registry,
 	stopCh <-chan struct{}, opts ...frameworkruntime.Option) (framework.Framework, error) {
-	//recorder := recorderFact(cfg.SchedulerName)
-	recorder := ""
 	opts = append(opts,
-		frameworkruntime.WithEventRecorder(recorder),
 		frameworkruntime.WithStageNominator(queue.NewStageNominator(nil)),
 	)
 	return frameworkruntime.NewFramework(r, &cfg, stopCh, opts...)
@@ -36,13 +30,13 @@ type cfgValidator struct {
 }
 
 // NewMap builds the frameworks given by the configuration, indexed by name.
-func NewMap(cfgs []config.Profile, r frameworkruntime.Registry, recorderFact RecorderFactory,
+func NewMap(cfgs []config.Profile, r frameworkruntime.Registry,
 	stopCh <-chan struct{}, opts ...frameworkruntime.Option) (Map, error) {
 	m := make(Map)
 	v := cfgValidator{m: m}
 
 	for _, cfg := range cfgs {
-		p, err := newProfile(cfg, r, recorderFact, stopCh, opts...)
+		p, err := newProfile(cfg, r, stopCh, opts...)
 		if err != nil {
 			return nil, fmt.Errorf("creating profile for scheduler name %s: %v", cfg.SchedulerName, err)
 		}

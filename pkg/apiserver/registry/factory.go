@@ -9,7 +9,6 @@ import (
 	"github.com/tsundata/flowline/pkg/runtime"
 	"go.etcd.io/etcd/client/pkg/v3/transport"
 	clientv3 "go.etcd.io/etcd/client/v3"
-	"google.golang.org/grpc"
 	"sync"
 	"time"
 )
@@ -70,14 +69,10 @@ func newETCDClient(c config.TransportConfig) (*clientv3.Client, error) {
 		tlsConfig = nil
 	}
 
-	dialOptions := []grpc.DialOption{
-		grpc.WithBlock(), // block until the underlying connection is up
-	}
 	cfg := clientv3.Config{
 		DialTimeout:          dialTimeout,
 		DialKeepAliveTime:    keepaliveTime,
 		DialKeepAliveTimeout: keepaliveTimeout,
-		DialOptions:          dialOptions,
 		Endpoints:            c.ServerList,
 		TLS:                  tlsConfig,
 	}

@@ -115,7 +115,7 @@ func (s *store) Get(ctx context.Context, key string, opts meta.GetOptions, out r
 		if opts.IgnoreNotFound {
 			return meta.SetZeroValue(out)
 		}
-		return fmt.Errorf("key not found %s", key)
+		return storage.ErrKeyNotFound
 	}
 	kv := getResp.Kvs[0]
 	data := kv.Value

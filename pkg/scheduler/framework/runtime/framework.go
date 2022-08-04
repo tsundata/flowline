@@ -24,7 +24,6 @@ const (
 type frameworkOptions struct {
 	clientSet       client.Interface
 	config          interface{}
-	eventRecorder   interface{}
 	informerFactory interface{}
 	// snapshotSharedLister   interface{}
 	stageNominator  framework.StageNominator
@@ -39,13 +38,6 @@ type Option func(*frameworkOptions)
 
 // CaptureProfile is a callback to capture a finalized profile.
 type CaptureProfile func(config.Profile)
-
-// WithEventRecorder sets clientSet for the scheduling frameworkImpl.
-func WithEventRecorder(recorder interface{}) Option {
-	return func(o *frameworkOptions) {
-		o.eventRecorder = recorder
-	}
-}
 
 // WithStageNominator sets stageNominator for the scheduling frameworkImpl.
 func WithStageNominator(nominator framework.StageNominator) Option {
@@ -88,7 +80,6 @@ func NewFramework(r Registry, profile *config.Profile, stopCh <-chan struct{}, o
 		waitingStages:     newWaitingStagesMap(),
 		clientSet:         options.clientSet,
 		config:            options.config,
-		eventRecorder:     options.eventRecorder,
 		informerFactory:   options.informerFactory,
 		extenders:         options.extenders,
 		StageNominator:    options.stageNominator,

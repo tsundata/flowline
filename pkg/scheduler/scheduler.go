@@ -8,6 +8,7 @@ import (
 	"github.com/tsundata/flowline/pkg/api/client/rest"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/informer/informers"
+	listerv1 "github.com/tsundata/flowline/pkg/informer/listers/core/v1"
 	"github.com/tsundata/flowline/pkg/scheduler/cache"
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/config"
@@ -362,8 +363,6 @@ var defaultSchedulerOptions = schedulerOptions{
 // New returns a Scheduler
 func New(client client.Interface,
 	informerFactory informers.SharedInformerFactory,
-	dynInformerFactory interface{},
-	recorderFactory profile.RecorderFactory,
 	stopCh <-chan struct{},
 	opts ...Option) (*Scheduler, error) {
 
@@ -396,7 +395,7 @@ func New(client client.Interface,
 	stageLister := informerFactory.Core().V1().Stages().Lister()
 	nominator := queue.NewStageNominator(stageLister)
 
-	profiles, err := profile.NewMap(options.profiles, registry, recorderFactory, stopCh,
+	profiles, err := profile.NewMap(options.profiles, registry, stopCh,
 		frameworkruntime.WithExtenders(extenders),
 		frameworkruntime.WithStageNominator(nominator),
 		frameworkruntime.WithClientSet(client),
@@ -416,7 +415,7 @@ func New(client client.Interface,
 		schedulerCache,
 		extenders,
 		queue.MakeNextStageFunc(stageQueue),
-		MakeDefaultErrorFunc(client, nil, stageQueue, schedulerCache),
+		MakeDefaultErrorFunc(client, stageLister, stageQueue, schedulerCache),
 		stopEverything,
 		stageQueue,
 		profiles,
@@ -430,16 +429,27 @@ func New(client client.Interface,
 	return sched, nil
 }
 
-func MakeDefaultErrorFunc(client interface{}, stageLister interface{}, stageQueue queue.SchedulingQueue, schedulerCache cache.Cache) func(*framework.QueuedStageInfo, error) {
+func MakeDefaultErrorFunc(client client.Interface, stageLister listerv1.StageLister, stageQueue queue.SchedulingQueue, schedulerCache cache.Cache) func(*framework.QueuedStageInfo, error) {
 	return func(stageInfo *framework.QueuedStageInfo, err error) {
 		stage := stageInfo.Stage
-		if err != nil {
+		if err == errors.New("IsNotFound") { // todo
+			workerUID := "something uid"
+			_, err := client.CoreV1().Worker().Get(context.Background(), workerUID, meta.GetOptions{})
+			if err != nil {
+				worker := meta.Worker{ObjectMeta: meta.ObjectMeta{UID: workerUID}}
+				if err := schedulerCache.RemoveWorker(&worker); err != nil {
+					flog.Errorf("Worker is not found; failed to remove it from the cache %s", worker.UID)
+				}
+			}
+		} else {
 			flog.Errorf("%s Error scheduling stage; retrying %s %s", err, stage.Name, stage.UID)
 		}
 
-		// todo when isNotFound err, client get worker
-
-		cachedStage := &meta.Stage{} // todo
+		cachedStage, err := stageLister.Get(stage.UID)
+		if err != nil {
+			flog.Errorf("Stage doesn't exist in informer cache %s %s", stage.UID, err)
+			return
+		}
 
 		// As <cachedStage> is from SharedInformer, we need to do a DeepCopy() here.
 		stageInfo.StageInfo = framework.NewStageInfo(cachedStage)

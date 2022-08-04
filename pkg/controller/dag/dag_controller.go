@@ -13,6 +13,7 @@ import (
 	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
+	"github.com/tsundata/flowline/pkg/util/sets"
 	"github.com/tsundata/flowline/pkg/util/workqueue"
 	"time"
 )
@@ -22,6 +23,10 @@ type Controller struct {
 
 	jobControl   jobControlInterface
 	stageControl stageControlInterface
+
+	codeControl       codeControlInterface
+	variableControl   variableControlInterface
+	connectionControl connectionControlInterface
 
 	jobLister listerv1.JobLister
 
@@ -37,6 +42,10 @@ func NewController(jobInformer informerv1.JobInformer, client client.Interface) 
 
 		jobControl:   &realJobControl{Client: client},
 		stageControl: &realStageControl{Client: client},
+
+		codeControl:       &realCodeControl{Client: client},
+		variableControl:   &realVariableControl{Client: client},
+		connectionControl: &realConnectionControl{Client: client},
 
 		jobLister:       jobInformer.Lister(),
 		jobListerSynced: jobInformer.Informer().HasSynced,
@@ -175,14 +184,69 @@ func (jm *Controller) split(ctx context.Context, jobKey string) (bool, error) {
 	return true, nil
 }
 
-func (jm *Controller) splitDag(_ context.Context, job *meta.Job, dag *meta.Dag) (*meta.Job, bool, error) {
+func (jm *Controller) splitDag(ctx context.Context, job *meta.Job, dag *meta.Dag) (*meta.Job, bool, error) {
 	stages, err := dagSort(dag)
 	if err != nil {
 		return nil, false, err
 	}
+
+	codeUID := sets.NewString()
+	variableUID := sets.NewString()
+	connectionUID := sets.NewString()
+	for _, stage := range stages {
+		codeUID.Insert(stage.Code)
+		variableUID.Insert(stage.Variables...)
+		connectionUID.Insert(stage.Connections...)
+	}
+	codes := make(map[string]*meta.Code)
+	if codeUID.Len() > 0 {
+		codeList, err := jm.codeControl.GetCodes(ctx)
+		if err != nil {
+			return nil, false, err
+		}
+		if codeList == nil {
+			return nil, false, errors.New("error code")
+		}
+		for i, item := range codeList.Items {
+			if codeUID.Has(item.UID) {
+				codes[item.UID] = &codeList.Items[i]
+			}
+		}
+	}
+	variables := make(map[string]*meta.Variable)
+	if len(variableUID) > 0 {
+		variableList, err := jm.variableControl.GetVariables(ctx)
+		if err != nil {
+			return nil, false, err
+		}
+		if variableList == nil {
+			return nil, false, errors.New("error variable")
+		}
+		for i, item := range variableList.Items {
+			if variableUID.Has(item.UID) {
+				variables[item.UID] = &variableList.Items[i]
+			}
+		}
+	}
+	connections := make(map[string]*meta.Connection)
+	if len(connectionUID) > 0 {
+		connectionList, err := jm.connectionControl.GetConnections(ctx)
+		if err != nil {
+			return nil, false, err
+		}
+		if connectionList == nil {
+			return nil, false, errors.New("error connection")
+		}
+		for i, item := range connectionList.Items {
+			if connectionUID.Has(item.UID) {
+				connections[item.UID] = &connectionList.Items[i]
+			}
+		}
+	}
+
 	updateStatus := false
 	for i, item := range stages {
-		stageReq, err := getStageFromTemplate(job, item, i)
+		stageReq, err := getStageFromTemplate(i, job, item, codes, variables, connections)
 		if err != nil {
 			flog.Errorf("unable to make job from template %s", job.Name)
 			return job, false, err
@@ -274,8 +338,36 @@ func dagSort(dag *meta.Dag) ([]dagStage, error) {
 // getJobFromTemplate2 makes a Job from a job. It converts the unix time into minutes from
 // epoch time and concatenates that to the job name, because the dag_controller v2 has the lowest
 // granularity of 1 minute for scheduling job.
-func getStageFromTemplate(cj *meta.Job, item dagStage, index int) (*meta.Stage, error) {
-	// We want job names for a given nominal start time to have a deterministic name to avoid the same job being created twice
+func getStageFromTemplate(
+	index int, cj *meta.Job, item dagStage,
+	codes map[string]*meta.Code, variables map[string]*meta.Variable, connections map[string]*meta.Connection) (*meta.Stage, error) {
+
+	// code
+	code, ok := codes[item.Code]
+	if !ok || code == nil {
+		return nil, fmt.Errorf("not found code %s", item.Code)
+	}
+
+	// variables
+	var stageVariables []meta.Variable
+	for _, uid := range item.Variables {
+		variable, ok := variables[uid]
+		if !ok || variable == nil {
+			return nil, fmt.Errorf("not found variable %s", uid)
+		}
+		stageVariables = append(stageVariables, *variable)
+	}
+
+	// connections
+	var stageConnections []meta.Connection
+	for _, uid := range item.Connections {
+		connection, ok := connections[uid]
+		if !ok || connection == nil {
+			return nil, fmt.Errorf("not found connection %s", uid)
+		}
+		stageConnections = append(stageConnections, *connection)
+	}
+
 	name := getStageName(cj, index)
 	now := time.Now()
 	stage := &meta.Stage{
@@ -295,10 +387,10 @@ func getStageFromTemplate(cj *meta.Job, item dagStage, index int) (*meta.Stage, 
 
 		State: item.State,
 
-		Runtime:     "javascript",  // fixme
-		Code:        "input() + 1", // fixme
-		Connections: nil,           // fixme
-		Variables:   nil,           // fixme
+		Runtime:     code.Runtime,
+		Code:        code.Code,
+		Variables:   stageVariables,
+		Connections: stageConnections,
 
 		DependNodeId: item.DependNodeId,
 

@@ -318,7 +318,7 @@ func (e *Store) Update(ctx context.Context, name string, objInfo runtime.Object,
 		return nil, false, err
 	}
 
-	out := e.NewFunc()
+	out := objInfo
 	if err := updateValidation(ctx, objInfo, out); err != nil {
 		return nil, false, err
 	}

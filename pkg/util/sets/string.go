@@ -5,7 +5,7 @@ import (
 	"sort"
 )
 
-// sets.String is a set of strings, implemented via map[string]struct{} for minimal memory consumption.
+// String sets.String is a set of strings, implemented via map[string]struct{} for minimal memory consumption.
 type String map[string]struct{}
 
 // NewString creates a String from a list of values.
@@ -167,7 +167,7 @@ func (s String) UnsortedList() []string {
 	return res
 }
 
-// Returns a single element from the set.
+// PopAny Returns a single element from the set.
 func (s String) PopAny() (string, bool) {
 	for key := range s {
 		s.Delete(key)

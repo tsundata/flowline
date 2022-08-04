@@ -106,8 +106,6 @@ func Setup(ctx context.Context, c *config.Config, outOfTreeRegistryOptions ...Op
 	sche, err := scheduler.New(
 		c.Client,
 		c.InformerFactory,
-		nil,
-		nil,
 		ctx.Done(),
 		scheduler.WithConfig(c.RestConfig),
 		//scheduler.WithProfiles(cc.ComponentConfig.Profiles...),

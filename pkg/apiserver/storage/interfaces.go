@@ -2,10 +2,13 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/watch"
 )
+
+var ErrKeyNotFound = errors.New("key not found")
 
 // Interface offers a common interface for object marshaling/unmarshaling operations and
 // hides all the storage-related operations behind it.

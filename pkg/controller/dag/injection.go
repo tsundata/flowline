@@ -73,3 +73,66 @@ type realStageControl struct {
 func (r *realStageControl) CreateStage(stage *meta.Stage) (*meta.Stage, error) {
 	return r.Client.CoreV1().Stage().Create(context.Background(), stage, meta.CreateOptions{})
 }
+
+type codeControlInterface interface {
+	// GetCode retrieves a code.
+	GetCode(ctx context.Context, name string) (*meta.Code, error)
+	// GetCodes retrieves Code list.
+	GetCodes(ctx context.Context) (*meta.CodeList, error)
+}
+
+type realCodeControl struct {
+	Client client.Interface
+}
+
+var _ codeControlInterface = &realCodeControl{}
+
+func (r *realCodeControl) GetCode(ctx context.Context, name string) (*meta.Code, error) {
+	return r.Client.CoreV1().Code().Get(ctx, name, meta.GetOptions{})
+}
+
+func (r *realCodeControl) GetCodes(ctx context.Context) (*meta.CodeList, error) {
+	return r.Client.CoreV1().Code().List(ctx, meta.ListOptions{})
+}
+
+type variableControlInterface interface {
+	// GetVariable retrieves a Variable.
+	GetVariable(ctx context.Context, name string) (*meta.Variable, error)
+	// GetVariables retrieves Variable list.
+	GetVariables(ctx context.Context) (*meta.VariableList, error)
+}
+
+type realVariableControl struct {
+	Client client.Interface
+}
+
+var _ variableControlInterface = &realVariableControl{}
+
+func (r *realVariableControl) GetVariable(ctx context.Context, name string) (*meta.Variable, error) {
+	return r.Client.CoreV1().Variable().Get(ctx, name, meta.GetOptions{})
+}
+
+func (r *realVariableControl) GetVariables(ctx context.Context) (*meta.VariableList, error) {
+	return r.Client.CoreV1().Variable().List(ctx, meta.ListOptions{})
+}
+
+type connectionControlInterface interface {
+	// GetConnection retrieves a Connection.
+	GetConnection(ctx context.Context, name string) (*meta.Connection, error)
+	// GetConnections retrieves Connection list.
+	GetConnections(ctx context.Context) (*meta.ConnectionList, error)
+}
+
+type realConnectionControl struct {
+	Client client.Interface
+}
+
+var _ connectionControlInterface = &realConnectionControl{}
+
+func (r *realConnectionControl) GetConnection(ctx context.Context, name string) (*meta.Connection, error) {
+	return r.Client.CoreV1().Connection().Get(ctx, name, meta.GetOptions{})
+}
+
+func (r *realConnectionControl) GetConnections(ctx context.Context) (*meta.ConnectionList, error) {
+	return r.Client.CoreV1().Connection().List(ctx, meta.ListOptions{})
+}

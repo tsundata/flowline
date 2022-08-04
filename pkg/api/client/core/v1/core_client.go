@@ -13,6 +13,9 @@ type CoreV1Interface interface {
 	JobGetter
 	WorkerGetter
 	StageGetter
+	CodeGetter
+	VariableGetter
+	ConnectionGetter
 }
 
 type CoreV1Client struct {
@@ -33,6 +36,18 @@ func (c *CoreV1Client) Worker() WorkerInterface {
 
 func (c *CoreV1Client) Stage() StageInterface {
 	return newStage(c)
+}
+
+func (c *CoreV1Client) Code() CodeInterface {
+	return newCode(c)
+}
+
+func (c *CoreV1Client) Variable() VariableInterface {
+	return newVariable(c)
+}
+
+func (c *CoreV1Client) Connection() ConnectionInterface {
+	return newConnection(c)
 }
 
 // RESTClient returns a RESTClient that is used to communicate
