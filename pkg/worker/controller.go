@@ -50,8 +50,8 @@ func NewController(config *config.Config, stageInformer informerv1.StageInformer
 			case *meta.Stage:
 				return t.State == meta.StageBind && t.WorkerUID == config.WorkerID
 			case informer.DeletedFinalStateUnknown:
-				if w, ok := t.Obj.(*meta.Stage); ok {
-					return w.State == meta.StageBind && w.WorkerUID == config.WorkerID
+				if _, ok := t.Obj.(*meta.Stage); ok {
+					return true
 				}
 				flog.Errorf("unable to convert object %T to *meta.Job", obj)
 				return false
@@ -217,13 +217,7 @@ func (jm *Controller) executeCode(_ context.Context, stage *meta.Stage) (result 
 	result = stage
 
 	rt := sandbox.Factory(sandbox.RuntimeType(result.Runtime))
-	var input interface{}
-	if stage.Input != nil {
-		input = stage.Input
-	} else {
-		input = 0 // fixme
-	}
-	out, err := rt.Run(result.Code, input) // fixme
+	out, err := rt.Run(result.Code, stage.Input)
 	if err != nil {
 		flog.Error(err)
 		result.State = meta.StageFailed

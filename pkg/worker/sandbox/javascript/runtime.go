@@ -24,10 +24,27 @@ func (r *Runtime) Name() string {
 func (r *Runtime) Run(code string, input interface{}) (output interface{}, err error) {
 	err = r.vm.Set("input", func(call otto.FunctionCall) otto.Value {
 		val, err := r.vm.ToValue(input)
+		t := call.Argument(0).String()
+		var defaultValue interface{}
+		switch t {
+		case "string":
+			defaultValue = ""
+		case "number":
+			defaultValue = 0
+		case "bool":
+			defaultValue = false
+		default:
+			defaultValue = nil
+		}
+
 		if err != nil {
 			flog.Error(err)
-			return otto.NullValue()
+			val, _ = otto.ToValue(defaultValue)
 		}
+		if input == nil {
+			val, _ = otto.ToValue(defaultValue)
+		}
+
 		return val
 	})
 	if err != nil {

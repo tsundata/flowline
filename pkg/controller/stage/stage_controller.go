@@ -46,8 +46,8 @@ func NewController(stageInformer informerv1.StageInformer, client client.Interfa
 			case *meta.Stage:
 				return t.State == meta.StageSuccess || t.State == meta.StageFailed
 			case informer.DeletedFinalStateUnknown:
-				if w, ok := t.Obj.(*meta.Stage); ok {
-					return w.State == meta.StageSuccess || w.State == meta.StageFailed
+				if _, ok := t.Obj.(*meta.Stage); ok {
+					return true
 				}
 				flog.Errorf("unable to convert object %T to *meta.Job", obj)
 				return false

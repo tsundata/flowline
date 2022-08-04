@@ -59,8 +59,8 @@ func NewController(jobInformer informerv1.JobInformer, client client.Interface) 
 			case *meta.Job:
 				return t.State == meta.JobCreate
 			case informer.DeletedFinalStateUnknown:
-				if w, ok := t.Obj.(*meta.Job); ok {
-					return w.State == meta.JobCreate
+				if _, ok := t.Obj.(*meta.Job); ok {
+					return true
 				}
 				flog.Errorf("unable to convert object %T to *meta.Job", obj)
 				return false

@@ -26,9 +26,7 @@ func NewGenericWorkerServer(name string, config *config.Config) *GenericWorkerSe
 
 	sharedInformers := informers.NewSharedInformerFactory(c, ResyncPeriod(config)())
 	config.InformerFactory = sharedInformers
-	config.Runtime = []string{
-		string(sandbox.RuntimeJavaScript),
-	}
+	config.Runtime = sandbox.AvailableRuntime
 
 	s := &GenericWorkerServer{
 		config: config,

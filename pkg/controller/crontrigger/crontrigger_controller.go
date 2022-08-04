@@ -61,8 +61,8 @@ func NewController(jobInformer informerv1.JobInformer, workflowInformer informer
 			case *meta.Workflow:
 				return t.Trigger == meta.TriggerCron
 			case informer.DeletedFinalStateUnknown:
-				if w, ok := t.Obj.(*meta.Workflow); ok {
-					return w.Trigger == meta.TriggerCron
+				if _, ok := t.Obj.(*meta.Workflow); ok {
+					return true
 				}
 				flog.Errorf("unable to convert object %T to *meta.Workflow", obj)
 				return false
@@ -256,7 +256,10 @@ func (jm *Controller) sync(ctx context.Context, cronJobKey string) (*time.Durati
 		return nil, err
 	}
 
-	var jobsToBeReconciled []*meta.Job //fixme
+	jobsToBeReconciled, err := jm.getJobsToBeReconciled(cronJob)
+	if err != nil {
+		return nil, err
+	}
 
 	cronJobCopy, requeueAfter, updateStatus, err := jm.syncCronJob(ctx, cronJob, jobsToBeReconciled)
 	if err != nil {
@@ -290,6 +293,23 @@ func (jm *Controller) sync(ctx context.Context, cronJobKey string) (*time.Durati
 	return nil, nil
 }
 
+func (jm *Controller) getJobsToBeReconciled(cj *meta.Workflow) ([]*meta.Job, error) {
+	jobList, err := jm.jobLister.List(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var jobsToBeReconciled []*meta.Job
+
+	for i, job := range jobList {
+		if cj.UID == job.WorkflowUID {
+			jobsToBeReconciled = append(jobsToBeReconciled, jobList[i])
+		}
+	}
+
+	return jobsToBeReconciled, nil
+}
+
 // cleanupFinishedJobs cleanups finished jobs created by a CronJob
 // It returns a bool to indicate an update to api-server is needed
 func (jm *Controller) cleanupFinishedJobs(_ context.Context, cj *meta.Workflow, js []*meta.Job) bool {
@@ -299,8 +319,8 @@ func (jm *Controller) cleanupFinishedJobs(_ context.Context, cj *meta.Workflow, 
 	}
 
 	updateStatus := false
-	failedJobs := []*meta.Job{}
-	successfulJobs := []*meta.Job{}
+	var failedJobs []*meta.Job
+	var successfulJobs []*meta.Job
 
 	for _, job := range js {
 		isFinished, finishedStatus := jm.getFinishedStatus(job)
@@ -364,7 +384,7 @@ func deleteJob(cj *meta.Workflow, job *meta.Job, jc jobControlInterface) bool {
 	return true
 }
 
-// byJobStartTimeStar sorts a list of jobs by start timestamp, using their names as a tie breaker.
+// byJobStartTimeStar sorts a list of jobs by start timestamp, using their names as a tiebreaker.
 type byJobStartTimeStar []*meta.Job
 
 func (o byJobStartTimeStar) Len() int      { return len(o) }
@@ -390,7 +410,7 @@ func (jm *Controller) getFinishedStatus(j *meta.Job) (bool, meta.JobState) {
 	return false, ""
 }
 
-// IsJobFinished returns whether or not a job has completed successfully or failed.
+// IsJobFinished returns whether a job has completed successfully or failed.
 func IsJobFinished(j *meta.Job) bool {
 	isFinished, _ := getFinishedStatus(j)
 	return isFinished
@@ -422,7 +442,7 @@ func (jm *Controller) syncCronJob(
 		childrenJobs[j.ObjectMeta.UID] = true
 		found := inActiveList(*cronJob, j.ObjectMeta.UID)
 		if !found && !IsJobFinished(j) {
-			cjCopy, err := jm.workflowControl.GetWorkflow(ctx, cronJob.Name)
+			cjCopy, err := jm.workflowControl.GetWorkflow(ctx, cronJob.UID)
 			if err != nil {
 				return nil, nil, updateStatus, err
 			}
@@ -475,11 +495,11 @@ func (jm *Controller) syncCronJob(
 		return cronJob, nil, updateStatus, nil
 	}
 	if scheduledTime == nil {
-		// no unmet start time, return cj,.
+		// no unmet start time, return cj,
 		// The only time this should happen is if queue is filled after restart.
-		// Otherwise, the queue is always suppose to trigger sync function at the time of
+		// Otherwise, the queue is always supposed to trigger sync function at the time of
 		// the scheduled time, that will give atleast 1 unmet time schedule
-		flog.Infof("No unmet start times %s", cronJob.GetName())
+		flog.Infof("No unmet start times %s", cronJob.GetUID())
 		t := nextScheduledTimeDuration(*cronJob, sched, now)
 		return cronJob, t, updateStatus, nil
 	}
@@ -502,14 +522,14 @@ func (jm *Controller) syncCronJob(
 		return cronJob, t, updateStatus, nil
 	}
 	if cronJob.LastTriggerTimestamp != nil && cronJob.LastTriggerTimestamp.Equal(*scheduledTime) {
-		flog.Infof("Not starting job because the scheduled time is already processed %s %s", cronJob.GetName(), scheduledTime.UTC().Format(time.RFC1123Z))
+		flog.Infof("Not starting job because the scheduled time is already processed %s %s", cronJob.GetUID(), scheduledTime.UTC().Format(time.RFC1123Z))
 		t := nextScheduledTimeDuration(*cronJob, sched, now)
 		return cronJob, t, updateStatus, nil
 	}
 
 	jobReq, err := getJobFromTemplate(cronJob, *scheduledTime)
 	if err != nil {
-		flog.Errorf("unable to make job from template %s", cronJob.Name)
+		flog.Errorf("unable to make job from template %s", cronJob.UID)
 		return cronJob, nil, updateStatus, err
 	}
 	jobResp, err := jm.jobControl.CreateJob(jobReq)
@@ -518,7 +538,7 @@ func (jm *Controller) syncCronJob(
 		return cronJob, nil, updateStatus, err
 	}
 
-	flog.Infof("Created Job %s %s", jobResp.GetName(), cronJob.GetName())
+	flog.Infof("Created Job %s %s", jobResp.GetUID(), cronJob.GetUID())
 
 	// ------------------------------------------------------------------ //
 
@@ -584,7 +604,7 @@ func inActiveList(cj meta.Workflow, uid string) bool {
 
 // getNextScheduleTime gets the time of next schedule after last scheduled and before now
 //  it returns nil if no unmet schedule times.
-// If there are too many (>100) unstarted times, it will raise a warning and but still return
+// If there are too many (>100) unstarted times, it will raise a warning and still return
 // the list of missed times.
 func getNextScheduleTime(cj meta.Workflow, now time.Time, schedule cron.Schedule) (*time.Time, error) {
 	var (
