@@ -7,8 +7,8 @@ import (
 )
 
 type Event struct {
-	TypeMeta
-	ObjectMeta
+	TypeMeta   `json:",inline"`
+	ObjectMeta `json:",inline"`
 }
 
 func (m *Event) GetObjectKind() schema.ObjectKind {
@@ -20,9 +20,10 @@ func (m *Event) DeepCopyObject() runtime.Object {
 }
 
 type EventList struct {
-	TypeMeta
-	ListMeta
-	Items []Event
+	TypeMeta `json:",inline"`
+	ListMeta `json:",inline"`
+
+	Items []Event `json:"items"`
 }
 
 func (m *EventList) GetObjectKind() schema.ObjectKind {
@@ -34,8 +35,8 @@ func (m *EventList) DeepCopyObject() runtime.Object {
 }
 
 type WatchEvent struct {
-	TypeMeta
-	ObjectMeta
+	TypeMeta   `json:",inline"`
+	ObjectMeta `json:",inline"`
 
 	Type   string       `json:"type"`
 	Object RawExtension `json:"object"`

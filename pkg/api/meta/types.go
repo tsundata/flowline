@@ -10,7 +10,6 @@ type GetOptions struct {
 	// details.
 	//
 	// Defaults to unset
-	// +optional
 	ResourceVersion string `json:"resourceVersion,omitempty"`
 
 	// IgnoreNotFound determines what is returned if the requested object is not found. If
@@ -27,14 +26,12 @@ type CreateOptions struct {
 	// result in an error response and no further processing of the
 	// request. Valid values are:
 	// - All: all dry run stages will be processed
-	// +optional
 	DryRun []string `json:"dryRun,omitempty"`
 
 	// fieldManager is a name associated with the actor or entity
 	// that is making these changes. The value must be less than or
 	// 128 characters long, and only contain printable characters,
 	// as defined by https://golang.org/pkg/unicode/#IsPrint.
-	// +optional
 	FieldManager string `json:"fieldManager,omitempty"`
 
 	// fieldValidation instructs the server on how to handle
@@ -56,7 +53,6 @@ type CreateOptions struct {
 	// any unknown fields would be dropped from the object, or if any
 	// duplicate fields are present. The error returned from the server
 	// will contain all unknown and duplicate fields encountered.
-	// +optional
 	FieldValidation string `json:"fieldValidation,omitempty"`
 }
 
@@ -70,13 +66,11 @@ type PatchOptions struct {
 	// result in an error response and no further processing of the
 	// request. Valid values are:
 	// - All: all dry run stages will be processed
-	// +optional
 	DryRun []string `json:"dryRun,omitempty"`
 
 	// Force is going to "force" Apply requests. It means user will
 	// re-acquire conflicting fields owned by other people. Force
 	// flag must be unset for non-apply patch requests.
-	// +optional
 	Force *bool `json:"force,omitempty"`
 
 	// fieldManager is a name associated with the actor or entity
@@ -118,11 +112,9 @@ type ListOptions struct {
 
 	// A selector to restrict the list of returned objects by their labels.
 	// Defaults to everything.
-	// +optional
 	LabelSelector string `json:"labelSelector,omitempty"`
 	// A selector to restrict the list of returned objects by their fields.
 	// Defaults to everything.
-	// +optional
 	FieldSelector string `json:"fieldSelector,omitempty"`
 
 	// Watch for changes to the described resources and return them as a stream of
@@ -135,7 +127,6 @@ type ListOptions struct {
 	// assume bookmarks are returned at any specific interval, nor may they
 	// assume the server will send any BOOKMARK event during a session.
 	// If this is not a watch, this field is ignored.
-	// +optional
 	AllowWatchBookmarks bool `json:"allowWatchBookmarks,omitempty"`
 
 	// resourceVersion sets a constraint on what resource versions a request may be served from.
@@ -146,8 +137,6 @@ type ListOptions struct {
 	// resourceVersionMatch determines how resourceVersion is applied to list calls.
 	// It is highly recommended that resourceVersionMatch be set for list calls where
 	// resourceVersion is set
-	// See https://kubernetes.io/docs/reference/using-api/api-concepts/#resource-versions for
-	// details.
 	//
 	// Defaults to unset
 	ResourceVersionMatch string `json:"resourceVersionMatch,omitempty"`
@@ -161,7 +150,7 @@ type ListOptions struct {
 	// the requested amount of items (up to zero items) in the event all requested objects are
 	// filtered out and clients should only use the presence of the continue field to determine whether
 	// more results are available. Servers may choose not to support the limit argument and will return
-	// all of the available results. If limit is specified and the continue field is empty, clients may
+	// all the available results. If limit is specified and the continue field is empty, clients may
 	// assume that no more results are available. This field is not supported if watch is true.
 	//
 	// The server guarantees that the objects returned when using continue will be identical to issuing
@@ -192,15 +181,15 @@ type ListOptions struct {
 	Predicate SelectionPredicate
 	// Recursive determines whether the list or watch is defined for a single object located at the
 	// given key, or for the whole set of objects with the given key as a prefix.
-	Recursive bool
+	Recursive bool `json:"recursive,omitempty"`
 	// ProgressNotify determines whether storage-originated bookmark (progress notify) events should
 	// be delivered to the users. The option is ignored for non-watch requests.
-	ProgressNotify bool
+	ProgressNotify bool `json:"progressNotify,omitempty"`
 
 	// label
-	Label string
+	Label string `json:"label,omitempty"`
 	// field
-	Field string
+	Field string `json:"field,omitempty"`
 }
 
 // AttrFunc returns label and field sets and the uninitialized flag for List or Watch to match.
@@ -291,14 +280,12 @@ type UpdateOptions struct {
 	// result in an error response and no further processing of the
 	// request. Valid values are:
 	// - All: all dry run stages will be processed
-	// +optional
 	DryRun []string `json:"dryRun,omitempty"`
 
 	// fieldManager is a name associated with the actor or entity
 	// that is making these changes. The value must be less than or
 	// 128 characters long, and only contain printable characters,
 	// as defined by https://golang.org/pkg/unicode/#IsPrint.
-	// +optional
 	FieldManager string `json:"fieldManager,omitempty"`
 
 	// fieldValidation instructs the server on how to handle
@@ -320,7 +307,6 @@ type UpdateOptions struct {
 	// any unknown fields would be dropped from the object, or if any
 	// duplicate fields are present. The error returned from the server
 	// will contain all unknown and duplicate fields encountered.
-	// +optional
 	FieldValidation string `json:"fieldValidation,omitempty"`
 }
 
@@ -332,20 +318,16 @@ type DeleteOptions struct {
 	// The value zero indicates delete immediately. If this value is nil, the default grace period for the
 	// specified type will be used.
 	// Defaults to a per object value if not specified. zero means delete immediately.
-	// +optional
 	GracePeriodSeconds *int64 `json:"gracePeriodSeconds,omitempty"`
 
 	// Must be fulfilled before a deletion is carried out. If not possible, a 409 Conflict status will be
 	// returned.
-	// +k8s:conversion-gen=false
-	// +optional
 	Preconditions *Preconditions `json:"preconditions,omitempty"`
 
 	// Deprecated: please use the PropagationPolicy, this field will be deprecated in 1.7.
 	// Should the dependent objects be orphaned. If true/false, the "orphan"
 	// finalizer will be added to/removed from the object's finalizers list.
 	// Either this field or PropagationPolicy may be set, but not both.
-	// +optional
 	OrphanDependents *bool `json:"orphanDependents,omitempty"`
 
 	// Whether and how garbage collection will be performed.
@@ -356,7 +338,6 @@ type DeleteOptions struct {
 	// allow the garbage collector to delete the dependents in the background;
 	// 'Foreground' - a cascading policy that deletes all dependents in the
 	// foreground.
-	// +optional
 	PropagationPolicy *string `json:"propagationPolicy,omitempty"`
 
 	// When present, indicates that modifications should not be
@@ -364,16 +345,13 @@ type DeleteOptions struct {
 	// result in an error response and no further processing of the
 	// request. Valid values are:
 	// - All: all dry run stages will be processed
-	// +optional
 	DryRun []string `json:"dryRun,omitempty"`
 }
 
 // Preconditions must be fulfilled before an operation (update, delete, etc.) is carried out.
 type Preconditions struct {
 	// Specifies the target UID.
-	// +optional
 	UID *string `json:"uid,omitempty"`
 	// Specifies the target ResourceVersion
-	// +optional
 	ResourceVersion *string `json:"resourceVersion,omitempty"`
 }

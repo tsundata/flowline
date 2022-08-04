@@ -7,8 +7,8 @@ import (
 )
 
 type User struct {
-	TypeMeta
-	ObjectMeta
+	TypeMeta   `json:",inline"`
+	ObjectMeta `json:",inline"`
 
 	Password    string `json:"password,omitempty"`
 	Email       string `json:"email,omitempty"`
@@ -26,9 +26,10 @@ func (m *User) DeepCopyObject() runtime.Object {
 }
 
 type UserList struct {
-	TypeMeta
-	ListMeta
-	Items []User
+	TypeMeta `json:",inline"`
+	ListMeta `json:",inline"`
+
+	Items []User `json:"items"`
 }
 
 func (m *UserList) GetObjectKind() schema.ObjectKind {
@@ -40,8 +41,8 @@ func (m *UserList) DeepCopyObject() runtime.Object {
 }
 
 type UserSession struct {
-	TypeMeta
-	ObjectMeta
+	TypeMeta   `json:",inline"`
+	ObjectMeta `json:",inline"`
 
 	UserUID  string `json:"userUID,omitempty"`
 	Username string `json:"username,omitempty"`
@@ -58,5 +59,5 @@ func (m *UserSession) DeepCopyObject() runtime.Object {
 }
 
 type UserClaims struct {
-	*jwt.RegisteredClaims
+	*jwt.RegisteredClaims `json:",inline"`
 }

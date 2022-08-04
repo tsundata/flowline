@@ -9,30 +9,24 @@ import (
 type Status struct {
 	TypeMeta `json:",inline"`
 	// Standard list metadata.
-	// +optional
-	ListMeta `json:"metadata,omitempty"`
+	ListMeta `json:",inline"`
 
 	// Status of the operation.
 	// One of: "Success" or "Failure".
-	// +optional
 	Status string `json:"status,omitempty"`
 	// A human-readable description of the status of this operation.
-	// +optional
 	Message string `json:"message,omitempty"`
 	// A machine-readable description of why this operation is in the
 	// "Failure" status. If this value is empty there
 	// is no information available. A Reason clarifies an HTTP status
 	// code but does not override it.
-	// +optional
 	Reason string `json:"reason,omitempty"`
 	// Extended data associated with the reason.  Each reason may define its
 	// own extended details. This field is optional and the data returned
 	// is not guaranteed to conform to any schema except that defined by
 	// the reason type.
-	// +optional
 	Details *StatusDetails `json:"details,omitempty"`
 	// Suggested HTTP return code for this status, 0 if not set.
-	// +optional
 	Code int32 `json:"code,omitempty"`
 }
 

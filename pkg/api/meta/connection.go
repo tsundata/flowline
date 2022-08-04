@@ -14,8 +14,8 @@ const (
 )
 
 type Connection struct {
-	TypeMeta
-	ObjectMeta
+	TypeMeta   `json:",inline"`
+	ObjectMeta `json:",inline"`
 
 	Type     ProviderType `json:"type,omitempty"`
 	Describe string       `json:"describe,omitempty"`
@@ -36,9 +36,10 @@ func (m *Connection) DeepCopyObject() runtime.Object {
 }
 
 type ConnectionList struct {
-	TypeMeta
-	ListMeta
-	Items []Connection
+	TypeMeta `json:",inline"`
+	ListMeta `json:",inline"`
+
+	Items []Connection `json:"items"`
 }
 
 func (m *ConnectionList) GetObjectKind() schema.ObjectKind {

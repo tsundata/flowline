@@ -6,8 +6,8 @@ import (
 )
 
 type RoleBinding struct {
-	TypeMeta
-	ObjectMeta
+	TypeMeta   `json:",inline"`
+	ObjectMeta `json:",inline"`
 
 	UserUID string `json:"userUID,omitempty"`
 	RoleUID string `json:"roleUID,omitempty"`
@@ -22,9 +22,10 @@ func (m *RoleBinding) DeepCopyObject() runtime.Object {
 }
 
 type RoleBindingList struct {
-	TypeMeta
-	ListMeta
-	Items []RoleBinding
+	TypeMeta `json:",inline"`
+	ListMeta `json:",inline"`
+	
+	Items []RoleBinding `json:"items"`
 }
 
 func (m *RoleBindingList) GetObjectKind() schema.ObjectKind {

@@ -14,8 +14,8 @@ const (
 )
 
 type Worker struct {
-	TypeMeta
-	ObjectMeta
+	TypeMeta   `json:",inline"`
+	ObjectMeta `json:",inline"`
 
 	State    WorkerState `json:"state,omitempty"`
 	Hostname string      `json:"hostname,omitempty"`
@@ -31,9 +31,10 @@ func (m *Worker) DeepCopyObject() runtime.Object {
 }
 
 type WorkerList struct {
-	TypeMeta
-	ListMeta
-	Items []Worker
+	TypeMeta `json:",inline"`
+	ListMeta `json:",inline"`
+
+	Items []Worker `json:"items"`
 }
 
 func (m *WorkerList) GetObjectKind() schema.ObjectKind {

@@ -6,8 +6,8 @@ import (
 )
 
 type Variable struct {
-	TypeMeta
-	ObjectMeta
+	TypeMeta   `json:",inline"`
+	ObjectMeta `json:",inline"`
 
 	Value    string `json:"value,omitempty"`
 	Describe string `json:"describe,omitempty"`
@@ -22,9 +22,10 @@ func (m *Variable) DeepCopyObject() runtime.Object {
 }
 
 type VariableList struct {
-	TypeMeta
-	ListMeta
-	Items []Variable
+	TypeMeta `json:",inline"`
+	ListMeta `json:",inline"`
+
+	Items []Variable `json:"items"`
 }
 
 func (m *VariableList) GetObjectKind() schema.ObjectKind {

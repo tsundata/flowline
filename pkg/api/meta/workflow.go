@@ -16,8 +16,8 @@ const (
 )
 
 type Workflow struct {
-	TypeMeta
-	ObjectMeta
+	TypeMeta   `json:",inline"`
+	ObjectMeta `json:",inline"`
 
 	Describe                string      `json:"describe,omitempty"`
 	Active                  bool        `json:"active,omitempty"`
@@ -41,9 +41,10 @@ func (m *Workflow) DeepCopyObject() runtime.Object {
 }
 
 type WorkflowList struct {
-	TypeMeta
-	ListMeta
-	Items []Workflow
+	TypeMeta `json:",inline"`
+	ListMeta `json:",inline"`
+
+	Items []Workflow `json:"items"`
 }
 
 func (m *WorkflowList) GetObjectKind() schema.ObjectKind {

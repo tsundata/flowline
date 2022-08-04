@@ -6,8 +6,8 @@ import (
 )
 
 type Dag struct {
-	TypeMeta
-	ObjectMeta
+	TypeMeta   `json:",inline"`
+	ObjectMeta `json:",inline"`
 
 	WorkflowUID string `json:"workflowUID,omitempty"`
 	Nodes       []Node `json:"nodes"`
@@ -66,9 +66,10 @@ func (m *Dag) DeepCopyObject() runtime.Object {
 }
 
 type DagList struct {
-	TypeMeta
-	ListMeta
-	Items []Dag
+	TypeMeta `json:",inline"`
+	ListMeta `json:",inline"`
+
+	Items []Dag `json:"items"`
 }
 
 func (m *DagList) GetObjectKind() schema.ObjectKind {

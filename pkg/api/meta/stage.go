@@ -16,8 +16,8 @@ const (
 )
 
 type Stage struct {
-	TypeMeta
-	ObjectMeta
+	TypeMeta   `json:",inline"`
+	ObjectMeta `json:",inline"`
 
 	SchedulerName string `json:"schedulerName,omitempty"`
 	Priority      int    `json:"priority,omitempty"`
@@ -51,9 +51,10 @@ func (m *Stage) DeepCopyObject() runtime.Object {
 }
 
 type StageList struct {
-	TypeMeta
-	ListMeta
-	Items []Stage
+	TypeMeta `json:",inline"`
+	ListMeta `json:",inline"`
+
+	Items []Stage `json:"items"`
 }
 
 func (m *StageList) GetObjectKind() schema.ObjectKind {

@@ -6,8 +6,8 @@ import (
 )
 
 type Role struct {
-	TypeMeta
-	ObjectMeta
+	TypeMeta   `json:",inline"`
+	ObjectMeta `json:",inline"`
 
 	Permissions []interface{} `json:"permissions,omitempty"`
 }
@@ -21,9 +21,10 @@ func (m *Role) DeepCopyObject() runtime.Object {
 }
 
 type RoleList struct {
-	TypeMeta
-	ListMeta
-	Items []Role
+	TypeMeta `json:",inline"`
+	ListMeta `json:",inline"`
+
+	Items []Role `json:"items"`
 }
 
 func (m *RoleList) GetObjectKind() schema.ObjectKind {

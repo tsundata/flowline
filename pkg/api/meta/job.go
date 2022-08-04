@@ -23,8 +23,8 @@ const (
 )
 
 type Job struct {
-	TypeMeta
-	ObjectMeta
+	TypeMeta   `json:",inline"`
+	ObjectMeta `json:",inline"`
 
 	WorkflowUID         string     `json:"workflowUID"`
 	State               JobState   `json:"state,omitempty"`
@@ -42,9 +42,10 @@ func (m *Job) DeepCopyObject() runtime.Object {
 }
 
 type JobList struct {
-	TypeMeta
-	ListMeta
-	Items []Job
+	TypeMeta `json:",inline"`
+	ListMeta `json:",inline"`
+
+	Items []Job `json:"items"`
 }
 
 func (m *JobList) GetObjectKind() schema.ObjectKind {

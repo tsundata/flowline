@@ -6,8 +6,8 @@ import (
 )
 
 type Code struct {
-	TypeMeta
-	ObjectMeta
+	TypeMeta   `json:",inline"`
+	ObjectMeta `json:",inline"`
 
 	Describe string `json:"describe,omitempty"`
 	Runtime  string `json:"runtime,omitempty"`
@@ -23,9 +23,10 @@ func (m *Code) DeepCopyObject() runtime.Object {
 }
 
 type CodeList struct {
-	TypeMeta
-	ListMeta
-	Items []Code
+	TypeMeta `json:",inline"`
+	ListMeta `json:",inline"`
+
+	Items []Code `json:"items"`
 }
 
 func (m *CodeList) GetObjectKind() schema.ObjectKind {
