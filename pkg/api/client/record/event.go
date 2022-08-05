@@ -84,9 +84,6 @@ type EventRecorder interface {
 
 	// Eventf is just like Event, but with Sprintf for the message field.
 	Eventf(object runtime.Object, eventtype, reason, messageFmt string, args ...interface{})
-
-	// AnnotatedEventf is just like eventf, but with annotations attached fixme delete
-	AnnotatedEventf(object runtime.Object, annotations map[string]string, eventtype, reason, messageFmt string, args ...interface{})
 }
 
 // EventBroadcaster knows how to receive events and send them to any EventSink, watcher, or log.
@@ -305,10 +302,6 @@ func (recorder *recorderImpl) Event(object runtime.Object, eventtype, reason, me
 
 func (recorder *recorderImpl) Eventf(object runtime.Object, eventtype, reason, messageFmt string, args ...interface{}) {
 	recorder.Event(object, eventtype, reason, fmt.Sprintf(messageFmt, args...))
-}
-
-func (recorder *recorderImpl) AnnotatedEventf(object runtime.Object, _ map[string]string, eventtype, reason, messageFmt string, args ...interface{}) {
-	recorder.generateEvent(object, eventtype, reason, fmt.Sprintf(messageFmt, args...))
 }
 
 func (recorder *recorderImpl) makeEvent(ref *meta.ObjectReference, eventtype, reason, message string) *meta.Event {

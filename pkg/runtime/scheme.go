@@ -48,14 +48,14 @@ type Scheme struct {
 
 	// converter stores all registered conversion functions. It also has
 	// default converting behavior.
-	converter interface{}
+	// converter interface{}
 
 	// versionPriority is a map of groups to ordered lists of versions for those groups indicating the
 	// default priorities of these versions as registered in the scheme
 	versionPriority map[string][]string
 
 	// observedVersions keeps track of the order we've seen versions during type registration
-	observedVersions []schema.GroupVersion
+	// observedVersions []schema.GroupVersion
 
 	// schemeName is the name of this scheme.  If you don't specify a name, the stack of the NewScheme caller will be used.
 	// This is useful for error reporting to indicate the origin of the scheme.

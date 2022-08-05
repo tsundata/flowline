@@ -100,7 +100,7 @@ func SetZeroValue(objPtr runtime.Object) error {
 
 // errNotList is returned when an object implements the Object style interfaces but not the List style
 // interfaces.
-var errNotList = fmt.Errorf("object does not implement the List interfaces")
+// var errNotList = fmt.Errorf("object does not implement the List interfaces")
 
 var errNotCommon = fmt.Errorf("object does not implement the common interface for accessing the SelfLink")
 

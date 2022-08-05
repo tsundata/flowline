@@ -112,11 +112,8 @@ func PatchResource(s rest.Patcher, scope *registry.RequestScope) restful.RouteFu
 
 type patcher struct {
 	// Pieces of RequestScope
-	resource            schema.GroupVersionResource
-	kind                schema.GroupVersionKind
-	subresource         string
-	dryRun              bool
-	validationDirective string
+	resource schema.GroupVersionResource
+	kind     schema.GroupVersionKind
 
 	hubGroupVersion schema.GroupVersion
 
@@ -141,12 +138,11 @@ type patcher struct {
 	forceAllowCreate  bool
 }
 
-func (p *patcher) patchResource(ctx context.Context, scope *registry.RequestScope) (runtime.Object, bool, error) {
+func (p *patcher) patchResource(ctx context.Context, _ *registry.RequestScope) (runtime.Object, bool, error) {
 	switch p.patchType {
 	case meta.JSONPatchType, meta.MergePatchType:
 		p.mechanism = &jsonPatcher{
-			patcher:      p,
-			fieldManager: nil, // todo
+			patcher: p,
 		}
 	default:
 		return nil, false, fmt.Errorf("%s: unimplemented patch type", p.patchType)
@@ -231,8 +227,6 @@ type patchMechanism interface {
 
 type jsonPatcher struct {
 	*patcher
-
-	fieldManager interface{}
 }
 
 func (p *jsonPatcher) applyPatchToCurrentObject(_ context.Context, currentObject runtime.Object) (runtime.Object, error) {
@@ -256,9 +250,6 @@ func (p *jsonPatcher) applyPatchToCurrentObject(_ context.Context, currentObject
 		return nil, fmt.Errorf("StrictDecodingError %v", appliedStrictErrs)
 	}
 
-	if p.fieldManager != nil {
-		// objToUpdate = p.fieldManager.UpdateNoErrors(currentObject, objToUpdate, managerOrUserAgent(p.options.FieldManager, p.userAgent))
-	}
 	return objToUpdate, nil
 }
 
