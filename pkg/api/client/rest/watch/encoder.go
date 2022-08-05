@@ -11,7 +11,6 @@ import (
 // Encoder serializes watch.Events into io.Writer. The internal objects
 // are encoded using embedded encoder, and the outer Event is serialized
 // using encoder.
-// TODO: this type is only used by tests
 type Encoder struct {
 	encoder         streaming.Encoder
 	embeddedEncoder runtime.Encoder

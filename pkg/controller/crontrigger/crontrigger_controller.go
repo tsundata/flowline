@@ -589,7 +589,6 @@ func getJobFromTemplate(cj *meta.Workflow, scheduledTime time.Time) (*meta.Job, 
 			Name:              name,
 			CreationTimestamp: &scheduledTime,
 		},
-		// todo
 		State:       meta.JobCreate,
 		WorkflowUID: cj.UID,
 	}
