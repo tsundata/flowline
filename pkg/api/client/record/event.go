@@ -231,7 +231,7 @@ func (e *eventBroadcasterImpl) StartLogging(logf func(format string, args ...int
 func (e *eventBroadcasterImpl) StartStructuredLogging(_ string) watch.Interface {
 	return e.StartEventWatcher(
 		func(e *meta.Event) {
-			flog.Infof("Event occurred %s %s %s %s %s %s %s", e.InvolvedObject.Name, e.InvolvedObject.FieldPath, e.InvolvedObject.Kind, e.InvolvedObject.APIVersion, e.Type, e.Reason, e.Message)
+			flog.Infof("Event occurred %s %s %s %s %s %s %s", e.InvolvedObject.UID, e.InvolvedObject.FieldPath, e.InvolvedObject.Kind, e.InvolvedObject.APIVersion, e.Type, e.Reason, e.Message)
 		})
 }
 

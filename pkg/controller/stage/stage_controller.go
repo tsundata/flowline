@@ -5,10 +5,13 @@ import (
 	"errors"
 	"github.com/heimdalr/dag"
 	"github.com/tsundata/flowline/pkg/api/client"
+	"github.com/tsundata/flowline/pkg/api/client/events"
+	"github.com/tsundata/flowline/pkg/api/client/record"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/informer"
 	informerv1 "github.com/tsundata/flowline/pkg/informer/informers/core/v1"
 	listerv1 "github.com/tsundata/flowline/pkg/informer/listers/core/v1"
+	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
 	"github.com/tsundata/flowline/pkg/util/workqueue"
@@ -16,7 +19,8 @@ import (
 )
 
 type Controller struct {
-	queue workqueue.RateLimitingInterface
+	queue    workqueue.RateLimitingInterface
+	recorder record.EventRecorder
 
 	stageControl stageControlInterface
 
@@ -29,8 +33,13 @@ type Controller struct {
 }
 
 func NewController(stageInformer informerv1.StageInformer, client client.Interface) (*Controller, error) {
+	eventBroadcaster := record.NewBroadcaster()
+	eventBroadcaster.StartStructuredLogging("")
+	eventBroadcaster.StartRecordingToSink(&events.EventSinkImpl{Interface: client.EventsV1()})
+
 	jm := &Controller{
-		queue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "stage"),
+		queue:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "stage"),
+		recorder: eventBroadcaster.NewRecorder(runtime.NewScheme(), meta.EventSource{Component: "stage-controller"}),
 
 		stageControl: &realStageControl{Client: client},
 
@@ -145,12 +154,6 @@ func (jm *Controller) depend(ctx context.Context, jobKey string) (bool, error) {
 	stageList, updateStatus, err := jm.dependStage(ctx, stage)
 	if err != nil {
 		flog.Infof("Error reconciling stage %s %s", stage.GetName(), err)
-		if updateStatus {
-			if _, err := jm.stageControl.UpdateListStatus(ctx, stageList); err != nil {
-				flog.Infof("Unable to update status for job %s %s %s", stage.GetName(), stage.ResourceVersion, err)
-				return false, err
-			}
-		}
 		return false, err
 	}
 
@@ -159,6 +162,14 @@ func (jm *Controller) depend(ctx context.Context, jobKey string) (bool, error) {
 		if _, err := jm.stageControl.UpdateListStatus(ctx, stageList); err != nil {
 			flog.Infof("Unable to update status for job %s %s %s", stage.GetName(), stage.ResourceVersion, err)
 			return false, err
+		}
+		for i, item := range stageList.Items {
+			switch item.State {
+			case meta.StageReady:
+				jm.recorder.Eventf(&stageList.Items[i], meta.EventTypeNormal, "UpdateReadyState", "Stage %v update ready state", item.UID)
+			case meta.StageFailed:
+				jm.recorder.Eventf(&stageList.Items[i], meta.EventTypeWarning, "UpdateFailedState", "Stage %v update failed state", item.UID)
+			}
 		}
 	}
 

@@ -244,7 +244,7 @@ func (e *eventBroadcasterImpl) StartStructuredLogging(_ string) func() {
 				flog.Errorf("unexpected type, expected meta.Event")
 				return
 			}
-			flog.Infof("Event occurred %s %s %s %s %s %s %s", event.Regarding.Name, event.Regarding.Kind, event.Regarding.APIVersion, event.Type, event.Reason, event.Action, event.Note)
+			flog.Infof("Event occurred %s %s %s %s %s %s %s", event.Regarding.UID, event.Regarding.Kind, event.Regarding.APIVersion, event.Type, event.Reason, event.Action, event.Note)
 		})
 }
 

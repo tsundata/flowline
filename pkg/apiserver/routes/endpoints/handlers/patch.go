@@ -162,7 +162,7 @@ func (p *patcher) patchResource(ctx context.Context, scope *registry.RequestScop
 			return nil, err
 		}
 		if errors.Is(err, storage.ErrKeyNotFound) {
-			return nil, err
+			// return nil, err fixme
 		}
 		patchedObj, err := p.updatedObjectInfo.UpdatedObject(ctx, find)
 		if err != nil {
