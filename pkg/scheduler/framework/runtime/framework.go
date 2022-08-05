@@ -4,7 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/tsundata/flowline/pkg/api/client"
+	"github.com/tsundata/flowline/pkg/api/client/events"
+	"github.com/tsundata/flowline/pkg/api/client/rest"
 	"github.com/tsundata/flowline/pkg/api/meta"
+	"github.com/tsundata/flowline/pkg/informer/informers"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/config"
@@ -23,8 +26,9 @@ const (
 
 type frameworkOptions struct {
 	clientSet       client.Interface
-	config          interface{}
-	informerFactory interface{}
+	config          *rest.Config
+	eventRecorder   events.EventRecorder
+	informerFactory informers.SharedInformerFactory
 	// snapshotSharedLister   interface{}
 	stageNominator  framework.StageNominator
 	extenders       []framework.Extender
@@ -43,6 +47,13 @@ type CaptureProfile func(config.Profile)
 func WithStageNominator(nominator framework.StageNominator) Option {
 	return func(o *frameworkOptions) {
 		o.stageNominator = nominator
+	}
+}
+
+// WithEventRecorder sets clientSet for the scheduling frameworkImpl.
+func WithEventRecorder(recorder events.EventRecorder) Option {
+	return func(o *frameworkOptions) {
+		o.eventRecorder = recorder
 	}
 }
 
@@ -80,6 +91,7 @@ func NewFramework(r Registry, profile *config.Profile, stopCh <-chan struct{}, o
 		waitingStages:     newWaitingStagesMap(),
 		clientSet:         options.clientSet,
 		config:            options.config,
+		eventRecorder:     options.eventRecorder,
 		informerFactory:   options.informerFactory,
 		extenders:         options.extenders,
 		StageNominator:    options.stageNominator,
@@ -321,9 +333,9 @@ type frameworkImpl struct {
 	permitPlugins     []framework.PermitPlugin
 
 	clientSet       client.Interface
-	config          interface{}
-	eventRecorder   interface{}
-	informerFactory interface{}
+	config          *rest.Config
+	eventRecorder   events.EventRecorder
+	informerFactory informers.SharedInformerFactory
 
 	profileName string
 
@@ -469,7 +481,7 @@ func (f *frameworkImpl) ClientSet() client.Interface {
 	return f.clientSet
 }
 
-func (f *frameworkImpl) EventRecorder() interface{} {
+func (f *frameworkImpl) EventRecorder() events.EventRecorder {
 	return f.eventRecorder
 }
 
@@ -744,16 +756,16 @@ func fillEventToPluginMap(p framework.Plugin, eventToPlugins map[framework.Clust
 		return
 	}
 
-	events := ext.EventsToRegister()
+	registerEvents := ext.EventsToRegister()
 	// It's rare that a plugin implements EnqueueExtensions but returns nil.
 	// We treat it as: the plugin is not interested in any event, and hence stage failed by that plugin
 	// cannot be moved by any regular cluster event.
-	if len(events) == 0 {
+	if len(registerEvents) == 0 {
 		flog.Infof("Plugin's EventsToRegister() returned nil %s", p.Name())
 		return
 	}
 	// The most common case: a plugin implements EnqueueExtensions and returns non-nil result.
-	registerClusterEvents(p.Name(), eventToPlugins, events)
+	registerClusterEvents(p.Name(), eventToPlugins, registerEvents)
 }
 
 func registerClusterEvents(name string, eventToPlugins map[framework.ClusterEvent]map[string]struct{}, evts []framework.ClusterEvent) {

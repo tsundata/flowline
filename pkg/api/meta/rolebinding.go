@@ -24,7 +24,7 @@ func (m *RoleBinding) DeepCopyObject() runtime.Object {
 type RoleBindingList struct {
 	TypeMeta `json:",inline"`
 	ListMeta `json:",inline"`
-	
+
 	Items []RoleBinding `json:"items"`
 }
 

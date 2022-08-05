@@ -126,11 +126,11 @@ func (s *store) Get(ctx context.Context, key string, opts meta.GetOptions, out r
 func (s *store) GetList(ctx context.Context, key string, opts meta.ListOptions, listObj runtime.Object) error {
 	recursive := opts.Recursive
 	pred := opts.Predicate
-	listPtr, err := meta.GetItemsPtr(listObj)
+	listPtr, err := runtime.GetItemsPtr(listObj)
 	if err != nil {
 		return err
 	}
-	v, err := meta.EnforcePtr(listPtr)
+	v, err := runtime.EnforcePtr(listPtr)
 	if err != nil || v.Kind() != reflect.Slice {
 		return fmt.Errorf("need ptr to slice: %v", err)
 	}

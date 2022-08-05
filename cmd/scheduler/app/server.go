@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/tsundata/flowline/cmd/scheduler/app/config"
-	"github.com/tsundata/flowline/pkg/api/client"
+	"github.com/tsundata/flowline/pkg/api/client/events"
 	"github.com/tsundata/flowline/pkg/api/client/rest"
 	"github.com/tsundata/flowline/pkg/scheduler"
 	config2 "github.com/tsundata/flowline/pkg/scheduler/framework/config"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/runtime"
+	"github.com/tsundata/flowline/pkg/scheduler/profile"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/signal"
 	"github.com/tsundata/flowline/pkg/util/version"
@@ -77,6 +78,10 @@ type Option func(runtime.Registry) error
 func Run(ctx context.Context, c *config.Config, sched *scheduler.Scheduler) error {
 	flog.Info("scheduler running")
 
+	// Start events processing pipeline.
+	c.EventBroadcaster.StartRecordingToSink(ctx.Done())
+	defer c.EventBroadcaster.Shutdown()
+
 	// Start all informers
 	c.InformerFactory.Start(ctx.Done())
 	// Wait for all caches to sync before scheduling.
@@ -94,18 +99,15 @@ func Setup(ctx context.Context, c *config.Config, outOfTreeRegistryOptions ...Op
 		}
 	}
 
-	var err error
-	c.Client, err = client.NewForConfig(c.RestConfig)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	c.Complete()
 
+	recorderFactory := getRecorderFactory(c)
+
 	completedProfiles := make([]config2.Profile, 0)
-	sche, err := scheduler.New(
+	sched, err := scheduler.New(
 		c.Client,
 		c.InformerFactory,
+		recorderFactory,
 		ctx.Done(),
 		scheduler.WithConfig(c.RestConfig),
 		//scheduler.WithProfiles(cc.ComponentConfig.Profiles...),
@@ -124,5 +126,11 @@ func Setup(ctx context.Context, c *config.Config, outOfTreeRegistryOptions ...Op
 		return nil, nil, err
 	}
 
-	return c, sche, nil
+	return c, sched, nil
+}
+
+func getRecorderFactory(cc *config.Config) profile.RecorderFactory {
+	return func(name string) events.EventRecorder {
+		return cc.EventBroadcaster.NewRecorder(name)
+	}
 }

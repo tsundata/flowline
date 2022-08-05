@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/tsundata/flowline/pkg/api/client"
+	"github.com/tsundata/flowline/pkg/api/client/events"
 	"github.com/tsundata/flowline/pkg/api/client/rest"
 	"github.com/tsundata/flowline/pkg/informer/informers"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/config"
@@ -67,6 +68,8 @@ type Config struct {
 	InformerFactory informers.SharedInformerFactory
 	//DynInformerFactory dynamicinformer.DynamicSharedInformerFactory
 
+	EventBroadcaster events.EventBroadcasterAdapter
+
 	// StageMaxInUnschedulableStagesDuration is the maximum time a stage can stay in
 	// unschedulableStages. If a stage stays in unschedulableStages for longer than this
 	// value, the stage will be moved from unschedulableStages to backoffQ or activeQ.
@@ -77,5 +80,27 @@ type Config struct {
 func (c *Config) Complete() {
 	// todo AuthorizeClientBearerToken
 
-	c.InformerFactory = informers.NewSharedInformerFactory(c.Client, 10*time.Minute)
+	coreClient, eventClient, err := createClients(c.RestConfig)
+	if err != nil {
+		panic(err)
+	}
+
+	c.Client = coreClient
+	c.EventBroadcaster = events.NewEventBroadcasterAdapter(eventClient)
+	c.InformerFactory = informers.NewSharedInformerFactory(c.Client, 0)
+}
+
+// createClients creates a kube client and an event client from the given kubeConfig
+func createClients(c *rest.Config) (client.Interface, client.Interface, error) {
+	coreClient, err := client.NewForConfig(c)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	eventClient, err := client.NewForConfig(c)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return coreClient, eventClient, nil
 }

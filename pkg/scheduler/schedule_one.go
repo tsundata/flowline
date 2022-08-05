@@ -165,7 +165,7 @@ func (sched *Scheduler) extendersBinding(stage *meta.Stage, worker string) (bool
 	return false, nil
 }
 
-func (sched *Scheduler) finishBinding(_ framework.Framework, assumed *meta.Stage, targetWorker string, err error) {
+func (sched *Scheduler) finishBinding(fwk framework.Framework, assumed *meta.Stage, targetWorker string, err error) {
 	if finErr := sched.Cache.FinishBinding(assumed); finErr != nil {
 		flog.Error(finErr)
 	}
@@ -174,9 +174,10 @@ func (sched *Scheduler) finishBinding(_ framework.Framework, assumed *meta.Stage
 	}
 
 	flog.Infof("scheduled %s %s", assumed.Name, targetWorker)
+	fwk.EventRecorder().Eventf(assumed, nil, meta.EventTypeNormal, "Scheduled", "Binding", "Successfully assigned %v to %v", assumed.UID, targetWorker)
 }
 
-func (sched *Scheduler) handleSchedulingFailure(ctx context.Context, _ framework.Framework, stageInfo *framework.QueuedStageInfo, err error, reason string, nominatingInfo *framework.NominatingInfo) {
+func (sched *Scheduler) handleSchedulingFailure(ctx context.Context, fwk framework.Framework, stageInfo *framework.QueuedStageInfo, err error, reason string, nominatingInfo *framework.NominatingInfo) {
 	sched.Error(stageInfo, err)
 
 	if sched.SchedulingQueue != nil {
@@ -184,7 +185,9 @@ func (sched *Scheduler) handleSchedulingFailure(ctx context.Context, _ framework
 	}
 
 	stage := stageInfo.Stage
+	msg := truncateMessage(err.Error())
 	flog.Warnf("FailedScheduling %s %s", stage.Name, err.Error())
+	fwk.EventRecorder().Eventf(stage, nil, meta.EventTypeWarning, "FailedScheduling", "scheduling", msg)
 	if err := updateStage(ctx, sched.client, stage, map[string]interface{}{
 		"Type":    "StageScheduled",
 		"Status":  "ConditionFalse",
@@ -193,6 +196,16 @@ func (sched *Scheduler) handleSchedulingFailure(ctx context.Context, _ framework
 	}, nominatingInfo); err != nil {
 		flog.Error(err)
 	}
+}
+
+// truncateMessage truncates a message if it hits the NoteLengthLimit.
+func truncateMessage(message string) string {
+	max := 1024
+	if len(message) <= max {
+		return message
+	}
+	suffix := " ..."
+	return message[:max-len(suffix)] + suffix
 }
 
 func (sched *Scheduler) frameworkForStage(stage *meta.Stage) (framework.Framework, error) {
@@ -204,9 +217,10 @@ func (sched *Scheduler) frameworkForStage(stage *meta.Stage) (framework.Framewor
 	return fwk, nil
 }
 
-func (sched *Scheduler) skipStageSchedule(_ framework.Framework, stage *meta.Stage) bool {
+func (sched *Scheduler) skipStageSchedule(fwk framework.Framework, stage *meta.Stage) bool {
 	// Case 1: stage is being deleted.
 	if stage.DeletionTimestamp != nil {
+		fwk.EventRecorder().Eventf(stage, nil, meta.EventTypeWarning, "FailedScheduling", "Scheduling", "skip schedule deleting stage: %v", stage.UID)
 		flog.Infof("skip schedule deleting stage %s", stage.UID)
 		return true
 	}

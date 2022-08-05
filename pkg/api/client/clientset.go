@@ -2,22 +2,29 @@ package client
 
 import (
 	"fmt"
-	v1 "github.com/tsundata/flowline/pkg/api/client/core/v1"
+	corev1 "github.com/tsundata/flowline/pkg/api/client/core/v1"
+	eventsv1 "github.com/tsundata/flowline/pkg/api/client/events/v1"
 	"github.com/tsundata/flowline/pkg/api/client/rest"
 	"github.com/tsundata/flowline/pkg/util/flowcontrol"
 	"net/http"
 )
 
 type Interface interface {
-	CoreV1() v1.CoreV1Interface
+	CoreV1() corev1.CoreV1Interface
+	EventsV1() eventsv1.EventsV1Interface
 }
 
 type Clientset struct {
-	coreV1 *v1.CoreV1Client
+	coreV1   *corev1.CoreV1Client
+	eventsV1 *eventsv1.EventsV1Client
 }
 
-func (c *Clientset) CoreV1() v1.CoreV1Interface {
+func (c *Clientset) CoreV1() corev1.CoreV1Interface {
 	return c.coreV1
+}
+
+func (c *Clientset) EventsV1() eventsv1.EventsV1Interface {
+	return c.eventsV1
 }
 
 // NewForConfig creates a new Clientset for the given config.
@@ -56,7 +63,11 @@ func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*Clientset,
 
 	var cs Clientset
 	var err error
-	cs.coreV1, err = v1.NewForConfigAndClient(&configShallowCopy, httpClient)
+	cs.coreV1, err = corev1.NewForConfigAndClient(&configShallowCopy, httpClient)
+	if err != nil {
+		return nil, err
+	}
+	cs.eventsV1, err = eventsv1.NewForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +88,8 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
-	cs.coreV1 = v1.New(c)
+	cs.coreV1 = corev1.New(c)
+	cs.eventsV1 = eventsv1.New(c)
 
 	return &cs
 }

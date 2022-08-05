@@ -139,3 +139,24 @@ type ParameterCodec interface {
 	// EncodeParameters encodes the provided object as query parameters or returns an error.
 	EncodeParameters(obj Object, to schema.GroupVersion) (url.Values, error)
 }
+
+// Unstructured objects store values as map[string]interface{}, with only values that can be serialized
+// to JSON allowed.
+type Unstructured interface {
+	Object
+	// NewEmptyInstance returns a new instance of the concrete type containing only kind/apiVersion and no other data.
+	// This should be called instead of reflect.New() for unstructured types because the go type alone does not preserve kind/apiVersion info.
+	NewEmptyInstance() Unstructured
+	// UnstructuredContent returns a non-nil map with this object's contents. Values may be
+	// []interface{}, map[string]interface{}, or any primitive type. Contents are typically serialized to
+	// and from JSON. SetUnstructuredContent should be used to mutate the contents.
+	UnstructuredContent() map[string]interface{}
+	// SetUnstructuredContent updates the object content to match the provided map.
+	SetUnstructuredContent(map[string]interface{})
+	// IsList returns true if this type is a list or matches the list convention - has an array called "items".
+	IsList() bool
+	// EachListItem should pass a single item out of the list as an Object to the provided function. Any
+	// error should terminate the iteration. If IsList() returns false, this method should return an error
+	// instead of calling the provided function.
+	EachListItem(func(Object) error) error
+}

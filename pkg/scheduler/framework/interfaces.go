@@ -6,6 +6,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/tsundata/flowline/pkg/api/client"
+	"github.com/tsundata/flowline/pkg/api/client/events"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/config"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
@@ -102,7 +103,7 @@ type ScorePlugin interface {
 	// the stage will be rejected.
 	Score(ctx context.Context, state *CycleState, p *meta.Stage, workerUID string) (int64, *Status)
 
-	// ScoreExtensions returns a ScoreExtensions interface if it implements one, or nil if does not.
+	// ScoreExtensions returns a ScoreExtensions interface if it implements one, or nil if it does not.
 	ScoreExtensions() ScoreExtensions
 }
 
@@ -125,7 +126,7 @@ type BindPlugin interface {
 	Plugin
 	// Bind plugins will not be called until all pre-bind plugins have completed. Each
 	// bind plugin is called in the configured order. A bind plugin may choose whether
-	// or not to handle the given Stage. If a bind plugin chooses to handle a Stage, the
+	// to handle the given Stage. If a bind plugin chooses to handle a Stage, the
 	// remaining bind plugins are skipped. When a bind plugin does not handle a stage,
 	// it must return Skip in its Status code. If a bind plugin returns an Error, the
 	// stage is rejected and will not be bound.
@@ -154,7 +155,7 @@ type Framework interface {
 	WaitOnPermit(ctx context.Context, stage *meta.Stage) *Status
 
 	// RunBindPlugins runs the set of configured Bind plugins. A Bind plugin may choose
-	// whether or not to handle the given Stage. If a Bind plugin chooses to skip the
+	// whether to handle the given Stage. If a Bind plugin chooses to skip the
 	// binding, it should return code=5("skip") status. Otherwise, it should return "Error"
 	// or "Success". If none of the plugins handled binding, RunBindPlugins returns
 	// code=5("skip") status.
@@ -196,7 +197,7 @@ type Handle interface {
 	ClientSet() client.Interface
 
 	// EventRecorder returns an event recorder.
-	EventRecorder() interface{}
+	EventRecorder() events.EventRecorder
 
 	// RunFilterPluginsWithNominatedStages runs the set of configured filter plugins for nominated stage on the given worker.
 	RunFilterPluginsWithNominatedStages(ctx context.Context, state *CycleState, stage *meta.Stage, info *WorkerInfo) *Status

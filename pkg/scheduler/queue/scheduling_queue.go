@@ -619,7 +619,7 @@ func (p *PriorityQueue) flushUnschedulableStagesLeftover() {
 }
 
 // NewStageNominator creates a nominator as a backing of framework.StageNominator.
-// A stageLister is passed in so as to check if the stage exists
+// A stageLister is passed in to check if the stage exists
 // before adding its nominatedWorker info.
 func NewStageNominator(stageLister v1.StageLister) framework.StageNominator {
 	return &nominator{

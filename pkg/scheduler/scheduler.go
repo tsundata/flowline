@@ -363,6 +363,7 @@ var defaultSchedulerOptions = schedulerOptions{
 // New returns a Scheduler
 func New(client client.Interface,
 	informerFactory informers.SharedInformerFactory,
+	recorderFactory profile.RecorderFactory,
 	stopCh <-chan struct{},
 	opts ...Option) (*Scheduler, error) {
 
@@ -395,7 +396,7 @@ func New(client client.Interface,
 	stageLister := informerFactory.Core().V1().Stages().Lister()
 	nominator := queue.NewStageNominator(stageLister)
 
-	profiles, err := profile.NewMap(options.profiles, registry, stopCh,
+	profiles, err := profile.NewMap(options.profiles, registry, recorderFactory, stopCh,
 		frameworkruntime.WithExtenders(extenders),
 		frameworkruntime.WithStageNominator(nominator),
 		frameworkruntime.WithClientSet(client),

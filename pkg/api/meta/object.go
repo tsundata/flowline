@@ -55,6 +55,14 @@ type ListMetaAccessor interface {
 	GetListMeta() List
 }
 
+// Common lets you work with core metadata from any of the versioned or
+// internal API objects. Attempting to set or retrieve a field on an object that does
+// not support that field will be a no-op and return a default value.
+type Common interface {
+	GetResourceVersion() string
+	SetResourceVersion(version string)
+}
+
 // ListInterface lets you work with list metadata from any of the versioned or
 // internal API objects. Attempting to set or retrieve a field on an object that does
 // not support that field will be a no-op and return a default value.
@@ -82,7 +90,7 @@ func ListAccessor(obj interface{}) (List, error) {
 }
 
 func SetZeroValue(objPtr runtime.Object) error {
-	v, err := EnforcePtr(objPtr)
+	v, err := runtime.EnforcePtr(objPtr)
 	if err != nil {
 		return err
 	}
@@ -90,14 +98,43 @@ func SetZeroValue(objPtr runtime.Object) error {
 	return nil
 }
 
+// errNotList is returned when an object implements the Object style interfaces but not the List style
+// interfaces.
+var errNotList = fmt.Errorf("object does not implement the List interfaces")
+
+var errNotCommon = fmt.Errorf("object does not implement the common interface for accessing the SelfLink")
+
+// CommonAccessor returns a Common interface for the provided object or an error if the object does
+// not provide List.
+func CommonAccessor(obj interface{}) (Common, error) {
+	switch t := obj.(type) {
+	case List:
+		return t, nil
+	case ListMetaAccessor:
+		if m := t.GetListMeta(); m != nil {
+			return m, nil
+		}
+		return nil, errNotCommon
+	case Object:
+		return t, nil
+	case ObjectMetaAccessor:
+		if m := t.GetObjectMeta(); m != nil {
+			return m, nil
+		}
+		return nil, errNotCommon
+	default:
+		return nil, errNotCommon
+	}
+}
+
 // ExtractList returns obj's Items element as an array of runtime.Objects.
 // Returns an error if obj is not a List type (does not have an Items member).
 func ExtractList(obj runtime.Object) ([]runtime.Object, error) {
-	itemsPtr, err := GetItemsPtr(obj)
+	itemsPtr, err := runtime.GetItemsPtr(obj)
 	if err != nil {
 		return nil, err
 	}
-	items, err := EnforcePtr(itemsPtr)
+	items, err := runtime.EnforcePtr(itemsPtr)
 	if err != nil {
 		return nil, err
 	}

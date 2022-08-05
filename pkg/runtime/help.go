@@ -1,9 +1,8 @@
-package meta
+package runtime
 
 import (
 	"errors"
 	"fmt"
-	"github.com/tsundata/flowline/pkg/runtime"
 	"reflect"
 )
 
@@ -11,7 +10,7 @@ import (
 // If 'list' doesn't have an Items member, it's not really a list type
 // and an error will be returned.
 // This function will either return a pointer to a slice, or an error, but not both.
-func GetItemsPtr(list runtime.Object) (interface{}, error) {
+func GetItemsPtr(list Object) (interface{}, error) {
 	obj, err := getItemsPtr(list)
 	if err != nil {
 		return nil, fmt.Errorf("%T is not a list: %v", list, err)
@@ -20,7 +19,7 @@ func GetItemsPtr(list runtime.Object) (interface{}, error) {
 }
 
 // getItemsPtr returns a pointer to the list object's Items member or an error.
-func getItemsPtr(list runtime.Object) (interface{}, error) {
+func getItemsPtr(list Object) (interface{}, error) {
 	v, err := EnforcePtr(list)
 	if err != nil {
 		return nil, err
