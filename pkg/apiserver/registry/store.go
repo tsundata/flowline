@@ -258,6 +258,9 @@ func (e *Store) CompleteWithOptions(options *options.StoreOptions) error {
 			if err != nil {
 				return "", err
 			}
+			if e, ok := obj.(*meta.Event); ok {
+				return e.Name, nil
+			}
 			return accessor.GetUID(), nil
 		}
 	}

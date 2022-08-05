@@ -11,7 +11,6 @@ import (
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/util/flog"
-	"github.com/tsundata/flowline/pkg/util/uid"
 	"net/http"
 )
 
@@ -156,7 +155,7 @@ func (r *subResource) workflowUpdateDag(req *restful.Request, resp *restful.Resp
 	} else {
 		// create
 		obj.WorkflowUID = workflowUID
-		obj.UID = uid.New()
+		rest.FillObjectMetaSystemFields(&obj)
 		err = r.store.Storage.Create(ctx, fmt.Sprintf("/%s/%s/dag/%s", constant.GroupName, constant.Version, obj.UID), &obj, &obj, 0, false)
 	}
 	if err != nil {

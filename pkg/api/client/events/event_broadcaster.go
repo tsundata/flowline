@@ -60,7 +60,7 @@ func (e *EventSinkImpl) Update(event *meta.Event) (*meta.Event, error) {
 
 // Patch applies the patch and returns the patched event, and an error, if there is any.
 func (e *EventSinkImpl) Patch(event *meta.Event, data []byte) (*meta.Event, error) {
-	return e.Interface.Event().Patch(context.TODO(), event.UID, string(meta.MergePatchType), data, meta.PatchOptions{})
+	return e.Interface.Event().Patch(context.TODO(), event.Name, string(meta.MergePatchType), data, meta.PatchOptions{})
 }
 
 // NewBroadcaster Creates a new event broadcaster.

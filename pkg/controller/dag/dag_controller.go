@@ -6,10 +6,13 @@ import (
 	"fmt"
 	dagLib "github.com/heimdalr/dag"
 	"github.com/tsundata/flowline/pkg/api/client"
+	"github.com/tsundata/flowline/pkg/api/client/events"
+	"github.com/tsundata/flowline/pkg/api/client/record"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/informer"
 	informerv1 "github.com/tsundata/flowline/pkg/informer/informers/core/v1"
 	listerv1 "github.com/tsundata/flowline/pkg/informer/listers/core/v1"
+	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
@@ -19,7 +22,8 @@ import (
 )
 
 type Controller struct {
-	queue workqueue.RateLimitingInterface
+	queue    workqueue.RateLimitingInterface
+	recorder record.EventRecorder
 
 	jobControl   jobControlInterface
 	stageControl stageControlInterface
@@ -37,8 +41,13 @@ type Controller struct {
 }
 
 func NewController(jobInformer informerv1.JobInformer, client client.Interface) (*Controller, error) {
+	eventBroadcaster := record.NewBroadcaster()
+	eventBroadcaster.StartStructuredLogging("")
+	eventBroadcaster.StartRecordingToSink(&events.EventSinkImpl{Interface: client.EventsV1()})
+
 	jm := &Controller{
-		queue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "dag"),
+		queue:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "dag"),
+		recorder: eventBroadcaster.NewRecorder(runtime.NewScheme(), meta.EventSource{Component: "dag-controller"}),
 
 		jobControl:   &realJobControl{Client: client},
 		stageControl: &realStageControl{Client: client},
@@ -181,6 +190,8 @@ func (jm *Controller) split(ctx context.Context, jobKey string) (bool, error) {
 		}
 	}
 
+	jm.recorder.Eventf(jobCopy, meta.EventTypeNormal, "SuccessfulSplit", "Job %s split dag", jobCopy.UID)
+
 	return true, nil
 }
 
@@ -253,10 +264,12 @@ func (jm *Controller) splitDag(ctx context.Context, job *meta.Job, dag *meta.Dag
 		}
 		stageResp, err := jm.stageControl.CreateStage(stageReq)
 		if err != nil {
+			jm.recorder.Eventf(job, meta.EventTypeWarning, "FailedCreateStage", "Error creating stage: %v", err)
 			flog.Errorf("failed create stage %s", stageReq.Name)
 			return job, false, err
 		}
 
+		jm.recorder.Eventf(job, meta.EventTypeNormal, "SuccessfulCreateStage", "Create stage %s", stageResp.UID)
 		flog.Infof("Created Stage %s %s", stageResp.GetName(), job.GetName())
 	}
 

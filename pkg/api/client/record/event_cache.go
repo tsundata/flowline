@@ -9,7 +9,6 @@ import (
 	"github.com/tsundata/flowline/pkg/util/clock"
 	"github.com/tsundata/flowline/pkg/util/flowcontrol"
 	"github.com/tsundata/flowline/pkg/util/sets"
-	"github.com/tsundata/flowline/pkg/util/uid"
 	"strings"
 	"sync"
 	"time"
@@ -260,8 +259,7 @@ func (e *EventAggregator) EventAggregate(newEvent *meta.Event) (*meta.Event, str
 	// (so that it can be overwritten.)
 	eventCopy := &meta.Event{
 		ObjectMeta: meta.ObjectMeta{
-			UID:  uid.New(),
-			Name: fmt.Sprintf("%v.%x", newEvent.InvolvedObject.Name, now.UnixNano()),
+			Name: fmt.Sprintf("%v.%x", newEvent.InvolvedObject.UID, now.UnixNano()),
 		},
 		Count:          1,
 		FirstTimestamp: now,
@@ -285,7 +283,6 @@ type eventLog struct {
 
 	// The unique name of the first occurrence of this event
 	name string
-	uid  string
 
 	// Resource version returned from previous interaction with server
 	resourceVersion string
@@ -322,7 +319,6 @@ func (e *eventLogger) eventObserve(newEvent *meta.Event, key string) (*meta.Even
 	if lastObservation.count > 0 {
 		// update the event based on the last observation so patch will work as desired
 		event.Name = lastObservation.name
-		event.UID = lastObservation.uid
 		event.ResourceVersion = lastObservation.resourceVersion
 		event.FirstTimestamp = lastObservation.firstTimestamp
 		event.Count = int32(lastObservation.count) + 1
@@ -345,7 +341,6 @@ func (e *eventLogger) eventObserve(newEvent *meta.Event, key string) (*meta.Even
 			count:           uint(event.Count),
 			firstTimestamp:  event.FirstTimestamp,
 			name:            event.Name,
-			uid:             event.UID,
 			resourceVersion: event.ResourceVersion,
 		},
 	)
@@ -364,7 +359,6 @@ func (e *eventLogger) updateState(event *meta.Event) {
 			count:           uint(event.Count),
 			firstTimestamp:  event.FirstTimestamp,
 			name:            event.Name,
-			uid:             event.UID,
 			resourceVersion: event.ResourceVersion,
 		},
 	)

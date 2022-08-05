@@ -9,7 +9,6 @@ import (
 	"github.com/tsundata/flowline/pkg/util/clock"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
-	"github.com/tsundata/flowline/pkg/util/uid"
 	"github.com/tsundata/flowline/pkg/watch"
 	"time"
 )
@@ -53,8 +52,7 @@ func (recorder *recorderImpl) makeEvent(refRegarding *meta.ObjectReference, refR
 	t := recorder.clock.Now()
 	return &meta.Event{
 		ObjectMeta: meta.ObjectMeta{
-			UID:  uid.New(),
-			Name: fmt.Sprintf("%v.%x", refRegarding.Name, t.UnixNano()),
+			Name: fmt.Sprintf("%v.%x", refRegarding.UID, t.UnixNano()),
 		},
 		EventTime:           timestamp,
 		Series:              nil,
