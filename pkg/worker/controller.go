@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"github.com/tsundata/flowline/pkg/api/client"
+	"github.com/tsundata/flowline/pkg/api/client/events"
+	"github.com/tsundata/flowline/pkg/api/client/record"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/informer"
 	informerv1 "github.com/tsundata/flowline/pkg/informer/informers/core/v1"
 	listerv1 "github.com/tsundata/flowline/pkg/informer/listers/core/v1"
+	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
@@ -19,7 +22,8 @@ import (
 )
 
 type Controller struct {
-	config *config.Config
+	config   *config.Config
+	recorder record.EventRecorder
 
 	queue workqueue.RateLimitingInterface
 
@@ -34,14 +38,22 @@ type Controller struct {
 }
 
 func NewController(config *config.Config, stageInformer informerv1.StageInformer, client client.Interface) (*Controller, error) {
+	eventBroadcaster := record.NewBroadcaster()
+	eventBroadcaster.StartStructuredLogging("")
+	eventBroadcaster.StartRecordingToSink(&events.EventSinkImpl{Interface: client.EventsV1()})
+
 	jm := &Controller{
-		config:            config,
-		queue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "worker"),
-		stageControl:      &realStageControl{Client: client},
-		workerControl:     &realWorkerControl{Client: client},
+		config:   config,
+		queue:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "worker"),
+		recorder: eventBroadcaster.NewRecorder(runtime.NewScheme(), meta.EventSource{Component: "worker"}),
+
+		stageControl:  &realStageControl{Client: client},
+		workerControl: &realWorkerControl{Client: client},
+
 		stageLister:       stageInformer.Lister(),
 		stageListerSynced: stageInformer.Informer().HasSynced,
-		now:               time.Now,
+
+		now: time.Now,
 	}
 
 	stageInformer.Informer().AddEventHandler(informer.FilteringResourceEventHandler{
@@ -94,16 +106,9 @@ func (jm *Controller) enqueueController(obj interface{}) {
 	jm.queue.Add(key)
 }
 
-func (jm *Controller) Run(ctx context.Context, workers int) {
-	defer parallelizer.HandleCrash()
-	defer jm.queue.ShutDown()
-
-	flog.Info("starting worker controller")
-	defer flog.Info("shutting down worker controller")
-
-	// register worker
+func (jm *Controller) workerMeta() *meta.Worker {
 	hostname, _ := os.Hostname()
-	_, err := jm.workerControl.Register(ctx, &meta.Worker{
+	return &meta.Worker{
 		TypeMeta: meta.TypeMeta{
 			Kind:       "worker",
 			APIVersion: constant.Version,
@@ -115,11 +120,26 @@ func (jm *Controller) Run(ctx context.Context, workers int) {
 		State:    meta.WorkerReady,
 		Hostname: hostname,
 		Runtimes: jm.config.Runtime,
-	})
+	}
+}
+
+func (jm *Controller) Run(ctx context.Context, workers int) {
+	defer parallelizer.HandleCrash()
+	defer jm.queue.ShutDown()
+
+	flog.Info("starting worker controller")
+	defer flog.Info("shutting down worker controller")
+
+	// register worker
+	worker := jm.workerMeta()
+	_, err := jm.workerControl.Register(ctx, worker)
 	if err != nil {
+		jm.recorder.Eventf(worker, meta.EventTypeWarning, "FailedRegister", "worker %s register failed", jm.config.WorkerID)
 		flog.Fatalf("error worker register %s %s", jm.config.WorkerID, err)
 		return
 	}
+	jm.recorder.Eventf(worker, meta.EventTypeNormal, "SuccessfulRegister", "worker %s register successful", jm.config.WorkerID)
+
 	// worker heartbeat
 	go parallelizer.Until(jm.heartbeat, time.Minute, ctx.Done())
 
@@ -135,24 +155,14 @@ func (jm *Controller) Run(ctx context.Context, workers int) {
 }
 
 func (jm *Controller) heartbeat() {
-	hostname, _ := os.Hostname()
-	_, err := jm.workerControl.Heartbeat(context.Background(), &meta.Worker{
-		TypeMeta: meta.TypeMeta{
-			Kind:       "worker",
-			APIVersion: constant.Version,
-		},
-		ObjectMeta: meta.ObjectMeta{
-			Name: "worker-" + jm.config.WorkerID,
-			UID:  jm.config.WorkerID,
-		},
-		State:    meta.WorkerReady,
-		Hostname: hostname,
-		Runtimes: jm.config.Runtime,
-	})
+	worker := jm.workerMeta()
+	_, err := jm.workerControl.Heartbeat(context.Background(), worker)
 	if err != nil {
+		jm.recorder.Eventf(worker, meta.EventTypeWarning, "FailedHeartbeat", "worker %s heartbeat failed", jm.config.WorkerID)
 		flog.Errorf("error worker heartbeat %s %s", jm.config.WorkerID, err)
 		return
 	}
+	jm.recorder.Eventf(worker, meta.EventTypeNormal, "SuccessfulHeartbeat", "worker %s heartbeat successful", jm.config.WorkerID)
 }
 
 func (jm *Controller) worker(ctx context.Context) {
@@ -196,6 +206,7 @@ func (jm *Controller) execute(ctx context.Context, stageKey string) (bool, error
 			flog.Infof("Unable to update status for stage %s %s %s", stage.GetName(), stage.ResourceVersion, err)
 			return false, err
 		}
+		jm.recorder.Eventf(stageCopy, meta.EventTypeWarning, "FailedExecute", "Stage %s execute failed %v", stageCopy.UID, err)
 	}
 
 	// Update the job if needed
@@ -203,6 +214,8 @@ func (jm *Controller) execute(ctx context.Context, stageKey string) (bool, error
 		flog.Infof("Unable to update status for stage %s %s %s", stage.GetName(), stage.ResourceVersion, err)
 		return false, err
 	}
+
+	jm.recorder.Eventf(stageCopy, meta.EventTypeNormal, "SuccessfulExecute", "Stage %s execute success", stageCopy.UID)
 
 	return true, nil
 }

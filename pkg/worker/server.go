@@ -3,6 +3,7 @@ package worker
 import (
 	"fmt"
 	"github.com/tsundata/flowline/pkg/api/client"
+	"github.com/tsundata/flowline/pkg/api/client/events"
 	"github.com/tsundata/flowline/pkg/informer/informers"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
@@ -27,6 +28,7 @@ func NewGenericWorkerServer(name string, config *config.Config) *GenericWorkerSe
 	sharedInformers := informers.NewSharedInformerFactory(c, ResyncPeriod(config)())
 	config.InformerFactory = sharedInformers
 	config.Runtime = sandbox.AvailableRuntime
+	config.Client = c
 
 	s := &GenericWorkerServer{
 		config: config,
@@ -42,8 +44,13 @@ func (g *GenericWorkerServer) Run(stopCh <-chan struct{}) error {
 		g.client,
 	)
 	if err != nil {
-		return fmt.Errorf("error run worker controller %v", err)
+		return fmt.Errorf("error new worker controller %v", err)
 	}
+
+	// Start events processing pipeline.
+	g.config.EventBroadcaster.StartStructuredLogging("")
+	g.config.EventBroadcaster.StartRecordingToSink(&events.EventSinkImpl{Interface: g.config.Client.EventsV1()})
+	defer g.config.EventBroadcaster.Shutdown()
 
 	// run controller
 	ctx, _ := parallelizer.ContextForChannel(stopCh)

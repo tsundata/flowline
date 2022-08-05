@@ -1,8 +1,12 @@
 package config
 
 import (
+	"github.com/tsundata/flowline/pkg/api/client"
+	"github.com/tsundata/flowline/pkg/api/client/record"
 	"github.com/tsundata/flowline/pkg/api/client/rest"
+	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/informer/informers"
+	"github.com/tsundata/flowline/pkg/runtime"
 	"time"
 )
 
@@ -19,8 +23,20 @@ type Config struct {
 	MinResyncPeriod time.Duration
 
 	StageWorkers int
+
+	Client client.Interface
+
+	EventBroadcaster record.EventBroadcaster
+	EventRecorder    record.EventRecorder
 }
 
 func NewConfig() *Config {
-	return &Config{RestConfig: &rest.Config{}}
+	eventBroadcaster := record.NewBroadcaster()
+	eventRecorder := eventBroadcaster.NewRecorder(runtime.NewScheme(), meta.EventSource{Component: "worker"})
+	return &Config{
+		RestConfig:       &rest.Config{},
+		StageWorkers:     2,
+		EventBroadcaster: eventBroadcaster,
+		EventRecorder:    eventRecorder,
+	}
 }
