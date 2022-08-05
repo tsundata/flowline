@@ -2,7 +2,10 @@ package config
 
 import (
 	"github.com/tsundata/flowline/pkg/api/client"
+	"github.com/tsundata/flowline/pkg/api/client/record"
 	"github.com/tsundata/flowline/pkg/api/client/rest"
+	"github.com/tsundata/flowline/pkg/api/meta"
+	"github.com/tsundata/flowline/pkg/runtime"
 	"time"
 )
 
@@ -19,6 +22,9 @@ type Config struct {
 	ConcurrentCronTriggerSyncs int32
 	ConcurrentDagSyncs         int32
 	ConcurrentStageSyncs       int32
+
+	EventBroadcaster record.EventBroadcaster
+	EventRecorder    record.EventRecorder
 }
 
 // GenericControllerManagerConfiguration holds configuration for a generic controller-manager
@@ -41,6 +47,8 @@ type GenericControllerManagerConfiguration struct {
 }
 
 func NewConfig() *Config {
+	eventBroadcaster := record.NewBroadcaster()
+	eventRecorder := eventBroadcaster.NewRecorder(runtime.NewScheme(), meta.EventSource{Component: "controller-manager"})
 	return &Config{
 		RestConfig: &rest.Config{
 			DisableCompression: true,
@@ -52,11 +60,12 @@ func NewConfig() *Config {
 				"*",
 			},
 		},
-		ConcurrentCronTriggerSyncs: 1,
-		ConcurrentDagSyncs:         1,
-		ConcurrentStageSyncs:       1,
+		ConcurrentCronTriggerSyncs: 2,
+		ConcurrentDagSyncs:         2,
+		ConcurrentStageSyncs:       2,
+		EventBroadcaster:           eventBroadcaster,
+		EventRecorder:              eventRecorder,
 	}
-
 }
 
 func (c *Config) Complete() *Config {

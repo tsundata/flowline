@@ -125,6 +125,19 @@ type Updater interface {
 	Update(ctx context.Context, name string, objInfo runtime.Object, createValidation ValidateObjectFunc, updateValidation ValidateObjectUpdateFunc, forceAllowCreate bool, options *meta.UpdateOptions) (runtime.Object, bool, error)
 }
 
+// UpdatedObjectInfo provides information about an updated object to an Updater.
+// It requires access to the old object in order to return the newly updated object.
+type UpdatedObjectInfo interface {
+	// Preconditions Returns preconditions built from the updated object, if applicable.
+	// May return nil, or a preconditions object containing nil fields,
+	// if no preconditions can be determined from the updated object.
+	Preconditions() *meta.Preconditions
+
+	// UpdatedObject returns the updated object, given a context and old object.
+	// The only time an empty oldObj should be passed in is if a "create on update" is occurring (there is no oldObj).
+	UpdatedObject(ctx context.Context, oldObj runtime.Object) (newObj runtime.Object, err error)
+}
+
 // ValidateObjectFunc is a function to act on a given object. An error may be returned
 // if the hook cannot be completed. A ValidateObjectFunc may NOT transform the provided
 // object.

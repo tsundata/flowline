@@ -7,6 +7,7 @@ import (
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/options"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest"
+	"github.com/tsundata/flowline/pkg/apiserver/storage"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"github.com/tsundata/flowline/pkg/util/flog"
@@ -326,6 +327,16 @@ func (e *Store) Update(ctx context.Context, name string, objInfo runtime.Object,
 	if forceAllowCreate {
 		if err := createValidation(ctx, out); err != nil {
 			return nil, false, err
+		}
+
+		_, err = e.Get(ctx, key, &meta.GetOptions{})
+		if errors.Is(err, storage.ErrKeyNotFound) {
+			createOut := e.NewFunc()
+			err = e.Storage.Create(ctx, key, out, createOut, 0, false)
+			if err != nil {
+				return nil, true, err
+			}
+			return createOut, true, nil
 		}
 	}
 

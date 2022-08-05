@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+const (
+	ContentTypeJSON string = "application/json"
+)
+
 // HandleError is a method to invoke when a non-user facing piece of code cannot
 // return an error and needs to indicate it has been ignored. Invoking this method
 // is preferable to logging the error - the default behavior is to log but the

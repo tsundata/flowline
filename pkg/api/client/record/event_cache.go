@@ -1,12 +1,15 @@
 package record
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/golang/groupcache/lru"
+	"github.com/tsundata/flowline/pkg/api/client/record/util"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/util/clock"
 	"github.com/tsundata/flowline/pkg/util/flowcontrol"
 	"github.com/tsundata/flowline/pkg/util/sets"
+	"github.com/tsundata/flowline/pkg/util/uid"
 	"strings"
 	"sync"
 	"time"
@@ -36,7 +39,7 @@ func getEventKey(event *meta.Event) string {
 		event.InvolvedObject.Kind,
 		event.InvolvedObject.Name,
 		event.InvolvedObject.FieldPath,
-		string(event.InvolvedObject.UID),
+		event.InvolvedObject.UID,
 		event.InvolvedObject.APIVersion,
 		event.Type,
 		event.Reason,
@@ -52,7 +55,7 @@ func getSpamKey(event *meta.Event) string {
 		event.Source.Host,
 		event.InvolvedObject.Kind,
 		event.InvolvedObject.Name,
-		string(event.InvolvedObject.UID),
+		event.InvolvedObject.UID,
 		event.InvolvedObject.APIVersion,
 	},
 		"")
@@ -145,7 +148,7 @@ func EventAggregatorByReasonFunc(event *meta.Event) (string, string) {
 		event.Source.Host,
 		event.InvolvedObject.Kind,
 		event.InvolvedObject.Name,
-		string(event.InvolvedObject.UID),
+		event.InvolvedObject.UID,
 		event.InvolvedObject.APIVersion,
 		event.Type,
 		event.Reason,
@@ -257,6 +260,7 @@ func (e *EventAggregator) EventAggregate(newEvent *meta.Event) (*meta.Event, str
 	// (so that it can be overwritten.)
 	eventCopy := &meta.Event{
 		ObjectMeta: meta.ObjectMeta{
+			UID:  uid.New(),
 			Name: fmt.Sprintf("%v.%x", newEvent.InvolvedObject.Name, now.UnixNano()),
 		},
 		Count:          1,
@@ -281,6 +285,7 @@ type eventLog struct {
 
 	// The unique name of the first occurrence of this event
 	name string
+	uid  string
 
 	// Resource version returned from previous interaction with server
 	resourceVersion string
@@ -317,6 +322,7 @@ func (e *eventLogger) eventObserve(newEvent *meta.Event, key string) (*meta.Even
 	if lastObservation.count > 0 {
 		// update the event based on the last observation so patch will work as desired
 		event.Name = lastObservation.name
+		event.UID = lastObservation.uid
 		event.ResourceVersion = lastObservation.resourceVersion
 		event.FirstTimestamp = lastObservation.firstTimestamp
 		event.Count = int32(lastObservation.count) + 1
@@ -327,9 +333,9 @@ func (e *eventLogger) eventObserve(newEvent *meta.Event, key string) (*meta.Even
 		eventCopy2.LastTimestamp = &lt
 		eventCopy2.Message = ""
 
-		//newData, _ := json.Marshal(event) todo
-		//oldData, _ := json.Marshal(eventCopy2) todo
-		//patch, err = strategicpatch.CreateTwoWayMergePatch(oldData, newData, event) todo
+		newData, _ := json.Marshal(event)
+		oldData, _ := json.Marshal(eventCopy2)
+		patch, err = util.CreateTwoWayMergePatch(oldData, newData, event)
 	}
 
 	// record our new observation
@@ -339,6 +345,7 @@ func (e *eventLogger) eventObserve(newEvent *meta.Event, key string) (*meta.Even
 			count:           uint(event.Count),
 			firstTimestamp:  event.FirstTimestamp,
 			name:            event.Name,
+			uid:             event.UID,
 			resourceVersion: event.ResourceVersion,
 		},
 	)
@@ -357,6 +364,7 @@ func (e *eventLogger) updateState(event *meta.Event) {
 			count:           uint(event.Count),
 			firstTimestamp:  event.FirstTimestamp,
 			name:            event.Name,
+			uid:             event.UID,
 			resourceVersion: event.ResourceVersion,
 		},
 	)

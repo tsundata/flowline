@@ -2,9 +2,22 @@ package runtime
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"io"
+	"reflect"
 )
+
+// codec binds an encoder and decoder.
+type codec struct {
+	Encoder
+	Decoder
+}
+
+// NewCodec creates a Codec from an Encoder and Decoder.
+func NewCodec(e Encoder, d Decoder) Codec {
+	return codec{e, d}
+}
 
 // Serializer is the core interface for transforming objects into a serialized format and back.
 // Implementations may choose to perform conversion of the object, but no assumptions should be made.
@@ -69,6 +82,18 @@ func Encode(e Encoder, obj Object) ([]byte, error) {
 func Decode(d Decoder, data []byte, obj Object) (Object, error) {
 	obj, _, err := d.Decode(data, nil, obj)
 	return obj, err
+}
+
+// DecodeInto performs a Decode into the provided object.
+func DecodeInto(d Decoder, data []byte, into Object) error {
+	out, gvk, err := d.Decode(data, nil, into)
+	if err != nil {
+		return err
+	}
+	if out != into {
+		return fmt.Errorf("unable to decode %s into %v", gvk, reflect.TypeOf(into))
+	}
+	return nil
 }
 
 // SerializerInfoForMediaType returns the first info in types that has a matching media type (which cannot

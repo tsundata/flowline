@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/tsundata/flowline/pkg/api/client/events"
 	"github.com/tsundata/flowline/pkg/manager/config"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
@@ -50,6 +51,11 @@ func NewControllerManagerCommand() *cli.App {
 
 func Run(c *config.Config, stopCh <-chan struct{}) error {
 	flog.Info("controller-manager running")
+
+	// Start events processing pipeline.
+	c.EventBroadcaster.StartStructuredLogging("")
+	c.EventBroadcaster.StartRecordingToSink(&events.EventSinkImpl{Interface: c.Client.EventsV1()})
+	defer c.EventBroadcaster.Shutdown()
 
 	run := func(ctx context.Context, initializersFunc ControllerInitializersFunc) {
 		controllerContext, err := CreateControllerContext(c, ctx.Done())

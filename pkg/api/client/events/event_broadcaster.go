@@ -48,19 +48,19 @@ type EventSinkImpl struct {
 	Interface eventsv1.EventsV1Interface
 }
 
-// Create takes the representation of a event and creates it. Returns the server's representation of the event, and an error, if there is any.
+// Create takes the representation of an event and creates it. Returns the server's representation of the event, and an error, if there is any.
 func (e *EventSinkImpl) Create(event *meta.Event) (*meta.Event, error) {
 	return e.Interface.Event().Create(context.TODO(), event, meta.CreateOptions{})
 }
 
-// Update takes the representation of a event and updates it. Returns the server's representation of the event, and an error, if there is any.
+// Update takes the representation of an event and updates it. Returns the server's representation of the event, and an error, if there is any.
 func (e *EventSinkImpl) Update(event *meta.Event) (*meta.Event, error) {
 	return e.Interface.Event().Update(context.TODO(), event, meta.UpdateOptions{})
 }
 
 // Patch applies the patch and returns the patched event, and an error, if there is any.
 func (e *EventSinkImpl) Patch(event *meta.Event, data []byte) (*meta.Event, error) {
-	return e.Interface.Event().Patch(context.TODO(), event.Name, string(meta.StrategicMergePatchType), data, meta.PatchOptions{})
+	return e.Interface.Event().Patch(context.TODO(), event.UID, string(meta.MergePatchType), data, meta.PatchOptions{})
 }
 
 // NewBroadcaster Creates a new event broadcaster.
@@ -84,7 +84,6 @@ func (e *eventBroadcasterImpl) Shutdown() {
 
 // refreshExistingEventSeries refresh events TTL
 func (e *eventBroadcasterImpl) refreshExistingEventSeries() {
-	// TODO: Investigate whether lock contention won't be a problem
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	for isomorphicKey, event := range e.eventCache {
@@ -202,7 +201,7 @@ func recordEvent(sink EventSink, event *meta.Event) (*meta.Event, bool) {
 		return newEvent, false
 	}
 	// If we can't contact the server, then hold everything while we keep trying.
-	// Otherwise, something about the event is malformed and we should abandon it.
+	// Otherwise, something about the event is malformed, and we should abandon it.
 	flog.Errorf("Unable to write event: '%v' (may retry after sleeping)", err)
 	return nil, true
 }
@@ -219,9 +218,7 @@ func createPatchBytesForSeries(event *meta.Event) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	// return strategicpatch.CreateTwoWayMergePatch(oldData, newData, meta.Event{}) todo
-	flog.Debugf("%s %s", oldData, newData)
-	return nil, nil
+	return util.CreateTwoWayMergePatch(oldData, newData, meta.Event{})
 }
 
 func getKey(event *meta.Event) eventKey {
@@ -298,8 +295,8 @@ func (e *eventBroadcasterImpl) StartRecordingToSink(stopCh <-chan struct{}) {
 }
 
 type eventBroadcasterAdapterImpl struct {
-	coreClient          eventsv1.EventGetter // fixme ???
-	coreBroadcaster     record.EventBroadcaster
+	coreClient          eventsv1.EventGetter    // Deprecated: use eventsv1Client
+	coreBroadcaster     record.EventBroadcaster // Deprecated: use eventsv1Broadcaster
 	eventsv1Client      eventsv1.EventsV1Interface
 	eventsv1Broadcaster EventBroadcaster
 }
@@ -324,9 +321,6 @@ func (e *eventBroadcasterAdapterImpl) StartRecordingToSink(stopCh <-chan struct{
 	if e.eventsv1Broadcaster != nil && e.eventsv1Client != nil {
 		e.eventsv1Broadcaster.StartRecordingToSink(stopCh)
 	}
-	//if e.coreBroadcaster != nil && e.coreClient != nil {
-	//	e.coreBroadcaster.StartRecordingToSink(&typedv1core.EventSinkImpl{Interface: e.coreClient.Events("")})
-	//}
 }
 
 func (e *eventBroadcasterAdapterImpl) NewRecorder(name string) EventRecorder {

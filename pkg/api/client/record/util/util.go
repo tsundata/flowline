@@ -1,6 +1,7 @@
 package util
 
 import (
+	jsonpatch "github.com/evanphx/json-patch/v5"
 	"github.com/tsundata/flowline/pkg/api/meta"
 )
 
@@ -19,4 +20,8 @@ func IsKeyNotFoundError(err error) bool {
 
 	//return statusErr != nil && statusErr.Status().Code == http.StatusNotFound
 	return false
+}
+
+func CreateTwoWayMergePatch(oldData []byte, newData []byte, dataStruct interface{}) ([]byte, error) {
+	return jsonpatch.CreateMergePatch(oldData, newData)
 }

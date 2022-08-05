@@ -37,7 +37,7 @@ type Broadcaster struct {
 	// How large to make watcher's channel.
 	watchQueueLength int
 	// If one of the watch channels is full, don't wait for it to become empty.
-	// Instead just deliver it to the watchers that do have space in their
+	// Instead, just deliver it to the watchers that do have space in their
 	// channels and move on to the next event.
 	// It's more fair to do this on a per-watcher basis than to do it on the
 	// "incoming" channel, which would allow one slow watcher to prevent all
@@ -143,7 +143,7 @@ func (m *Broadcaster) Watch() (Interface, error) {
 // WatchWithPrefix adds a new watcher to the list and returns an Interface for it. It sends
 // queuedEvents down the new watch before beginning to send ordinary events from Broadcaster.
 // The returned watch will have a queue length that is at least large enough to accommodate
-// all of the items in queuedEvents. It will block until the watcher is actually added to
+// all the items in queuedEvents. It will block until the watcher is actually added to
 // the broadcaster.
 func (m *Broadcaster) WatchWithPrefix(queuedEvents []Event) (Interface, error) {
 	var w *broadcasterWatcher

@@ -71,7 +71,7 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 	deleter, isDeleter := storage.(rest.Deleter)
 	//collectionDeleter, isCollectionDeleter := storage.(rest.CollectionDeleter)
 	updater, isUpdater := storage.(rest.Updater)
-	//patcher, isPatcher := storage.(rest.Patcher)
+	patcher, isPatcher := storage.(rest.Patcher)
 	watcher, isWatcher := storage.(rest.Watcher)
 	subResource, isSubResource := storage.(rest.SubResourceStorage)
 	storageMeta, isMetadata := storage.(rest.StorageMetadata)
@@ -85,7 +85,7 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 	actions = appendIf(actions, action{"PUT", resourcePath, resourceParams, UID}, isUpdater)
 	actions = appendIf(actions, action{"DELETE", resourcePath, resourceParams, UID}, isDeleter)
 	//actions = appendIf(actions, action{"DELETECOLLECTION", resourcePath, resourceParams, UID}, isCollectionDeleter)
-	//actions = appendIf(actions, action{"PATCH", resourcePath, resourceParams, UID}, isPatcher)
+	actions = appendIf(actions, action{"PATCH", resourcePath, resourceParams, UID}, isPatcher)
 	actions = appendIf(actions, action{"WATCH", resourcePath, resourceParams, UID}, isWatcher)
 
 	for _, action := range actions {
@@ -153,7 +153,18 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 		case "DELETECOLLECTION":
 			// fmt.Println("DELETECOLLECTION", resource, collectionDeleter)
 		case "PATCH":
-			// fmt.Println("PATCH", resource, patcher)
+			scope := registry.NewRequestScope(action.Verb, resource, "")
+			handler := handlers.PatchResource(patcher, scope)
+			putRoute := ws.PATCH(resource+"/{uid}").To(handler).
+				Doc(fmt.Sprintf("Patch %s resource", resource)).
+				Operation(resource+"Patch").
+				Metadata(restfulspec.KeyOpenAPITags, tags).
+				Returns(http.StatusOK, "OK", producedObject).
+				Reads(producedObject).
+				Writes(producedObject).
+				Consumes(string(meta.MergePatchType))
+			putRoute.Param(uidParam)
+			rs = append(rs, putRoute)
 		case "WATCH":
 			scope := registry.NewRequestScope(action.Verb, resource, "")
 			handler := handlers.WatchResource(watcher, scope)

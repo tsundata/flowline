@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"github.com/robfig/cron/v3"
 	"github.com/tsundata/flowline/pkg/api/client"
+	"github.com/tsundata/flowline/pkg/api/client/events"
+	"github.com/tsundata/flowline/pkg/api/client/record"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/informer"
 	informerv1 "github.com/tsundata/flowline/pkg/informer/informers/core/v1"
 	listerv1 "github.com/tsundata/flowline/pkg/informer/listers/core/v1"
+	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
@@ -19,7 +22,8 @@ import (
 )
 
 type Controller struct {
-	queue workqueue.RateLimitingInterface
+	queue    workqueue.RateLimitingInterface
+	recorder record.EventRecorder
 
 	jobControl      jobControlInterface
 	workflowControl cjControlInterface
@@ -35,8 +39,13 @@ type Controller struct {
 }
 
 func NewController(jobInformer informerv1.JobInformer, workflowInformer informerv1.WorkflowInformer, client client.Interface) (*Controller, error) {
+	eventBroadcaster := record.NewBroadcaster()
+	eventBroadcaster.StartStructuredLogging("")
+	eventBroadcaster.StartRecordingToSink(&events.EventSinkImpl{Interface: client.EventsV1()})
+
 	jm := &Controller{
-		queue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "crontrigger"),
+		queue:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "crontrigger"),
+		recorder: eventBroadcaster.NewRecorder(runtime.NewScheme(), meta.EventSource{Component: "crontrigger-controller"}),
 
 		jobControl:      &realJobControl{Client: client},
 		workflowControl: &realCJControl{Client: client},
@@ -164,6 +173,7 @@ func (jm *Controller) updateWorkflow(old, cur interface{}) {
 		sched, err := cron.ParseStandard(newCJ.TriggerParam)
 		if err != nil {
 			flog.Infof("unparseable schedule form crontrigger %s %s", newCJ.UID, newCJ.TriggerParam)
+			jm.recorder.Eventf(newCJ, meta.EventTypeWarning, "UnParseableCronTriggerSchedule", "unparseable schedule form crontrigger %s %s", newCJ.UID, newCJ.TriggerParam)
 			return
 		}
 		now := jm.now()
@@ -361,7 +371,7 @@ func (jm *Controller) removeOldestJobs(cj *meta.Workflow, js []*meta.Job, maxJob
 	sort.Sort(byJobStartTimeStar(js))
 	for i := 0; i < numToDelete; i++ {
 		flog.Infof("Removing job from CronJob list %s %s", js[i].Name, cj.GetName())
-		if deleteJob(cj, js[i], jm.jobControl) {
+		if deleteJob(cj, js[i], jm.jobControl, jm.recorder) {
 			updateStatus = true
 		}
 	}
@@ -369,17 +379,19 @@ func (jm *Controller) removeOldestJobs(cj *meta.Workflow, js []*meta.Job, maxJob
 }
 
 // deleteJob reaps a job, deleting the job, the workflow and the reference in the active list
-func deleteJob(cj *meta.Workflow, job *meta.Job, jc jobControlInterface) bool {
-	nameForLog := cj.Name
+func deleteJob(cj *meta.Workflow, job *meta.Job, jc jobControlInterface, recorder record.EventRecorder) bool {
+	nameForLog := cj.UID
 
 	// delete the job itself...
-	if err := jc.DeleteJob(job.Name); err != nil {
-		flog.Errorf("Error deleting job %s from %s: %v", job.Name, nameForLog, err)
+	if err := jc.DeleteJob(job.UID); err != nil {
+		recorder.Eventf(cj, meta.EventTypeWarning, "FailedDelete", "Deleted job: %v", err)
+		flog.Errorf("Error deleting job %s from %s: %v", job.UID, nameForLog, err)
 		return false
 	}
 	// ... and its reference from active list
 	deleteFromActiveList(cj, job.ObjectMeta.UID)
-	flog.Infof("Deleted job %v", job.Name)
+	flog.Infof("Deleted job %v", job.UID)
+	recorder.Eventf(cj, meta.EventTypeNormal, "SuccessfulDelete", "Deleted job %v", job.UID)
 
 	return true
 }
@@ -450,7 +462,7 @@ func (jm *Controller) syncCronJob(
 				cronJob = cjCopy
 				continue
 			}
-			flog.Infof("Saw a job that the controller did not create or forgot: %s", j.Name)
+			jm.recorder.Eventf(cronJob, meta.EventTypeWarning, "UnexpectedJob", "Saw a job that the controller did not create or forgot: %s", j.UID)
 			// We found an unfinished job that has us as the parent, but it is not in our Active list.
 			// This could happen if we crashed right after creating the Job and before updating the status,
 			// or if our jobs list is newer than our cj status after a relist, or if someone intentionally created
@@ -458,7 +470,7 @@ func (jm *Controller) syncCronJob(
 		} else if found && IsJobFinished(j) {
 			_, status := getFinishedStatus(j)
 			deleteFromActiveList(cronJob, j.ObjectMeta.UID)
-			flog.Infof("Saw completed job: %s, status: %v", j.Name, status)
+			jm.recorder.Eventf(cronJob, meta.EventTypeNormal, "SawCompletedJob", "Saw completed job: %s, status: %v", j.UID, status)
 			updateStatus = true
 		} else if IsJobFinished(j) {
 			// a job does not have to be in active list, as long as it is finished, we will process the timestamp
@@ -484,6 +496,7 @@ func (jm *Controller) syncCronJob(
 		// this is likely a user error in defining the spec value
 		// we should log the error and not reconcile this crontrigger until an update to spec
 		flog.Errorf("unparseable schedule: %q : %s", cronJob.TriggerParam, err)
+		jm.recorder.Eventf(cronJob, meta.EventTypeWarning, "UnparseableScheule", "unparseable schedule: %q : %s", cronJob.TriggerParam, err)
 		return cronJob, nil, updateStatus, nil
 	}
 
@@ -492,6 +505,7 @@ func (jm *Controller) syncCronJob(
 		// this is likely a user error in defining the spec value
 		// we should log the error and not reconcile this crontrigger until an update to spec
 		flog.Errorf("invalid schedule: %s : %s", cronJob.TriggerParam, err)
+		jm.recorder.Eventf(cronJob, meta.EventTypeWarning, "InvalidSchedule", "invalid schedule: %s : %s", cronJob.TriggerParam, err)
 		return cronJob, nil, updateStatus, nil
 	}
 	if scheduledTime == nil {
@@ -510,6 +524,7 @@ func (jm *Controller) syncCronJob(
 	}
 	if tooLate {
 		flog.Infof("Missed scheduled time to start a job: %s", scheduledTime.UTC().Format(time.RFC1123Z))
+		jm.recorder.Eventf(cronJob, meta.EventTypeWarning, "MissSchedule", "Missed scheduled time to start a job: %s", scheduledTime.UTC().Format(time.RFC1123Z))
 
 		// Since we don't set LastScheduleTime when not scheduling, we are going to keep noticing
 		// the miss every cycle.  In order to avoid sending multiple events, and to avoid processing
@@ -535,10 +550,12 @@ func (jm *Controller) syncCronJob(
 	jobResp, err := jm.jobControl.CreateJob(jobReq)
 	if err != nil {
 		flog.Errorf("failed create cron job %s", jobReq.Name)
+		jm.recorder.Eventf(cronJob, meta.EventTypeWarning, "FailedCreate", "Error creating job: %v", err)
 		return cronJob, nil, updateStatus, err
 	}
 
 	flog.Infof("Created Job %s %s", jobResp.GetUID(), cronJob.GetUID())
+	jm.recorder.Eventf(cronJob, meta.EventTypeNormal, "SuccessfulCreate", "Created job %v", jobResp.UID)
 
 	// ------------------------------------------------------------------ //
 
