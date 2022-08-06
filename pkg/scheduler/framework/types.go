@@ -1,10 +1,10 @@
 package framework
 
 import (
-	"errors"
 	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/util/flog"
+	"golang.org/x/xerrors"
 	"sync/atomic"
 	"time"
 )
@@ -255,7 +255,7 @@ type Diagnosis struct {
 func GetStageKey(stage *meta.Stage) (string, error) {
 	uid := stage.UID
 	if len(uid) == 0 {
-		return "", errors.New("cannot get cache key for stage with empty UID")
+		return "", xerrors.New("cannot get cache key for stage with empty UID")
 	}
 	return uid, nil
 }

@@ -2,7 +2,6 @@ package etcd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver/storage"
@@ -11,6 +10,7 @@ import (
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/watch"
 	clientv3 "go.etcd.io/etcd/client/v3"
+	"golang.org/x/xerrors"
 	"path"
 	"reflect"
 	"strings"
@@ -51,7 +51,7 @@ func (s *store) Versioner() storage.Versioner {
 
 func (s *store) Create(ctx context.Context, key string, obj, out runtime.Object, ttl uint64) error {
 	if version, err := s.versioner.ObjectResourceVersion(obj); err == nil && version != 0 {
-		return errors.New("resourceVersion should not be set on objects to be created")
+		return xerrors.New("resourceVersion should not be set on objects to be created")
 	}
 	if err := s.versioner.PrepareObjectForStorage(obj); err != nil {
 		return fmt.Errorf("PrepareObjectForStorage failed: %v", err)

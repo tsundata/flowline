@@ -2,11 +2,11 @@ package filters
 
 import (
 	"context"
-	"errors"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/util/flog"
+	"golang.org/x/xerrors"
 	"net/http"
 	"regexp"
 	"strings"
@@ -47,11 +47,11 @@ func WithJWT(handler http.Handler, secret []byte, whitelist []string) http.Handl
 
 func validJWT(authHeader string, secret []byte) (*jwt.Token, error) {
 	if !strings.HasPrefix(authHeader, "Bearer ") {
-		return nil, errors.New("token error")
+		return nil, xerrors.New("token error")
 	}
 	jwtToken := strings.Split(authHeader, " ")
 	if len(jwtToken) < 2 {
-		return nil, errors.New("token error")
+		return nil, xerrors.New("token error")
 	}
 
 	return jwt.ParseWithClaims(jwtToken[1], &meta.UserClaims{}, func(token *jwt.Token) (interface{}, error) {

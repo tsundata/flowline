@@ -61,3 +61,17 @@ func (m *UserSession) DeepCopyObject() runtime.Object {
 type UserClaims struct {
 	*jwt.RegisteredClaims `json:",inline"`
 }
+
+type Dashboard struct {
+	WorkflowAmount int64 `json:"workflowAmount"`
+	CodeAmount     int64 `json:"codeAmount"`
+	VariableAmount int64 `json:"variableAmount"`
+	WorkerAmount   int64 `json:"workerAmount"`
+
+	Data []DashboardData `json:"data,omitempty"`
+}
+
+type DashboardData struct {
+	Date     string `json:"date"`
+	Schedule int    `json:"schedule"`
+}

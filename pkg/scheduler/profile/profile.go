@@ -1,7 +1,6 @@
 package profile
 
 import (
-	"errors"
 	"fmt"
 	"github.com/google/go-cmp/cmp"
 	"github.com/tsundata/flowline/pkg/api/client/events"
@@ -9,6 +8,7 @@ import (
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/config"
 	frameworkruntime "github.com/tsundata/flowline/pkg/scheduler/framework/runtime"
+	"golang.org/x/xerrors"
 )
 
 // RecorderFactory builds an EventRecorder for a given scheduler name.
@@ -52,7 +52,7 @@ func NewMap(cfgs []config.Profile, r frameworkruntime.Registry, recorderFact Rec
 
 func (v *cfgValidator) validate(cfg config.Profile, f framework.Framework) error {
 	if len(f.ProfileName()) == 0 {
-		return errors.New("scheduler name is needed")
+		return xerrors.New("scheduler name is needed")
 	}
 	if cfg.Plugins == nil {
 		return fmt.Errorf("plugins required for profile with scheduler name %q", f.ProfileName())

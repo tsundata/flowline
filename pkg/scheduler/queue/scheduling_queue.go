@@ -29,7 +29,7 @@ var (
 	AssignedStageDelete = framework.ClusterEvent{Resource: framework.Stage, ActionType: framework.Delete, Label: "AssignedStageDelete"}
 	// UnschedulableTimeout is the event when a stage stays in unschedulable for longer than timeout.
 	UnschedulableTimeout = framework.ClusterEvent{Resource: framework.WildCard, ActionType: framework.All, Label: "UnschedulableTimeout"}
-	// WorkerStateChange is the event when node label is changed.
+	// WorkerStateChange is the event when worker label is changed.
 	WorkerStateChange = framework.ClusterEvent{Resource: framework.Worker, ActionType: framework.Update, Label: "WorkerStateChange"}
 )
 

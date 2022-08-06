@@ -1,9 +1,9 @@
 package runtime
 
 import (
-	"errors"
 	"fmt"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
+	"golang.org/x/xerrors"
 	"reflect"
 )
 
@@ -87,10 +87,10 @@ func (s *Scheme) ObjectKinds(obj Object) ([]schema.GroupVersionKind, bool, error
 		// we require that the GVK be populated in order to recognize the object
 		gvk := obj.GetObjectKind().GroupVersionKind()
 		if len(gvk.Kind) == 0 {
-			return nil, false, errors.New("unstructured object has no kind")
+			return nil, false, xerrors.New("unstructured object has no kind")
 		}
 		if len(gvk.Version) == 0 {
-			return nil, false, errors.New("unstructured object has no version")
+			return nil, false, xerrors.New("unstructured object has no version")
 		}
 		return []schema.GroupVersionKind{gvk}, false, nil
 	}

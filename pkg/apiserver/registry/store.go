@@ -12,6 +12,7 @@ import (
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/watch"
+	"golang.org/x/xerrors"
 	"strings"
 )
 
@@ -74,7 +75,7 @@ type Store struct {
 	// finalize this object before the store deletes it.
 	//
 	// If any store has garbage collection enabled, it must also be enabled in
-	// the kube-controller-manager.
+	// the controller-manager.
 	EnableGarbageCollection bool
 
 	// DeleteCollectionWorkers is the maximum number of workers in a single
@@ -103,7 +104,7 @@ type Store struct {
 
 	// Storage is the interface for the underlying storage for the
 	// resource. It is wrapped into a "DryRunnableStorage" that will
-	// either pass-through or simply dry-run.
+	// either pass through or simply dry-run.
 	Storage DryRunnableStorage
 	// StorageVersioner outputs the <group/version/kind> an object will be
 	// converted to before persisted in etcd, given a list of possible
@@ -146,7 +147,7 @@ func (e *Store) NewListStruct() interface{} {
 }
 
 // ProducesMIMETypes implements rest.StorageMetadata.
-func (e *Store) ProducesMIMETypes(verb string) []string {
+func (e *Store) ProducesMIMETypes(_ string) []string {
 	return nil
 }
 
@@ -284,7 +285,7 @@ func (e *Store) CompleteWithOptions(options *options.StoreOptions) error {
 	return nil
 }
 
-func (e *Store) Create(ctx context.Context, obj runtime.Object, createValidation rest.ValidateObjectFunc, options *meta.CreateOptions) (runtime.Object, error) {
+func (e *Store) Create(ctx context.Context, obj runtime.Object, createValidation rest.ValidateObjectFunc, _ *meta.CreateOptions) (runtime.Object, error) {
 	if objectMeta, err := meta.Accessor(obj); err != nil {
 		return nil, err
 	} else {
@@ -316,7 +317,7 @@ func (e *Store) Create(ctx context.Context, obj runtime.Object, createValidation
 	return out, nil
 }
 
-func (e *Store) Update(ctx context.Context, name string, objInfo runtime.Object, createValidation rest.ValidateObjectFunc, updateValidation rest.ValidateObjectUpdateFunc, forceAllowCreate bool, options *meta.UpdateOptions) (runtime.Object, bool, error) {
+func (e *Store) Update(ctx context.Context, name string, objInfo runtime.Object, createValidation rest.ValidateObjectFunc, updateValidation rest.ValidateObjectUpdateFunc, forceAllowCreate bool, _ *meta.UpdateOptions) (runtime.Object, bool, error) {
 	key, err := e.KeyFunc(ctx, name)
 	if err != nil {
 		return nil, false, err
@@ -368,7 +369,7 @@ func (e *Store) Get(ctx context.Context, name string, options *meta.GetOptions) 
 	return obj, nil
 }
 
-func (e *Store) Delete(ctx context.Context, name string, deleteValidation rest.ValidateObjectFunc, options *meta.DeleteOptions) (runtime.Object, bool, error) {
+func (e *Store) Delete(ctx context.Context, name string, deleteValidation rest.ValidateObjectFunc, _ *meta.DeleteOptions) (runtime.Object, bool, error) {
 	key, err := e.KeyFunc(ctx, name)
 	if err != nil {
 		return nil, false, err
@@ -427,12 +428,12 @@ func (e *Store) ListPredicate(ctx context.Context, p meta.SelectionPredicate, op
 // automatically.
 func (e *Store) Watch(ctx context.Context, options *meta.ListOptions) (watch.Interface, error) {
 	label := ""
-	if options != nil && options.Label != "" {
-		label = options.Label
+	if options != nil && options.LabelSelector != "" {
+		label = options.LabelSelector
 	}
 	field := ""
-	if options != nil && options.Field != "" {
-		field = options.Field
+	if options != nil && options.FieldSelector != "" {
+		field = options.FieldSelector
 	}
 	predicate := e.PredicateFunc(label, field)
 
@@ -493,9 +494,9 @@ func (e *Store) calculateTTL(obj runtime.Object, defaultTTL int64, update bool) 
 
 // NoNamespaceKeyFunc is the default function for constructing storage paths
 // to a resource relative to the given prefix without a namespace.
-func NoNamespaceKeyFunc(ctx context.Context, prefix string, uid string) (string, error) {
+func NoNamespaceKeyFunc(_ context.Context, prefix string, uid string) (string, error) {
 	if len(uid) == 0 {
-		return "", errors.New("name parameter required")
+		return "", xerrors.New("name parameter required")
 	}
 	if msgs := IsValidPathSegmentName(uid); len(msgs) != 0 {
 		return "", fmt.Errorf(fmt.Sprintf("UID parameter invalid: %q: %s", uid, strings.Join(msgs, ";")))

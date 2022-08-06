@@ -10,6 +10,7 @@ import (
 	"github.com/tsundata/flowline/pkg/apiserver/storage"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/util/flog"
+	"golang.org/x/xerrors"
 	"net/http"
 )
 
@@ -77,7 +78,7 @@ func (r *REST) Handle(verb, subresource string, req *restful.Request, resp *rest
 	srRoute.Match("PUT", "heartbeat", sr.heartbeat)
 	srRoute.Match("POST", "register", sr.workerRegister)
 	if !srRoute.Matched() {
-		_ = resp.WriteError(http.StatusBadRequest, errors.New("error subresource path"))
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("error subresource path"))
 	}
 }
 
@@ -91,7 +92,7 @@ func (r *subResource) heartbeat(req *restful.Request, resp *restful.Response) {
 	err := req.ReadEntity(&obj)
 	if err != nil {
 		flog.Error(err)
-		_ = resp.WriteError(http.StatusBadRequest, errors.New("form error"))
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("form error"))
 		return
 	}
 
@@ -104,7 +105,7 @@ func (r *subResource) workerRegister(req *restful.Request, resp *restful.Respons
 	err := req.ReadEntity(&obj)
 	if err != nil {
 		flog.Error(err)
-		_ = resp.WriteError(http.StatusBadRequest, errors.New("form error"))
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("form error"))
 		return
 	}
 
@@ -113,7 +114,7 @@ func (r *subResource) workerRegister(req *restful.Request, resp *restful.Respons
 	find, err := r.store.Get(ctx, obj.UID, &meta.GetOptions{})
 	if err != nil && !errors.Is(err, storage.ErrKeyNotFound) {
 		flog.Error(err)
-		_ = resp.WriteError(http.StatusBadRequest, errors.New("register error"))
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("register error"))
 		return
 	}
 
@@ -127,7 +128,7 @@ func (r *subResource) workerRegister(req *restful.Request, resp *restful.Respons
 
 	if err != nil {
 		flog.Error(err)
-		_ = resp.WriteError(http.StatusBadRequest, errors.New("register error"))
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("register error"))
 		return
 	}
 

@@ -1,9 +1,9 @@
 package meta
 
 import (
-	"errors"
 	"fmt"
 	"github.com/tsundata/flowline/pkg/runtime"
+	"golang.org/x/xerrors"
 	"reflect"
 	"time"
 )
@@ -43,9 +43,9 @@ func Accessor(obj interface{}) (Object, error) {
 		if m := t.GetObjectMeta(); m != nil {
 			return m, nil
 		}
-		return nil, errors.New("error object type")
+		return nil, xerrors.New("error object type")
 	default:
-		return nil, errors.New("error object type")
+		return nil, xerrors.New("error object type")
 	}
 }
 
@@ -83,9 +83,9 @@ func ListAccessor(obj interface{}) (List, error) {
 		if m := t.GetListMeta(); m != nil {
 			return m, nil
 		}
-		return nil, errors.New("object does not implement the List interfaces")
+		return nil, xerrors.New("object does not implement the List interfaces")
 	default:
-		return nil, errors.New("object does not implement the List interfaces")
+		return nil, xerrors.New("object does not implement the List interfaces")
 	}
 }
 

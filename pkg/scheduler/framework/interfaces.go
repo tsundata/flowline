@@ -2,7 +2,6 @@ package framework
 
 import (
 	"context"
-	"errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/tsundata/flowline/pkg/api/client"
@@ -10,6 +9,7 @@ import (
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/config"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
+	"golang.org/x/xerrors"
 	"math"
 	"strings"
 	"sync"
@@ -432,7 +432,7 @@ func (s *Status) AsError() error {
 	if s.err != nil {
 		return s.err
 	}
-	return errors.New(s.Message())
+	return xerrors.New(s.Message())
 }
 
 // Equal checks equality of two statuses. This is useful for testing with
@@ -457,7 +457,7 @@ func NewStatus(code Code, reasons ...string) *Status {
 		reasons: reasons,
 	}
 	if code == Error {
-		s.err = errors.New(s.Message())
+		s.err = xerrors.New(s.Message())
 	}
 	return s
 }

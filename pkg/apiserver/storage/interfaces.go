@@ -2,13 +2,13 @@ package storage
 
 import (
 	"context"
-	"errors"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/watch"
+	"golang.org/x/xerrors"
 )
 
-var ErrKeyNotFound = errors.New("key not found")
+var ErrKeyNotFound = xerrors.New("key not found")
 
 // Interface offers a common interface for object marshaling/unmarshaling operations and
 // hides all the storage-related operations behind it.

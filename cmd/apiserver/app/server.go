@@ -1,7 +1,6 @@
 package app
 
 import (
-	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/tsundata/flowline/pkg/api/meta"
@@ -11,6 +10,7 @@ import (
 	"github.com/tsundata/flowline/pkg/util/signal"
 	"github.com/tsundata/flowline/pkg/util/version"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/xerrors"
 	"time"
 )
 
@@ -90,7 +90,7 @@ func NewAPIServerCommand() *cli.App {
 						},
 					)
 					if c.String("secret") == "" {
-						return errors.New("error secret")
+						return xerrors.New("error secret")
 					}
 					token, err := jc.SignedString([]byte(c.String("secret")))
 					if err != nil {

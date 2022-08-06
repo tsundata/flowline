@@ -2,6 +2,7 @@ package rest
 
 import (
 	"context"
+	"fmt"
 	"github.com/emicklei/go-restful/v3"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
@@ -246,4 +247,8 @@ func (r *SubResourceRoute) Match(verb, subresource string, rf restful.RouteFunct
 
 func (r *SubResourceRoute) Matched() bool {
 	return r.matched
+}
+
+func WithPrefix(path string) string {
+	return fmt.Sprintf("/%s/%s/%s", constant.GroupName, constant.Version, path)
 }

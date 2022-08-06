@@ -1,7 +1,6 @@
 package job
 
 import (
-	"errors"
 	"github.com/emicklei/go-restful/v3"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver/registry"
@@ -9,6 +8,7 @@ import (
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/util/flog"
+	"golang.org/x/xerrors"
 	"net/http"
 )
 
@@ -67,7 +67,7 @@ func (r *REST) Handle(verb, subresource string, req *restful.Request, resp *rest
 	srRoute := rest.NewSubResourceRoute(verb, subresource, req, resp)
 	srRoute.Match("PUT", "state", sr.jobUpdateState)
 	if !srRoute.Matched() {
-		_ = resp.WriteError(http.StatusBadRequest, errors.New("error subresource path"))
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("error subresource path"))
 	}
 }
 
@@ -85,7 +85,7 @@ func (r *subResource) jobUpdateState(req *restful.Request, resp *restful.Respons
 	result, _, err := r.store.Update(req.Request.Context(), obj.UID, &obj, rest.ValidateAllObjectFunc, rest.ValidateAllObjectUpdateFunc, false, &meta.UpdateOptions{})
 	if err != nil {
 		flog.Error(err)
-		_ = resp.WriteError(http.StatusBadRequest, errors.New("job update state error"))
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("job update state error"))
 		return
 	}
 

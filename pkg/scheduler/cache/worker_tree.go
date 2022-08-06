@@ -1,10 +1,10 @@
 package cache
 
 import (
-	"errors"
 	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/util/flog"
+	"golang.org/x/xerrors"
 )
 
 // workerTree is a tree-like data structure that holds worker names in each zone. Zone names are
@@ -107,7 +107,7 @@ func (nt *workerTree) list() ([]string, error) {
 	workerIndex := 0
 	for len(workersList) < nt.numWorkers {
 		if numExhaustedZones >= len(nt.zones) { // all zones are exhausted.
-			return workersList, errors.New("all zones exhausted before reaching count of workers expected")
+			return workersList, xerrors.New("all zones exhausted before reaching count of workers expected")
 		}
 		for zoneIndex := 0; zoneIndex < len(nt.zones); zoneIndex++ {
 			na := nt.tree[nt.zones[zoneIndex]]

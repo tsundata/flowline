@@ -14,7 +14,7 @@ type Configuration struct {
 	// Parallelism defines the amount of parallelism in algorithms for scheduling a Stages. Must be greater than 0. Defaults to 16
 	Parallelism int32
 
-	// ClientConnection specifies the kubeconfig file and client connection
+	// ClientConnection specifies the config file and client connection
 	// settings for the proxy server to use when communicating with the apiserver.
 	ClientConnection interface{} //componentbaseconfig.ClientConnectionConfiguration
 	// HealthzBindAddress is the IP address and port for the health check server to serve on.
@@ -40,7 +40,7 @@ type Configuration struct {
 	// the default value (10s) will be used.
 	StageMaxBackoffSeconds int64
 
-	// Profiles are scheduling profiles that kube-scheduler supports. Stages can
+	// Profiles are scheduling profiles that scheduler supports. Stages can
 	// choose to be scheduled under a particular profile by setting its associated
 	// scheduler name. Stages that don't specify any scheduler name are scheduled
 	// with the "default-scheduler" profile, if present here.
@@ -90,7 +90,7 @@ func (c *Config) Complete() {
 	c.InformerFactory = informers.NewSharedInformerFactory(c.Client, 0)
 }
 
-// createClients creates a kube client and an event client from the given kubeConfig
+// createClients creates a client and an event client from the given Config
 func createClients(c *rest.Config) (client.Interface, client.Interface, error) {
 	coreClient, err := client.NewForConfig(c)
 	if err != nil {

@@ -206,7 +206,7 @@ func (jm *Controller) execute(ctx context.Context, stageKey string) (bool, error
 			flog.Infof("Unable to update status for stage %s %s %s", stage.GetName(), stage.ResourceVersion, err)
 			return false, err
 		}
-		jm.recorder.Eventf(stageCopy, meta.EventTypeWarning, "FailedExecute", "Stage %s execute failed %v", stageCopy.UID, err)
+		jm.recorder.Eventf(stageCopy, meta.EventTypeWarning, "FailedExecute", "Stage %s execute failed %v on worker %s", stageCopy.UID, err, jm.config.WorkerID)
 	}
 
 	// Update the job if needed
@@ -215,7 +215,7 @@ func (jm *Controller) execute(ctx context.Context, stageKey string) (bool, error
 		return false, err
 	}
 
-	jm.recorder.Eventf(stageCopy, meta.EventTypeNormal, "SuccessfulExecute", "Stage %s execute success", stageCopy.UID)
+	jm.recorder.Eventf(stageCopy, meta.EventTypeNormal, "SuccessfulExecute", "Stage %s execute success on worker %s", stageCopy.UID, jm.config.WorkerID)
 
 	return true, nil
 }

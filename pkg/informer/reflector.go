@@ -1,7 +1,6 @@
 package informer
 
 import (
-	"errors"
 	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
@@ -10,6 +9,7 @@ import (
 	"github.com/tsundata/flowline/pkg/util/net"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
 	"github.com/tsundata/flowline/pkg/watch"
+	"golang.org/x/xerrors"
 	"io"
 	"math/rand"
 	"reflect"
@@ -360,7 +360,7 @@ var (
 
 	// Used to indicate that watching stopped because of a signal from the stop
 	// channel passed in from a client of the reflector.
-	errorStopRequested = errors.New("stop requested")
+	errorStopRequested = xerrors.New("stop requested")
 )
 
 func (r *Reflector) resyncChan() (<-chan time.Time, func() bool) {

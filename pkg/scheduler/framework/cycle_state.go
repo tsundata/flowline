@@ -1,13 +1,13 @@
 package framework
 
 import (
-	"errors"
+	"golang.org/x/xerrors"
 	"sync"
 )
 
 var (
 	// ErrNotFound is the not found error message.
-	ErrNotFound = errors.New("not found")
+	ErrNotFound = xerrors.New("not found")
 )
 
 // StateData is a generic type for arbitrary data stored in CycleState.

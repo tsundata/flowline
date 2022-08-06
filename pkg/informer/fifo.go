@@ -1,8 +1,8 @@
 package informer
 
 import (
-	"errors"
 	"github.com/tsundata/flowline/pkg/util/sets"
+	"golang.org/x/xerrors"
 	"sync"
 )
 
@@ -18,7 +18,7 @@ type ErrRequeue struct {
 }
 
 // ErrFIFOClosed used when FIFO is closed
-var ErrFIFOClosed = errors.New("DeltaFIFO: manipulating with closed queue")
+var ErrFIFOClosed = xerrors.New("DeltaFIFO: manipulating with closed queue")
 
 func (e ErrRequeue) Error() string {
 	if e.Err == nil {

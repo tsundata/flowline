@@ -3,8 +3,8 @@ package value
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
+	"golang.org/x/xerrors"
 	"strings"
 	"sync"
 )
@@ -165,7 +165,7 @@ func (t *prefixTransformers) TransformFromStorage(ctx context.Context, data []by
 			errStr.WriteString(err.Error())
 			errStr.WriteString("  ")
 		}
-		return nil, false, errors.New(errStr.String())
+		return nil, false, xerrors.New(errStr.String())
 	}
 
 	return nil, false, t.err

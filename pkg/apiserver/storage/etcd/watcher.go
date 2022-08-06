@@ -2,7 +2,6 @@ package etcd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver/storage"
@@ -11,6 +10,7 @@ import (
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/watch"
 	clientv3 "go.etcd.io/etcd/client/v3"
+	"golang.org/x/xerrors"
 	"net/http"
 	"os"
 	"reflect"
@@ -29,7 +29,7 @@ const (
 var fatalOnDecodeError = false
 
 // errTestingDecode is the only error that testingDeferOnDecodeError catches during a panic
-var errTestingDecode = errors.New("sentinel error only used during testing to indicate watch decoding error")
+var errTestingDecode = xerrors.New("sentinel error only used during testing to indicate watch decoding error")
 
 // testingDeferOnDecodeError is used during testing to recover from a panic caused by errTestingDecode, all other values continue to panic
 func testingDeferOnDecodeError() {
@@ -467,8 +467,8 @@ func decodeObj(codec runtime.Codec, versioner storage.Versioner, data []byte, re
 
 func interpretWatchError(err error) error {
 	switch {
-	case err == errors.New("ErrCompacted"):
-		return errors.New("the resourceVersion for the provided watch is too old")
+	case err == xerrors.New("ErrCompacted"):
+		return xerrors.New("the resourceVersion for the provided watch is too old")
 	}
 	return err
 }

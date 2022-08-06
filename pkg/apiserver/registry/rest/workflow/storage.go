@@ -1,16 +1,14 @@
 package workflow
 
 import (
-	"errors"
-	"fmt"
 	"github.com/emicklei/go-restful/v3"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver/registry"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/options"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest"
 	"github.com/tsundata/flowline/pkg/runtime"
-	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/util/flog"
+	"golang.org/x/xerrors"
 	"net/http"
 )
 
@@ -86,7 +84,7 @@ func (r *REST) Handle(verb, subresource string, req *restful.Request, resp *rest
 	srRoute.Match("PUT", "dag", sr.workflowUpdateDag)
 	srRoute.Match("PUT", "state", sr.workflowUpdateState)
 	if !srRoute.Matched() {
-		_ = resp.WriteError(http.StatusBadRequest, errors.New("error subresource path"))
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("error subresource path"))
 	}
 }
 
@@ -99,10 +97,10 @@ func (r *subResource) workflowGetDag(req *restful.Request, resp *restful.Respons
 	u := req.PathParameter("uid")
 
 	list := &meta.DagList{}
-	err := r.store.Storage.GetList(ctx, fmt.Sprintf("/%s/%s/dag", constant.GroupName, constant.Version), meta.ListOptions{}, list)
+	err := r.store.Storage.GetList(ctx, rest.WithPrefix("dag"), meta.ListOptions{}, list)
 	if err != nil {
 		flog.Error(err)
-		_ = resp.WriteError(http.StatusBadRequest, errors.New("dag error"))
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("dag error"))
 		return
 	}
 
@@ -114,7 +112,7 @@ func (r *subResource) workflowGetDag(req *restful.Request, resp *restful.Respons
 		}
 	}
 	if dag == nil {
-		_ = resp.WriteError(http.StatusNotFound, errors.New("dag not found"))
+		_ = resp.WriteError(http.StatusNotFound, xerrors.New("dag not found"))
 		return
 	}
 
@@ -133,10 +131,10 @@ func (r *subResource) workflowUpdateDag(req *restful.Request, resp *restful.Resp
 
 	// query created dag
 	list := &meta.DagList{}
-	err = r.store.Storage.GetList(ctx, fmt.Sprintf("/%s/%s/dag", constant.GroupName, constant.Version), meta.ListOptions{}, list)
+	err = r.store.Storage.GetList(ctx, rest.WithPrefix("dag"), meta.ListOptions{}, list)
 	if err != nil {
 		flog.Error(err)
-		_ = resp.WriteError(http.StatusBadRequest, errors.New("dag error"))
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("dag list error"))
 		return
 	}
 	var dag *meta.Dag
@@ -151,16 +149,16 @@ func (r *subResource) workflowUpdateDag(req *restful.Request, resp *restful.Resp
 		// update
 		obj.WorkflowUID = workflowUID
 		obj.UID = dag.UID
-		err = r.store.Storage.GuaranteedUpdate(ctx, fmt.Sprintf("/%s/%s/dag/%s", constant.GroupName, constant.Version, dag.UID), &obj, false, nil, nil, false, nil)
+		err = r.store.Storage.GuaranteedUpdate(ctx, rest.WithPrefix("dag/"+dag.UID), &obj, false, nil, nil, false, nil)
 	} else {
 		// create
 		obj.WorkflowUID = workflowUID
 		rest.FillObjectMetaSystemFields(&obj)
-		err = r.store.Storage.Create(ctx, fmt.Sprintf("/%s/%s/dag/%s", constant.GroupName, constant.Version, obj.UID), &obj, &obj, 0, false)
+		err = r.store.Storage.Create(ctx, rest.WithPrefix("dag/"+obj.UID), &obj, &obj, 0, false)
 	}
 	if err != nil {
 		flog.Error(err)
-		_ = resp.WriteError(http.StatusBadRequest, errors.New("dag error"))
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("dag error"))
 		return
 	}
 
@@ -177,7 +175,7 @@ func (r *subResource) workflowUpdateState(req *restful.Request, resp *restful.Re
 	result, _, err := r.store.Update(req.Request.Context(), obj.UID, &obj, rest.ValidateAllObjectFunc, rest.ValidateAllObjectUpdateFunc, false, &meta.UpdateOptions{})
 	if err != nil {
 		flog.Error(err)
-		_ = resp.WriteError(http.StatusBadRequest, errors.New("workflow update state error"))
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("workflow update state error"))
 		return
 	}
 

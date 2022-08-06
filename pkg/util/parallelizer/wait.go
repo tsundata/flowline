@@ -2,8 +2,8 @@ package parallelizer
 
 import (
 	"context"
-	"errors"
 	"github.com/tsundata/flowline/pkg/util/clock"
+	"golang.org/x/xerrors"
 	"math"
 	"sync"
 	"time"
@@ -293,7 +293,7 @@ func WaitForWithContext(ctx context.Context, wait WaitWithContextFunc, fn Condit
 }
 
 // ErrWaitTimeout is returned when the condition exited without success.
-var ErrWaitTimeout = errors.New("timed out waiting for the condition")
+var ErrWaitTimeout = xerrors.New("timed out waiting for the condition")
 
 // runConditionWithCrashProtectionWithContext runs a
 // ConditionWithContextFunc with crash protection.

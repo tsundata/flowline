@@ -6,8 +6,6 @@ import "github.com/tsundata/flowline/pkg/runtime"
 type GetOptions struct {
 	TypeMeta `json:",inline"`
 	// resourceVersion sets a constraint on what resource versions a request may be served from.
-	// See https://kubernetes.io/docs/reference/using-api/api-concepts/#resource-versions for
-	// details.
 	//
 	// Defaults to unset
 	ResourceVersion string `json:"resourceVersion,omitempty"`
@@ -162,11 +160,11 @@ type ListOptions struct {
 	// result was calculated is returned.
 	Limit int64 `json:"limit,omitempty"`
 	// The continue option should be set when retrieving more results from the server. Since this value is
-	// server defined, clients may only use the continue value from a previous query result with identical
+	// server defined, clients may only use to continue value from a previous query result with identical
 	// query parameters (except for the value of continue) and the server may reject a continue value it
 	// does not recognize. If the specified continue value is no longer valid whether due to expiration
 	// (generally five to fifteen minutes) or a configuration change on the server, the server will
-	// respond with a 410 ResourceExpired error together with a continue token. If the client needs a
+	// respond with a 410 ResourceExpired error together with a continued token. If the client needs a
 	// consistent list, it must restart their list without the continue field. Otherwise, the client may
 	// send another list request with the token received with the 410 error, the server will respond with
 	// a list starting from the next key, but from the latest snapshot, which is inconsistent from the
@@ -185,11 +183,6 @@ type ListOptions struct {
 	// ProgressNotify determines whether storage-originated bookmark (progress notify) events should
 	// be delivered to the users. The option is ignored for non-watch requests.
 	ProgressNotify bool `json:"progressNotify,omitempty"`
-
-	// label
-	Label string `json:"label,omitempty"`
-	// field
-	Field string `json:"field,omitempty"`
 }
 
 // AttrFunc returns label and field sets and the uninitialized flag for List or Watch to match.

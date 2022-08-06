@@ -146,7 +146,7 @@ func (c *worker) Watch(ctx context.Context, opts meta.ListOptions) (watch.Interf
 func (c *worker) Patch(ctx context.Context, name string, pt string, data []byte, _ meta.PatchOptions, subresources ...string) (*meta.Worker, error) {
 	var result = &meta.Worker{}
 	var err = c.client.Patch(pt).
-		Resource("nodes").
+		Resource("worker").
 		Name(name).
 		SubResource(subresources...).
 		//VersionedParams(&opts, scheme.ParameterCodec).

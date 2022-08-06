@@ -36,9 +36,8 @@ type Extender struct {
 	//   (if the extender is the binder) phases iff the stage requests at least
 	//   one of the extended resources in this list. If empty or unspecified,
 	//   all stages will be sent to this extender.
-	// - If IgnoredByScheduler is set to true for a resource, kube-scheduler
+	// - If IgnoredByScheduler is set to true for a resource, scheduler
 	//   will skip checking the resource in predicates.
-	// +optional
 	ManagedResources []string
 	// Ignorable specifies if the extender is ignorable, i.e. scheduling should not
 	// fail when the extender returns an error or is not reachable.

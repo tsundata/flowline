@@ -3,11 +3,11 @@ package scheduler
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/config"
+	"golang.org/x/xerrors"
 	"net/http"
 	"strings"
 	"time"
@@ -160,7 +160,7 @@ func (h *HTTPExtender) Filter(stage *meta.Stage, workers []*meta.Worker) (filter
 		return nil, nil, nil, err
 	}
 	if result.Error != "" {
-		return nil, nil, nil, errors.New(result.Error)
+		return nil, nil, nil, xerrors.New(result.Error)
 	}
 
 	if h.workerCacheCapable && result.WorkerNames != nil {
@@ -239,7 +239,7 @@ func (h *HTTPExtender) Bind(binding *meta.Binding) error {
 		return err
 	}
 	if result.Error != "" {
-		return errors.New(result.Error)
+		return xerrors.New(result.Error)
 	}
 	return nil
 }

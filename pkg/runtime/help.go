@@ -1,8 +1,8 @@
 package runtime
 
 import (
-	"errors"
 	"fmt"
+	"golang.org/x/xerrors"
 	"reflect"
 )
 
@@ -27,19 +27,19 @@ func getItemsPtr(list Object) (interface{}, error) {
 
 	items := v.FieldByName("Items")
 	if !items.IsValid() {
-		return nil, errors.New("errExpectFieldItems")
+		return nil, xerrors.New("errExpectFieldItems")
 	}
 	switch items.Kind() {
 	case reflect.Interface, reflect.Pointer:
 		target := reflect.TypeOf(items.Interface()).Elem()
 		if target.Kind() != reflect.Slice {
-			return nil, errors.New("errExpectSliceItems")
+			return nil, xerrors.New("errExpectSliceItems")
 		}
 		return items.Interface(), nil
 	case reflect.Slice:
 		return items.Addr().Interface(), nil
 	default:
-		return nil, errors.New("errExpectSliceItems")
+		return nil, xerrors.New("errExpectSliceItems")
 	}
 }
 

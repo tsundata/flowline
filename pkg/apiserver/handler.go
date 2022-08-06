@@ -2,7 +2,6 @@ package apiserver
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	restfulspec "github.com/emicklei/go-restful-openapi/v2"
 	"github.com/emicklei/go-restful/v3"
@@ -14,6 +13,7 @@ import (
 	"github.com/tsundata/flowline/pkg/apiserver/routes/endpoints"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/util/flog"
+	"golang.org/x/xerrors"
 	"net/http"
 	"runtime"
 	"strings"
@@ -97,7 +97,7 @@ func logStackOnRecover(panicReason interface{}, w http.ResponseWriter) {
 		}
 		buffer.WriteString(fmt.Sprintf("    %s:%d\r\n", file, line))
 	}
-	flog.Error(errors.New(buffer.String()))
+	flog.Error(xerrors.New(buffer.String()))
 
 	headers := http.Header{}
 	if ct := w.Header().Get("Content-Type"); len(ct) > 0 {
@@ -110,7 +110,7 @@ func logStackOnRecover(panicReason interface{}, w http.ResponseWriter) {
 
 func serviceErrorHandler(serviceError restful.ServiceError, _ *restful.Request, resp *restful.Response) {
 	errText := fmt.Sprintf("error %d %s", serviceError.Code, serviceError.Message)
-	flog.Error(errors.New(errText))
+	flog.Error(xerrors.New(errText))
 
 	resp.Header().Set("Content-Type", "application/json") // todo
 	resp.WriteHeader(http.StatusInternalServerError)      // todo

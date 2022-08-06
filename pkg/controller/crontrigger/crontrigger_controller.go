@@ -631,7 +631,7 @@ func getNextScheduleTime(cj meta.Workflow, now time.Time, schedule cron.Schedule
 	} else {
 		// If none found, then this is either a recently created cronJob,
 		// or the active/completed info was somehow lost (contract for status
-		// in kubernetes says it may need to be recreated), or that we have
+		// in system says it may need to be recreated), or that we have
 		// started a job, but have not noticed it yet (distributed systems can
 		// have arbitrary delays).  In any case, use the creation time of the
 		// CronJob as last known start time.

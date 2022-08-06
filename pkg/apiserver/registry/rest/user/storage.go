@@ -1,7 +1,6 @@
 package user
 
 import (
-	"errors"
 	"fmt"
 	"github.com/emicklei/go-restful/v3"
 	"github.com/golang-jwt/jwt/v4"
@@ -13,7 +12,9 @@ import (
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/xerrors"
 	"net/http"
+	"sort"
 	"time"
 )
 
@@ -74,6 +75,12 @@ func (r *REST) Actions() []rest.SubResourceAction {
 			WriteSample:  meta.UserSession{},
 			ReturnSample: meta.UserSession{},
 		},
+		{
+			Verb:         "GET",
+			SubResource:  "dashboard",
+			Params:       nil,
+			ReturnSample: meta.Dashboard{},
+		},
 	}
 }
 
@@ -82,8 +89,9 @@ func (r *REST) Handle(verb, subresource string, req *restful.Request, resp *rest
 	srRoute := rest.NewSubResourceRoute(verb, subresource, req, resp)
 	srRoute.Match("POST", "session", sr.userLogin)
 	srRoute.Match("DELETE", "session", sr.userLogout)
+	srRoute.Match("GET", "dashboard", sr.dashboard)
 	if !srRoute.Matched() {
-		_ = resp.WriteError(http.StatusBadRequest, errors.New("error subresource path"))
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("error subresource path"))
 	}
 }
 
@@ -97,14 +105,14 @@ func (r *subResource) userLogin(req *restful.Request, resp *restful.Response) {
 	err := req.ReadEntity(&login)
 	if err != nil {
 		flog.Error(err)
-		_ = resp.WriteError(http.StatusBadRequest, errors.New("form error"))
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("form error"))
 		return
 	}
 
 	obj, err := r.store.List(ctx, &meta.ListOptions{})
 	if err != nil {
 		flog.Error(err)
-		_ = resp.WriteError(http.StatusBadRequest, errors.New("user error"))
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("user error"))
 		return
 	}
 
@@ -117,13 +125,13 @@ func (r *subResource) userLogin(req *restful.Request, resp *restful.Response) {
 			}
 		}
 		if user.Name == "" {
-			_ = resp.WriteError(http.StatusBadRequest, errors.New("username or password error"))
+			_ = resp.WriteError(http.StatusBadRequest, xerrors.New("username or password error"))
 			return
 		}
 
 		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(login.Password))
 		if err != nil {
-			_ = resp.WriteError(http.StatusBadRequest, errors.New("username or password error"))
+			_ = resp.WriteError(http.StatusBadRequest, xerrors.New("username or password error"))
 			return
 		}
 		var jc = jwt.NewWithClaims(
@@ -137,7 +145,7 @@ func (r *subResource) userLogin(req *restful.Request, resp *restful.Response) {
 			},
 		)
 		if r.store.config.JWTSecret == "" {
-			_ = resp.WriteError(http.StatusBadRequest, errors.New("token error"))
+			_ = resp.WriteError(http.StatusBadRequest, xerrors.New("token error"))
 			return
 		}
 
@@ -145,14 +153,14 @@ func (r *subResource) userLogin(req *restful.Request, resp *restful.Response) {
 		token, err := jc.SignedString(secret)
 		if err != nil {
 			flog.Error(err)
-			_ = resp.WriteError(http.StatusBadRequest, errors.New("token error"))
+			_ = resp.WriteError(http.StatusBadRequest, xerrors.New("token error"))
 			return
 		}
 
 		_ = resp.WriteEntity(meta.UserSession{UserUID: user.UID, Token: token})
 		return
 	} else {
-		_ = resp.WriteError(http.StatusBadRequest, errors.New("user error"))
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("user error"))
 		return
 	}
 }
@@ -164,4 +172,79 @@ func (r *subResource) userLogout(req *restful.Request, resp *restful.Response) {
 		flog.Error(err)
 	}
 	fmt.Printf("%+v \n", obj)
+}
+
+func (r *subResource) dashboard(req *restful.Request, resp *restful.Response) {
+	ctx := req.Request.Context()
+
+	workflowAmount, err := r.store.Storage.Count(rest.WithPrefix("workflow"))
+	if err != nil {
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("count workflow error"))
+		return
+	}
+	codeAmount, err := r.store.Storage.Count(rest.WithPrefix("code"))
+	if err != nil {
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("count code error"))
+		return
+	}
+	variableAmount, err := r.store.Storage.Count(rest.WithPrefix("variable"))
+	if err != nil {
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("count variable error"))
+		return
+	}
+	workerAmount, err := r.store.Storage.Count(rest.WithPrefix("worker"))
+	if err != nil {
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("count worker error"))
+		return
+	}
+
+	// Scheduled
+	list := meta.EventList{}
+	err = r.store.Storage.GetList(ctx, rest.WithPrefix("event"), meta.ListOptions{}, &list)
+	if err != nil {
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("get events error"))
+		return
+	}
+
+	dateCountMap := make(map[string]int)
+	for _, item := range list.Items {
+		if item.Reason == "Scheduled" {
+			date := item.CreationTimestamp.Format("2006-01-02")
+			if _, ok := dateCountMap[date]; ok {
+				dateCountMap[date] += 1
+			} else {
+				dateCountMap[date] = 1
+			}
+		}
+	}
+	resultData := DashboardDataArray{}
+	for date, count := range dateCountMap {
+		resultData = append(resultData, meta.DashboardData{
+			Date:     date,
+			Schedule: count,
+		})
+	}
+	sort.Sort(resultData)
+
+	_ = resp.WriteEntity(meta.Dashboard{
+		WorkflowAmount: workflowAmount,
+		CodeAmount:     codeAmount,
+		VariableAmount: variableAmount,
+		WorkerAmount:   workerAmount,
+		Data:           resultData,
+	})
+}
+
+type DashboardDataArray []meta.DashboardData
+
+func (d DashboardDataArray) Len() int {
+	return len(d)
+}
+
+func (d DashboardDataArray) Less(i, j int) bool {
+	return d[i].Date < d[j].Date
+}
+
+func (d DashboardDataArray) Swap(i, j int) {
+	d[i], d[j] = d[j], d[i]
 }

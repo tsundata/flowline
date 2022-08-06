@@ -159,7 +159,7 @@ func (c *stage) Watch(ctx context.Context, opts meta.ListOptions) (watch.Interfa
 func (c *stage) Patch(ctx context.Context, name string, pt string, data []byte, _ meta.PatchOptions, subresources ...string) (*meta.Stage, error) {
 	var result = &meta.Stage{}
 	var err = c.client.Patch(pt).
-		Resource("nodes").
+		Resource("stage").
 		Name(name).
 		SubResource(subresources...).
 		//VersionedParams(&opts, scheme.ParameterCodec).

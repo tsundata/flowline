@@ -144,7 +144,7 @@ func (c *job) Watch(ctx context.Context, opts meta.ListOptions) (watch.Interface
 func (c *job) Patch(ctx context.Context, name string, pt string, data []byte, _ meta.PatchOptions, subresources ...string) (*meta.Job, error) {
 	var result = &meta.Job{}
 	var err = c.client.Patch(pt).
-		Resource("nodes").
+		Resource("job").
 		Name(name).
 		SubResource(subresources...).
 		//VersionedParams(&opts, scheme.ParameterCodec).

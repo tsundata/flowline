@@ -293,8 +293,8 @@ func (c *threadSafeMap) deleteKeyFromIndex(key, indexValue string, index Index) 
 	}
 	set.Delete(key)
 	// If we don't delete the set when zero, indices with high cardinality
-	// short lived resources can cause memory to increase over time from
-	// unused empty sets. See `kubernetes/kubernetes/issues/84959`.
+	// short-lived resources can cause memory to increase over time from
+	// unused empty sets.
 	if len(set) == 0 {
 		delete(index, indexValue)
 	}

@@ -145,7 +145,7 @@ func (c *workflow) Watch(ctx context.Context, opts meta.ListOptions) (watch.Inte
 func (c *workflow) Patch(ctx context.Context, name string, pt string, data []byte, _ meta.PatchOptions, subresources ...string) (*meta.Workflow, error) {
 	var result = &meta.Workflow{}
 	var err = c.client.Patch(pt).
-		Resource("nodes").
+		Resource("workflow").
 		Name(name).
 		SubResource(subresources...).
 		//VersionedParams(&opts, scheme.ParameterCodec).

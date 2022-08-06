@@ -2,9 +2,9 @@ package flowcontrol
 
 import (
 	"context"
-	"errors"
 	"github.com/tsundata/flowline/pkg/util/clock"
 	"golang.org/x/time/rate"
+	"golang.org/x/xerrors"
 	"sync"
 	"time"
 )
@@ -153,7 +153,7 @@ func (t *fakeNeverRateLimiter) QPS() float32 {
 }
 
 func (t *fakeNeverRateLimiter) Wait(ctx context.Context) error {
-	return errors.New("can not be accept")
+	return xerrors.New("can not be accept")
 }
 
 var (

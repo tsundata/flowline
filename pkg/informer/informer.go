@@ -1,7 +1,6 @@
 package informer
 
 import (
-	"errors"
 	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
@@ -9,11 +8,12 @@ import (
 	"github.com/tsundata/flowline/pkg/util/clock"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
+	"golang.org/x/xerrors"
 	"sync"
 	"time"
 )
 
-var ErrNotFound = errors.New("not found")
+var ErrNotFound = xerrors.New("not found")
 
 type SharedInformer interface {
 	// AddEventHandler adds an event handler to the shared informer using the shared informer's resync
@@ -278,7 +278,7 @@ func (s *sharedIndexInformer) HandleDeltas(obj interface{}) error {
 	if deltas, ok := obj.(Deltas); ok {
 		return processDeltas(s, s.indexer, s.transform, deltas)
 	}
-	return errors.New("object given as Process argument is not Deltas")
+	return xerrors.New("object given as Process argument is not Deltas")
 }
 
 // OnAdd Conforms to ResourceEventHandler

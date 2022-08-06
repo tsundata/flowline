@@ -1,7 +1,6 @@
 package stage
 
 import (
-	"errors"
 	"github.com/emicklei/go-restful/v3"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver/registry"
@@ -9,6 +8,7 @@ import (
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/util/flog"
+	"golang.org/x/xerrors"
 	"net/http"
 )
 
@@ -75,7 +75,7 @@ func (r *REST) Handle(verb, subresource string, req *restful.Request, resp *rest
 	srRoute.Match("PUT", "binding", sr.stageBinding)
 	srRoute.Match("PUT", "list", sr.stageUpdateList)
 	if !srRoute.Matched() {
-		_ = resp.WriteError(http.StatusBadRequest, errors.New("error subresource path"))
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("error subresource path"))
 	}
 }
 
@@ -95,13 +95,13 @@ func (r *subResource) stageBinding(req *restful.Request, resp *restful.Response)
 	find, err := r.store.Get(ctx, uid, &meta.GetOptions{})
 	if err != nil {
 		flog.Error(err)
-		_ = resp.WriteError(http.StatusBadRequest, errors.New("error stage"))
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("error stage"))
 		return
 	}
 
 	stage, ok := find.(*meta.Stage)
 	if !ok {
-		_ = resp.WriteError(http.StatusBadRequest, errors.New("error stage"))
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("error stage"))
 		return
 	}
 
@@ -110,7 +110,7 @@ func (r *subResource) stageBinding(req *restful.Request, resp *restful.Response)
 
 	_, _, err = r.store.Update(ctx, uid, stage, rest.ValidateAllObjectFunc, rest.ValidateAllObjectUpdateFunc, false, &meta.UpdateOptions{})
 	if err != nil {
-		_ = resp.WriteError(http.StatusBadRequest, errors.New("error update stage"))
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("error update stage"))
 		return
 	}
 
@@ -128,7 +128,7 @@ func (r *subResource) stageUpdateList(req *restful.Request, resp *restful.Respon
 	for i, item := range obj.Items {
 		_, _, err = r.store.Update(ctx, item.UID, &obj.Items[i], rest.ValidateAllObjectFunc, rest.ValidateAllObjectUpdateFunc, false, &meta.UpdateOptions{})
 		if err != nil {
-			_ = resp.WriteError(http.StatusBadRequest, errors.New("error update stage"))
+			_ = resp.WriteError(http.StatusBadRequest, xerrors.New("error update stage"))
 			return
 		}
 	}

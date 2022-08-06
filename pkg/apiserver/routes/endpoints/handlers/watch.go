@@ -44,7 +44,7 @@ func watchHandler(s rest.Watcher, scope *registry.RequestScope) restful.RouteFun
 		ctx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
 
-		watcher, err := s.Watch(ctx, &meta.ListOptions{Field: uid, Recursive: false})
+		watcher, err := s.Watch(ctx, &meta.ListOptions{FieldSelector: uid, Recursive: false})
 		if err != nil {
 			_ = resp.WriteError(http.StatusInternalServerError, err)
 			return

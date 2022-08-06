@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/tsundata/flowline/pkg/api/client"
 	"github.com/tsundata/flowline/pkg/api/client/rest"
@@ -18,6 +17,7 @@ import (
 	"github.com/tsundata/flowline/pkg/scheduler/queue"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
+	"golang.org/x/xerrors"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -159,7 +159,7 @@ func (sched *Scheduler) scheduleStage(ctx context.Context, fwk framework.Framewo
 	}
 
 	if sched.workerInfoSnapshot.NumWorkers() == 0 {
-		return result, errors.New("ErrNoWorkersAvailable")
+		return result, xerrors.New("ErrNoWorkersAvailable")
 	}
 
 	feasibleWorkers, diagnosis, err := sched.findWorkersThatFitStage(ctx, fwk, state, stage)
@@ -168,7 +168,7 @@ func (sched *Scheduler) scheduleStage(ctx context.Context, fwk framework.Framewo
 	}
 
 	if len(feasibleWorkers) == 0 {
-		return result, errors.New("FitError")
+		return result, xerrors.New("FitError")
 	}
 
 	// When only one worker after predicate, just use it.
@@ -433,7 +433,7 @@ func New(client client.Interface,
 func MakeDefaultErrorFunc(client client.Interface, stageLister listerv1.StageLister, stageQueue queue.SchedulingQueue, schedulerCache cache.Cache) func(*framework.QueuedStageInfo, error) {
 	return func(stageInfo *framework.QueuedStageInfo, err error) {
 		stage := stageInfo.Stage
-		if err == errors.New("IsNotFound") { // todo
+		if err == xerrors.New("IsNotFound") { // todo
 			workerUID := "something uid"
 			_, err := client.CoreV1().Worker().Get(context.Background(), workerUID, meta.GetOptions{})
 			if err != nil {

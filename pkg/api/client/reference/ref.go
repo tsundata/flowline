@@ -1,15 +1,15 @@
 package reference
 
 import (
-	"errors"
 	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
+	"golang.org/x/xerrors"
 )
 
 var (
 	// ErrNilObject Errors that could be returned by GetReference.
-	ErrNilObject = errors.New("can't reference a nil object")
+	ErrNilObject = xerrors.New("can't reference a nil object")
 )
 
 // GetReference returns an ObjectReference which refers to the given

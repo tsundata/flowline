@@ -32,6 +32,11 @@ func GetResource(s rest.Getter, scope *registry.RequestScope) restful.RouteFunct
 
 func listHandler(s rest.Lister, scope *registry.RequestScope) restful.RouteFunction {
 	return func(req *restful.Request, resp *restful.Response) {
+		subResource, isSubResource := s.(rest.SubResourceStorage)
+		if isSubResource && scope.Subresource != "" {
+			subResource.Handle(scope.Verb, scope.Subresource, req, resp)
+			return
+		}
 		ctx := req.Request.Context()
 		out, err := s.List(ctx, &meta.ListOptions{})
 		if err != nil {

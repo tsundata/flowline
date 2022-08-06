@@ -18,6 +18,7 @@ import (
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
 	"github.com/tsundata/flowline/pkg/util/sets"
 	"github.com/tsundata/flowline/pkg/util/workqueue"
+	"golang.org/x/xerrors"
 	"time"
 )
 
@@ -216,7 +217,7 @@ func (jm *Controller) splitDag(ctx context.Context, job *meta.Job, dag *meta.Dag
 			return nil, false, err
 		}
 		if codeList == nil {
-			return nil, false, errors.New("error code")
+			return nil, false, xerrors.New("error code")
 		}
 		for i, item := range codeList.Items {
 			if codeUID.Has(item.UID) {
@@ -231,7 +232,7 @@ func (jm *Controller) splitDag(ctx context.Context, job *meta.Job, dag *meta.Dag
 			return nil, false, err
 		}
 		if variableList == nil {
-			return nil, false, errors.New("error variable")
+			return nil, false, xerrors.New("error variable")
 		}
 		for i, item := range variableList.Items {
 			if variableUID.Has(item.UID) {
@@ -246,7 +247,7 @@ func (jm *Controller) splitDag(ctx context.Context, job *meta.Job, dag *meta.Dag
 			return nil, false, err
 		}
 		if connectionList == nil {
-			return nil, false, errors.New("error connection")
+			return nil, false, xerrors.New("error connection")
 		}
 		for i, item := range connectionList.Items {
 			if connectionUID.Has(item.UID) {
