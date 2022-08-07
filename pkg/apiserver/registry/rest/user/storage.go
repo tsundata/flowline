@@ -210,11 +210,7 @@ func (r *subResource) dashboard(req *restful.Request, resp *restful.Response) {
 	for _, item := range list.Items {
 		if item.Reason == "Scheduled" {
 			date := item.CreationTimestamp.Format("2006-01-02")
-			if _, ok := dateCountMap[date]; ok {
-				dateCountMap[date] += 1
-			} else {
-				dateCountMap[date] = 1
-			}
+			dateCountMap[date] += 1
 		}
 	}
 	resultData := DashboardDataArray{}

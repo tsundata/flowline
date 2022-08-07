@@ -90,7 +90,7 @@ func (sw *StreamWatcher) receive() {
 			case io.EOF:
 				// watch closed normally
 			case io.ErrUnexpectedEOF:
-				flog.Errorf("Unexpected EOF during watch stream event decoding: %w", err)
+				flog.Errorf("Unexpected EOF during watch stream event decoding: %v", err)
 			default:
 				flog.Error(err)
 				if net.IsProbableEOF(err) || net.IsTimeout(err) {
