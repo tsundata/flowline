@@ -42,6 +42,41 @@ This project requires Go 1.18 or newer
 
 [Swagger UI](https://tsundata.github.io/flowline/)
 
+## [Flowline admin](https://github.com/tsundata/flowline-admin)
+
+### dashboard
+<img src="./docs/dashboard.png" width="100%"  alt=""/>
+
+### workflows
+<img src="./docs/workflows.png" width="100%"  alt=""/>
+
+### dag editor
+<img src="./docs/dag.png" width="100%"  alt=""/>
+
+### users
+<img src="./docs/users.png" width="100%"  alt=""/>
+
+### runs
+<img src="./docs/runs.png" width="100%"  alt=""/>
+
+### jobs
+<img src="./docs/jobs.png" width="100%"  alt=""/>
+
+### events
+<img src="./docs/events.png" width="100%"  alt=""/>
+
+### workers
+<img src="./docs/workers.png" width="100%"  alt=""/>
+
+### codes
+<img src="./docs/codes.png" width="100%"  alt=""/>
+
+### variables
+<img src="./docs/variables.png" width="100%"  alt=""/>
+
+### connections
+<img src="./docs/connections.png" width="100%"  alt=""/>
+
 ## Reference
 
 [kubernetes](https://github.com/kubernetes/kubernetes)
