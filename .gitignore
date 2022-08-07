@@ -17,3 +17,5 @@
 # Project
 .idea
 .vscode
+
+dist/

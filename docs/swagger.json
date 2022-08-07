@@ -1,0 +1,5028 @@
+{
+ "swagger": "2.0",
+ "info": {
+  "description": "Resource for flowline",
+  "title": "Flowline REST API",
+  "contact": {
+   "name": "sysatom",
+   "url": "https://flowline.tsundata.com",
+   "email": "sysatom@gmail.com"
+  },
+  "license": {
+   "name": "MIT",
+   "url": "https://github.com/tsundata/flowline/blob/main/LICENSE"
+  },
+  "version": "1.0.0"
+ },
+ "paths": {
+  "/api/apps/v1/code": {
+   "post": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "code"
+    ],
+    "summary": "Create code resource",
+    "operationId": "codeCreate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Code"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Code"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/code/list": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "code"
+    ],
+    "summary": "List code resource",
+    "operationId": "codeList",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.CodeList"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/code/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "code"
+    ],
+    "summary": "Watch List code resource",
+    "operationId": "codeWatchList",
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/apps/v1/code/{uid}": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "code"
+    ],
+    "summary": "Get code resource",
+    "operationId": "codeGet",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Code"
+      }
+     }
+    }
+   },
+   "put": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "code"
+    ],
+    "summary": "Update code resource",
+    "operationId": "codeUpdate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Code"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Code"
+      }
+     }
+    }
+   },
+   "delete": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "code"
+    ],
+    "summary": "Delete code resource",
+    "operationId": "codeDelete",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Code"
+      }
+     }
+    }
+   },
+   "patch": {
+    "consumes": [
+     "application/merge-patch+json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "code"
+    ],
+    "summary": "Patch code resource",
+    "operationId": "codePatch",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Code"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Code"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/code/{uid}/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "code"
+    ],
+    "summary": "Watch code resource",
+    "operationId": "codeWatch",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/apps/v1/connection": {
+   "post": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "connection"
+    ],
+    "summary": "Create connection resource",
+    "operationId": "connectionCreate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Connection"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Connection"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/connection/list": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "connection"
+    ],
+    "summary": "List connection resource",
+    "operationId": "connectionList",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.ConnectionList"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/connection/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "connection"
+    ],
+    "summary": "Watch List connection resource",
+    "operationId": "connectionWatchList",
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/apps/v1/connection/{uid}": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "connection"
+    ],
+    "summary": "Get connection resource",
+    "operationId": "connectionGet",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Connection"
+      }
+     }
+    }
+   },
+   "put": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "connection"
+    ],
+    "summary": "Update connection resource",
+    "operationId": "connectionUpdate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Connection"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Connection"
+      }
+     }
+    }
+   },
+   "delete": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "connection"
+    ],
+    "summary": "Delete connection resource",
+    "operationId": "connectionDelete",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Connection"
+      }
+     }
+    }
+   },
+   "patch": {
+    "consumes": [
+     "application/merge-patch+json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "connection"
+    ],
+    "summary": "Patch connection resource",
+    "operationId": "connectionPatch",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Connection"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Connection"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/connection/{uid}/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "connection"
+    ],
+    "summary": "Watch connection resource",
+    "operationId": "connectionWatch",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/apps/v1/dag": {
+   "post": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "dag"
+    ],
+    "summary": "Create dag resource",
+    "operationId": "dagCreate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Dag"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Dag"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/dag/list": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "dag"
+    ],
+    "summary": "List dag resource",
+    "operationId": "dagList",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.DagList"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/dag/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "dag"
+    ],
+    "summary": "Watch List dag resource",
+    "operationId": "dagWatchList",
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/apps/v1/dag/{uid}": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "dag"
+    ],
+    "summary": "Get dag resource",
+    "operationId": "dagGet",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Dag"
+      }
+     }
+    }
+   },
+   "put": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "dag"
+    ],
+    "summary": "Update dag resource",
+    "operationId": "dagUpdate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Dag"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Dag"
+      }
+     }
+    }
+   },
+   "delete": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "dag"
+    ],
+    "summary": "Delete dag resource",
+    "operationId": "dagDelete",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Dag"
+      }
+     }
+    }
+   },
+   "patch": {
+    "consumes": [
+     "application/merge-patch+json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "dag"
+    ],
+    "summary": "Patch dag resource",
+    "operationId": "dagPatch",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Dag"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Dag"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/dag/{uid}/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "dag"
+    ],
+    "summary": "Watch dag resource",
+    "operationId": "dagWatch",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/apps/v1/event": {
+   "post": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "event"
+    ],
+    "summary": "Create event resource",
+    "operationId": "eventCreate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Event"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Event"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/event/list": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "event"
+    ],
+    "summary": "List event resource",
+    "operationId": "eventList",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.EventList"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/event/list/kind": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "event"
+    ],
+    "summary": "List event resource to kind subresource",
+    "operationId": "eventListKind",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "Involved Object UID",
+      "name": "uid",
+      "in": "query",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.EventList"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/event/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "event"
+    ],
+    "summary": "Watch List event resource",
+    "operationId": "eventWatchList",
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/apps/v1/event/{uid}": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "event"
+    ],
+    "summary": "Get event resource",
+    "operationId": "eventGet",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Event"
+      }
+     }
+    }
+   },
+   "put": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "event"
+    ],
+    "summary": "Update event resource",
+    "operationId": "eventUpdate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Event"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Event"
+      }
+     }
+    }
+   },
+   "delete": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "event"
+    ],
+    "summary": "Delete event resource",
+    "operationId": "eventDelete",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Event"
+      }
+     }
+    }
+   },
+   "patch": {
+    "consumes": [
+     "application/merge-patch+json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "event"
+    ],
+    "summary": "Patch event resource",
+    "operationId": "eventPatch",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Event"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Event"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/event/{uid}/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "event"
+    ],
+    "summary": "Watch event resource",
+    "operationId": "eventWatch",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/apps/v1/job": {
+   "post": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "job"
+    ],
+    "summary": "Create job resource",
+    "operationId": "jobCreate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Job"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Job"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/job/list": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "job"
+    ],
+    "summary": "List job resource",
+    "operationId": "jobList",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.JobList"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/job/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "job"
+    ],
+    "summary": "Watch List job resource",
+    "operationId": "jobWatchList",
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/apps/v1/job/{uid}": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "job"
+    ],
+    "summary": "Get job resource",
+    "operationId": "jobGet",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Job"
+      }
+     }
+    }
+   },
+   "put": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "job"
+    ],
+    "summary": "Update job resource",
+    "operationId": "jobUpdate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Job"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Job"
+      }
+     }
+    }
+   },
+   "delete": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "job"
+    ],
+    "summary": "Delete job resource",
+    "operationId": "jobDelete",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Job"
+      }
+     }
+    }
+   },
+   "patch": {
+    "consumes": [
+     "application/merge-patch+json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "job"
+    ],
+    "summary": "Patch job resource",
+    "operationId": "jobPatch",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Job"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Job"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/job/{uid}/state": {
+   "put": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "job"
+    ],
+    "summary": "Update job resource to state",
+    "operationId": "jobUpdateState",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Job"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Job"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/job/{uid}/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "job"
+    ],
+    "summary": "Watch job resource",
+    "operationId": "jobWatch",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/apps/v1/role": {
+   "post": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "role"
+    ],
+    "summary": "Create role resource",
+    "operationId": "roleCreate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Role"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Role"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/role/list": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "role"
+    ],
+    "summary": "List role resource",
+    "operationId": "roleList",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.RoleList"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/role/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "role"
+    ],
+    "summary": "Watch List role resource",
+    "operationId": "roleWatchList",
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/apps/v1/role/{uid}": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "role"
+    ],
+    "summary": "Get role resource",
+    "operationId": "roleGet",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Role"
+      }
+     }
+    }
+   },
+   "put": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "role"
+    ],
+    "summary": "Update role resource",
+    "operationId": "roleUpdate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Role"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Role"
+      }
+     }
+    }
+   },
+   "delete": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "role"
+    ],
+    "summary": "Delete role resource",
+    "operationId": "roleDelete",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Role"
+      }
+     }
+    }
+   },
+   "patch": {
+    "consumes": [
+     "application/merge-patch+json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "role"
+    ],
+    "summary": "Patch role resource",
+    "operationId": "rolePatch",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Role"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Role"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/role/{uid}/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "role"
+    ],
+    "summary": "Watch role resource",
+    "operationId": "roleWatch",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/apps/v1/rolebinding": {
+   "post": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "rolebinding"
+    ],
+    "summary": "Create rolebinding resource",
+    "operationId": "rolebindingCreate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.RoleBinding"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.RoleBinding"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/rolebinding/list": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "rolebinding"
+    ],
+    "summary": "List rolebinding resource",
+    "operationId": "rolebindingList",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.RoleBindingList"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/rolebinding/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "rolebinding"
+    ],
+    "summary": "Watch List rolebinding resource",
+    "operationId": "rolebindingWatchList",
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/apps/v1/rolebinding/{uid}": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "rolebinding"
+    ],
+    "summary": "Get rolebinding resource",
+    "operationId": "rolebindingGet",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.RoleBinding"
+      }
+     }
+    }
+   },
+   "put": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "rolebinding"
+    ],
+    "summary": "Update rolebinding resource",
+    "operationId": "rolebindingUpdate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.RoleBinding"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.RoleBinding"
+      }
+     }
+    }
+   },
+   "delete": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "rolebinding"
+    ],
+    "summary": "Delete rolebinding resource",
+    "operationId": "rolebindingDelete",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.RoleBinding"
+      }
+     }
+    }
+   },
+   "patch": {
+    "consumes": [
+     "application/merge-patch+json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "rolebinding"
+    ],
+    "summary": "Patch rolebinding resource",
+    "operationId": "rolebindingPatch",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.RoleBinding"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.RoleBinding"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/rolebinding/{uid}/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "rolebinding"
+    ],
+    "summary": "Watch rolebinding resource",
+    "operationId": "rolebindingWatch",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/apps/v1/stage": {
+   "post": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "stage"
+    ],
+    "summary": "Create stage resource",
+    "operationId": "stageCreate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Stage"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Stage"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/stage/list": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "stage"
+    ],
+    "summary": "List stage resource",
+    "operationId": "stageList",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.StageList"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/stage/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "stage"
+    ],
+    "summary": "Watch List stage resource",
+    "operationId": "stageWatchList",
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/apps/v1/stage/{uid}": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "stage"
+    ],
+    "summary": "Get stage resource",
+    "operationId": "stageGet",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Stage"
+      }
+     }
+    }
+   },
+   "put": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "stage"
+    ],
+    "summary": "Update stage resource",
+    "operationId": "stageUpdate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Stage"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Stage"
+      }
+     }
+    }
+   },
+   "delete": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "stage"
+    ],
+    "summary": "Delete stage resource",
+    "operationId": "stageDelete",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Stage"
+      }
+     }
+    }
+   },
+   "patch": {
+    "consumes": [
+     "application/merge-patch+json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "stage"
+    ],
+    "summary": "Patch stage resource",
+    "operationId": "stagePatch",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Stage"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Stage"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/stage/{uid}/binding": {
+   "put": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "stage"
+    ],
+    "summary": "Update stage resource to binding",
+    "operationId": "stageUpdateBinding",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Binding"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Status"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/stage/{uid}/list": {
+   "put": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "stage"
+    ],
+    "summary": "Update stage resource to list",
+    "operationId": "stageUpdateList",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.StageList"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Status"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/stage/{uid}/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "stage"
+    ],
+    "summary": "Watch stage resource",
+    "operationId": "stageWatch",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/apps/v1/user": {
+   "post": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "user"
+    ],
+    "summary": "Create user resource",
+    "operationId": "userCreate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.User"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.User"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/user/list": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "user"
+    ],
+    "summary": "List user resource",
+    "operationId": "userList",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.UserList"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/user/session": {
+   "post": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "user"
+    ],
+    "summary": "Create user resource to session subresource",
+    "operationId": "userCreateSession",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.UserSession"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.UserSession"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/user/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "user"
+    ],
+    "summary": "Watch List user resource",
+    "operationId": "userWatchList",
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/apps/v1/user/{uid}": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "user"
+    ],
+    "summary": "Get user resource",
+    "operationId": "userGet",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.User"
+      }
+     }
+    }
+   },
+   "put": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "user"
+    ],
+    "summary": "Update user resource",
+    "operationId": "userUpdate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.User"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.User"
+      }
+     }
+    }
+   },
+   "delete": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "user"
+    ],
+    "summary": "Delete user resource",
+    "operationId": "userDelete",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.User"
+      }
+     }
+    }
+   },
+   "patch": {
+    "consumes": [
+     "application/merge-patch+json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "user"
+    ],
+    "summary": "Patch user resource",
+    "operationId": "userPatch",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.User"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.User"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/user/{uid}/dashboard": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "user"
+    ],
+    "summary": "Get user resource to dashboard subresource",
+    "operationId": "userGetDashboard",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Dashboard"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/user/{uid}/session": {
+   "delete": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "user"
+    ],
+    "summary": "Delete user resource to session subresource",
+    "operationId": "userDeleteSession",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.UserSession"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/user/{uid}/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "user"
+    ],
+    "summary": "Watch user resource",
+    "operationId": "userWatch",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/apps/v1/variable": {
+   "post": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "variable"
+    ],
+    "summary": "Create variable resource",
+    "operationId": "variableCreate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Variable"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Variable"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/variable/list": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "variable"
+    ],
+    "summary": "List variable resource",
+    "operationId": "variableList",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.VariableList"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/variable/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "variable"
+    ],
+    "summary": "Watch List variable resource",
+    "operationId": "variableWatchList",
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/apps/v1/variable/{uid}": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "variable"
+    ],
+    "summary": "Get variable resource",
+    "operationId": "variableGet",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Variable"
+      }
+     }
+    }
+   },
+   "put": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "variable"
+    ],
+    "summary": "Update variable resource",
+    "operationId": "variableUpdate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Variable"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Variable"
+      }
+     }
+    }
+   },
+   "delete": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "variable"
+    ],
+    "summary": "Delete variable resource",
+    "operationId": "variableDelete",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Variable"
+      }
+     }
+    }
+   },
+   "patch": {
+    "consumes": [
+     "application/merge-patch+json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "variable"
+    ],
+    "summary": "Patch variable resource",
+    "operationId": "variablePatch",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Variable"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Variable"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/variable/{uid}/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "variable"
+    ],
+    "summary": "Watch variable resource",
+    "operationId": "variableWatch",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/apps/v1/worker": {
+   "post": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "worker"
+    ],
+    "summary": "Create worker resource",
+    "operationId": "workerCreate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Worker"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Worker"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/worker/list": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "worker"
+    ],
+    "summary": "List worker resource",
+    "operationId": "workerList",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.WorkerList"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/worker/register": {
+   "post": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "worker"
+    ],
+    "summary": "Create worker resource to register subresource",
+    "operationId": "workerCreateRegister",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Worker"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Worker"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/worker/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "worker"
+    ],
+    "summary": "Watch List worker resource",
+    "operationId": "workerWatchList",
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/apps/v1/worker/{uid}": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "worker"
+    ],
+    "summary": "Get worker resource",
+    "operationId": "workerGet",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Worker"
+      }
+     }
+    }
+   },
+   "put": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "worker"
+    ],
+    "summary": "Update worker resource",
+    "operationId": "workerUpdate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Worker"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Worker"
+      }
+     }
+    }
+   },
+   "delete": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "worker"
+    ],
+    "summary": "Delete worker resource",
+    "operationId": "workerDelete",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Worker"
+      }
+     }
+    }
+   },
+   "patch": {
+    "consumes": [
+     "application/merge-patch+json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "worker"
+    ],
+    "summary": "Patch worker resource",
+    "operationId": "workerPatch",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Worker"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Worker"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/worker/{uid}/heartbeat": {
+   "put": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "worker"
+    ],
+    "summary": "Update worker resource to heartbeat",
+    "operationId": "workerUpdateHeartbeat",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Worker"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Status"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/worker/{uid}/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "worker"
+    ],
+    "summary": "Watch worker resource",
+    "operationId": "workerWatch",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/apps/v1/workflow": {
+   "post": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "workflow"
+    ],
+    "summary": "Create workflow resource",
+    "operationId": "workflowCreate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Workflow"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Workflow"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/workflow/list": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "workflow"
+    ],
+    "summary": "List workflow resource",
+    "operationId": "workflowList",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.WorkflowList"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/workflow/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "workflow"
+    ],
+    "summary": "Watch List workflow resource",
+    "operationId": "workflowWatchList",
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/apps/v1/workflow/{uid}": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "workflow"
+    ],
+    "summary": "Get workflow resource",
+    "operationId": "workflowGet",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Workflow"
+      }
+     }
+    }
+   },
+   "put": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "workflow"
+    ],
+    "summary": "Update workflow resource",
+    "operationId": "workflowUpdate",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Workflow"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Workflow"
+      }
+     }
+    }
+   },
+   "delete": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "workflow"
+    ],
+    "summary": "Delete workflow resource",
+    "operationId": "workflowDelete",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Workflow"
+      }
+     }
+    }
+   },
+   "patch": {
+    "consumes": [
+     "application/merge-patch+json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "workflow"
+    ],
+    "summary": "Patch workflow resource",
+    "operationId": "workflowPatch",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Workflow"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Workflow"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/workflow/{uid}/dag": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "workflow"
+    ],
+    "summary": "Get workflow resource to dag subresource",
+    "operationId": "workflowGetDag",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Dag"
+      }
+     }
+    }
+   },
+   "put": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "workflow"
+    ],
+    "summary": "Update workflow resource to dag",
+    "operationId": "workflowUpdateDag",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Dag"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Status"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/workflow/{uid}/state": {
+   "put": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "workflow"
+    ],
+    "summary": "Update workflow resource to state",
+    "operationId": "workflowUpdateState",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Workflow"
+      }
+     },
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Workflow"
+      }
+     }
+    }
+   }
+  },
+  "/api/apps/v1/workflow/{uid}/watch": {
+   "get": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "workflow"
+    ],
+    "summary": "Watch workflow resource",
+    "operationId": "workflowWatch",
+    "parameters": [
+     {
+      "type": "string",
+      "description": "uid of the resource",
+      "name": "uid",
+      "in": "path",
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  }
+ },
+ "definitions": {
+  ".connector": {
+   "properties": {
+    "name": {
+     "type": "string"
+    }
+   }
+  },
+  ".router": {
+   "properties": {
+    "name": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.Binding": {
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "creationTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "deletionGracePeriodSeconds": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "deletionTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "finalizers": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "generation": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "kind": {
+     "type": "string"
+    },
+    "labels": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     }
+    },
+    "name": {
+     "type": "string"
+    },
+    "resourceVersion": {
+     "type": "string"
+    },
+    "target": {
+     "$ref": "#/definitions/meta.Worker"
+    },
+    "uid": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.Code": {
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "code": {
+     "type": "string"
+    },
+    "creationTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "deletionGracePeriodSeconds": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "deletionTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "describe": {
+     "type": "string"
+    },
+    "finalizers": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "generation": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "kind": {
+     "type": "string"
+    },
+    "labels": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     }
+    },
+    "name": {
+     "type": "string"
+    },
+    "resourceVersion": {
+     "type": "string"
+    },
+    "runtime": {
+     "type": "string"
+    },
+    "uid": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.CodeList": {
+   "required": [
+    "items"
+   ],
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "continue": {
+     "type": "string"
+    },
+    "items": {
+     "type": "array",
+     "items": {
+      "$ref": "#/definitions/meta.Code"
+     }
+    },
+    "kind": {
+     "type": "string"
+    },
+    "remainingItemCount": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "resourceVersion": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.Connection": {
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "creationTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "deletionGracePeriodSeconds": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "deletionTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "describe": {
+     "type": "string"
+    },
+    "extra": {
+     "type": "string"
+    },
+    "finalizers": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "generation": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "host": {
+     "type": "string"
+    },
+    "kind": {
+     "type": "string"
+    },
+    "labels": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     }
+    },
+    "login": {
+     "type": "string"
+    },
+    "name": {
+     "type": "string"
+    },
+    "password": {
+     "type": "string"
+    },
+    "port": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "resourceVersion": {
+     "type": "string"
+    },
+    "schema": {
+     "type": "string"
+    },
+    "type": {
+     "type": "string"
+    },
+    "uid": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.ConnectionList": {
+   "required": [
+    "items"
+   ],
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "continue": {
+     "type": "string"
+    },
+    "items": {
+     "type": "array",
+     "items": {
+      "$ref": "#/definitions/meta.Connection"
+     }
+    },
+    "kind": {
+     "type": "string"
+    },
+    "remainingItemCount": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "resourceVersion": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.Dag": {
+   "required": [
+    "nodes",
+    "edges"
+   ],
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "creationTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "deletionGracePeriodSeconds": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "deletionTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "edges": {
+     "type": "array",
+     "items": {
+      "$ref": "#/definitions/meta.Edge"
+     }
+    },
+    "finalizers": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "generation": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "kind": {
+     "type": "string"
+    },
+    "labels": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     }
+    },
+    "name": {
+     "type": "string"
+    },
+    "nodes": {
+     "type": "array",
+     "items": {
+      "$ref": "#/definitions/meta.Node"
+     }
+    },
+    "resourceVersion": {
+     "type": "string"
+    },
+    "uid": {
+     "type": "string"
+    },
+    "workflowUID": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.DagList": {
+   "required": [
+    "items"
+   ],
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "continue": {
+     "type": "string"
+    },
+    "items": {
+     "type": "array",
+     "items": {
+      "$ref": "#/definitions/meta.Dag"
+     }
+    },
+    "kind": {
+     "type": "string"
+    },
+    "remainingItemCount": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "resourceVersion": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.Dashboard": {
+   "required": [
+    "workflowAmount",
+    "codeAmount",
+    "variableAmount",
+    "workerAmount"
+   ],
+   "properties": {
+    "codeAmount": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "data": {
+     "type": "array",
+     "items": {
+      "$ref": "#/definitions/meta.DashboardData"
+     }
+    },
+    "variableAmount": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "workerAmount": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "workflowAmount": {
+     "type": "integer",
+     "format": "int64"
+    }
+   }
+  },
+  "meta.DashboardData": {
+   "required": [
+    "date",
+    "schedule"
+   ],
+   "properties": {
+    "date": {
+     "type": "string"
+    },
+    "schedule": {
+     "type": "integer",
+     "format": "int32"
+    }
+   }
+  },
+  "meta.Edge": {
+   "required": [
+    "connector",
+    "router"
+   ],
+   "properties": {
+    "connector": {
+     "$ref": "#/definitions/.connector"
+    },
+    "edgeContentHeight": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "edgeContentWidth": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "id": {
+     "type": "string"
+    },
+    "label": {
+     "type": "string"
+    },
+    "router": {
+     "$ref": "#/definitions/.router"
+    },
+    "source": {
+     "type": "string"
+    },
+    "sourcePort": {
+     "type": "string"
+    },
+    "sourcePortId": {
+     "type": "string"
+    },
+    "target": {
+     "type": "string"
+    },
+    "targetPort": {
+     "type": "string"
+    },
+    "targetPortId": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.Event": {
+   "required": [
+    "involvedObject",
+    "reportingComponent",
+    "reportingInstance"
+   ],
+   "properties": {
+    "action": {
+     "type": "string"
+    },
+    "apiVersion": {
+     "type": "string"
+    },
+    "count": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "creationTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "deletionGracePeriodSeconds": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "deletionTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "eventTime": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "finalizers": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "firstTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "generation": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "involvedObject": {
+     "$ref": "#/definitions/meta.ObjectReference"
+    },
+    "kind": {
+     "type": "string"
+    },
+    "labels": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     }
+    },
+    "lastTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "message": {
+     "type": "string"
+    },
+    "name": {
+     "type": "string"
+    },
+    "note": {
+     "type": "string"
+    },
+    "reason": {
+     "type": "string"
+    },
+    "regarding": {
+     "$ref": "#/definitions/meta.ObjectReference"
+    },
+    "related": {
+     "$ref": "#/definitions/meta.ObjectReference"
+    },
+    "reportingComponent": {
+     "type": "string"
+    },
+    "reportingInstance": {
+     "type": "string"
+    },
+    "resourceVersion": {
+     "type": "string"
+    },
+    "series": {
+     "$ref": "#/definitions/meta.EventSeries"
+    },
+    "source": {
+     "$ref": "#/definitions/meta.EventSource"
+    },
+    "type": {
+     "type": "string"
+    },
+    "uid": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.EventList": {
+   "required": [
+    "items"
+   ],
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "continue": {
+     "type": "string"
+    },
+    "items": {
+     "type": "array",
+     "items": {
+      "$ref": "#/definitions/meta.Event"
+     }
+    },
+    "kind": {
+     "type": "string"
+    },
+    "remainingItemCount": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "resourceVersion": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.EventSeries": {
+   "properties": {
+    "count": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "lastObservedTime": {
+     "type": "string",
+     "format": "date-time"
+    }
+   }
+  },
+  "meta.EventSource": {
+   "properties": {
+    "component": {
+     "type": "string"
+    },
+    "host": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.Job": {
+   "required": [
+    "workflowUID"
+   ],
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "completionTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "creationTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "deletionGracePeriodSeconds": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "deletionTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "finalizers": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "generation": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "kind": {
+     "type": "string"
+    },
+    "labels": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     }
+    },
+    "name": {
+     "type": "string"
+    },
+    "resourceVersion": {
+     "type": "string"
+    },
+    "state": {
+     "type": "string"
+    },
+    "uid": {
+     "type": "string"
+    },
+    "workflowUID": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.JobList": {
+   "required": [
+    "items"
+   ],
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "continue": {
+     "type": "string"
+    },
+    "items": {
+     "type": "array",
+     "items": {
+      "$ref": "#/definitions/meta.Job"
+     }
+    },
+    "kind": {
+     "type": "string"
+    },
+    "remainingItemCount": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "resourceVersion": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.ListMeta": {
+   "properties": {
+    "continue": {
+     "type": "string"
+    },
+    "remainingItemCount": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "resourceVersion": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.Node": {
+   "required": [
+    "code",
+    "variables",
+    "connections"
+   ],
+   "properties": {
+    "_order": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "code": {
+     "type": "string"
+    },
+    "connections": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "group": {
+     "type": "string"
+    },
+    "height": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "id": {
+     "type": "string"
+    },
+    "isGroup": {
+     "type": "boolean"
+    },
+    "label": {
+     "type": "string"
+    },
+    "parentId": {
+     "type": "string"
+    },
+    "ports": {
+     "type": "array",
+     "items": {
+      "$ref": "#/definitions/meta.Node.ports"
+     }
+    },
+    "renderKey": {
+     "type": "string"
+    },
+    "variables": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "width": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "x": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "y": {
+     "type": "integer",
+     "format": "int32"
+    }
+   }
+  },
+  "meta.Node.ports": {
+   "properties": {
+    "connected": {
+     "type": "boolean"
+    },
+    "group": {
+     "type": "string"
+    },
+    "id": {
+     "type": "string"
+    },
+    "tooltip": {
+     "type": "string"
+    },
+    "type": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.ObjectMeta": {
+   "properties": {
+    "creationTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "deletionGracePeriodSeconds": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "deletionTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "finalizers": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "generation": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "labels": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     }
+    },
+    "name": {
+     "type": "string"
+    },
+    "resourceVersion": {
+     "type": "string"
+    },
+    "uid": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.ObjectReference": {
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "fieldPath": {
+     "type": "string"
+    },
+    "kind": {
+     "type": "string"
+    },
+    "name": {
+     "type": "string"
+    },
+    "resourceVersion": {
+     "type": "string"
+    },
+    "uid": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.Role": {
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "creationTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "deletionGracePeriodSeconds": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "deletionTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "finalizers": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "generation": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "kind": {
+     "type": "string"
+    },
+    "labels": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     }
+    },
+    "name": {
+     "type": "string"
+    },
+    "permissions": {
+     "type": "array",
+     "items": {
+      "$ref": "#/definitions/meta.Role.permissions"
+     }
+    },
+    "resourceVersion": {
+     "type": "string"
+    },
+    "uid": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.Role.permissions": {},
+  "meta.RoleBinding": {
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "creationTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "deletionGracePeriodSeconds": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "deletionTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "finalizers": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "generation": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "kind": {
+     "type": "string"
+    },
+    "labels": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     }
+    },
+    "name": {
+     "type": "string"
+    },
+    "resourceVersion": {
+     "type": "string"
+    },
+    "roleUID": {
+     "type": "string"
+    },
+    "uid": {
+     "type": "string"
+    },
+    "userUID": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.RoleBindingList": {
+   "required": [
+    "items"
+   ],
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "continue": {
+     "type": "string"
+    },
+    "items": {
+     "type": "array",
+     "items": {
+      "$ref": "#/definitions/meta.RoleBinding"
+     }
+    },
+    "kind": {
+     "type": "string"
+    },
+    "remainingItemCount": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "resourceVersion": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.RoleList": {
+   "required": [
+    "items"
+   ],
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "continue": {
+     "type": "string"
+    },
+    "items": {
+     "type": "array",
+     "items": {
+      "$ref": "#/definitions/meta.Role"
+     }
+    },
+    "kind": {
+     "type": "string"
+    },
+    "remainingItemCount": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "resourceVersion": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.Stage": {
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "code": {
+     "type": "string"
+    },
+    "connections": {
+     "type": "array",
+     "items": {
+      "$ref": "#/definitions/meta.Connection"
+     }
+    },
+    "creationTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "dagUID": {
+     "type": "string"
+    },
+    "deletionGracePeriodSeconds": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "deletionTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "dependNodeId": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "finalizers": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "generation": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "input": {
+     "$ref": "#/definitions/meta.Stage.input"
+    },
+    "jobUID": {
+     "type": "string"
+    },
+    "kind": {
+     "type": "string"
+    },
+    "labels": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     }
+    },
+    "name": {
+     "type": "string"
+    },
+    "nodeID": {
+     "type": "string"
+    },
+    "output": {
+     "$ref": "#/definitions/meta.Stage.output"
+    },
+    "priority": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "resourceVersion": {
+     "type": "string"
+    },
+    "runtime": {
+     "type": "string"
+    },
+    "schedulerName": {
+     "type": "string"
+    },
+    "state": {
+     "type": "string"
+    },
+    "uid": {
+     "type": "string"
+    },
+    "variables": {
+     "type": "array",
+     "items": {
+      "$ref": "#/definitions/meta.Variable"
+     }
+    },
+    "workerHost": {
+     "type": "string"
+    },
+    "workerUID": {
+     "type": "string"
+    },
+    "workflowUID": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.Stage.input": {},
+  "meta.Stage.output": {},
+  "meta.StageList": {
+   "required": [
+    "items"
+   ],
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "continue": {
+     "type": "string"
+    },
+    "items": {
+     "type": "array",
+     "items": {
+      "$ref": "#/definitions/meta.Stage"
+     }
+    },
+    "kind": {
+     "type": "string"
+    },
+    "remainingItemCount": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "resourceVersion": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.Status": {
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "code": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "continue": {
+     "type": "string"
+    },
+    "details": {
+     "$ref": "#/definitions/meta.StatusDetails"
+    },
+    "kind": {
+     "type": "string"
+    },
+    "message": {
+     "type": "string"
+    },
+    "reason": {
+     "type": "string"
+    },
+    "remainingItemCount": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "resourceVersion": {
+     "type": "string"
+    },
+    "status": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.StatusDetails": {
+   "properties": {
+    "causes": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "group": {
+     "type": "string"
+    },
+    "kind": {
+     "type": "string"
+    },
+    "name": {
+     "type": "string"
+    },
+    "retryAfterSeconds": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "uid": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.TypeMeta": {
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "kind": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.User": {
+   "properties": {
+    "active": {
+     "type": "boolean"
+    },
+    "apiVersion": {
+     "type": "string"
+    },
+    "avatar": {
+     "type": "string"
+    },
+    "creationTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "deletionGracePeriodSeconds": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "deletionTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "email": {
+     "type": "string"
+    },
+    "finalizers": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "generation": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "kind": {
+     "type": "string"
+    },
+    "labels": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     }
+    },
+    "name": {
+     "type": "string"
+    },
+    "password": {
+     "type": "string"
+    },
+    "resourceVersion": {
+     "type": "string"
+    },
+    "uid": {
+     "type": "string"
+    },
+    "unreadCount": {
+     "type": "integer",
+     "format": "int32"
+    }
+   }
+  },
+  "meta.UserList": {
+   "required": [
+    "items"
+   ],
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "continue": {
+     "type": "string"
+    },
+    "items": {
+     "type": "array",
+     "items": {
+      "$ref": "#/definitions/meta.User"
+     }
+    },
+    "kind": {
+     "type": "string"
+    },
+    "remainingItemCount": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "resourceVersion": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.UserSession": {
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "creationTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "deletionGracePeriodSeconds": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "deletionTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "finalizers": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "generation": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "kind": {
+     "type": "string"
+    },
+    "labels": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     }
+    },
+    "name": {
+     "type": "string"
+    },
+    "password": {
+     "type": "string"
+    },
+    "resourceVersion": {
+     "type": "string"
+    },
+    "token": {
+     "type": "string"
+    },
+    "uid": {
+     "type": "string"
+    },
+    "userUID": {
+     "type": "string"
+    },
+    "username": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.Variable": {
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "creationTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "deletionGracePeriodSeconds": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "deletionTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "describe": {
+     "type": "string"
+    },
+    "finalizers": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "generation": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "kind": {
+     "type": "string"
+    },
+    "labels": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     }
+    },
+    "name": {
+     "type": "string"
+    },
+    "resourceVersion": {
+     "type": "string"
+    },
+    "uid": {
+     "type": "string"
+    },
+    "value": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.VariableList": {
+   "required": [
+    "items"
+   ],
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "continue": {
+     "type": "string"
+    },
+    "items": {
+     "type": "array",
+     "items": {
+      "$ref": "#/definitions/meta.Variable"
+     }
+    },
+    "kind": {
+     "type": "string"
+    },
+    "remainingItemCount": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "resourceVersion": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.Worker": {
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "creationTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "deletionGracePeriodSeconds": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "deletionTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "finalizers": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "generation": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "hostname": {
+     "type": "string"
+    },
+    "kind": {
+     "type": "string"
+    },
+    "labels": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     }
+    },
+    "name": {
+     "type": "string"
+    },
+    "resourceVersion": {
+     "type": "string"
+    },
+    "runtimes": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "state": {
+     "type": "string"
+    },
+    "uid": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.WorkerList": {
+   "required": [
+    "items"
+   ],
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "continue": {
+     "type": "string"
+    },
+    "items": {
+     "type": "array",
+     "items": {
+      "$ref": "#/definitions/meta.Worker"
+     }
+    },
+    "kind": {
+     "type": "string"
+    },
+    "remainingItemCount": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "resourceVersion": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.Workflow": {
+   "properties": {
+    "LastSuccessfulTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "active": {
+     "type": "boolean"
+    },
+    "apiVersion": {
+     "type": "string"
+    },
+    "creationTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "currentTriggerTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "deletionGracePeriodSeconds": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "deletionTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "describe": {
+     "type": "string"
+    },
+    "finalizers": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "generation": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "kind": {
+     "type": "string"
+    },
+    "labels": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     }
+    },
+    "lastTriggerTimestamp": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "name": {
+     "type": "string"
+    },
+    "resourceVersion": {
+     "type": "string"
+    },
+    "trigger": {
+     "type": "string"
+    },
+    "triggerParam": {
+     "type": "string"
+    },
+    "uid": {
+     "type": "string"
+    }
+   }
+  },
+  "meta.WorkflowList": {
+   "required": [
+    "items"
+   ],
+   "properties": {
+    "apiVersion": {
+     "type": "string"
+    },
+    "continue": {
+     "type": "string"
+    },
+    "items": {
+     "type": "array",
+     "items": {
+      "$ref": "#/definitions/meta.Workflow"
+     }
+    },
+    "kind": {
+     "type": "string"
+    },
+    "remainingItemCount": {
+     "type": "integer",
+     "format": "int64"
+    },
+    "resourceVersion": {
+     "type": "string"
+    }
+   }
+  }
+ },
+ "securityDefinitions": {
+  "BearerToken": {
+   "description": "Bearer Token authentication",
+   "type": "apiKey",
+   "name": "authorization",
+   "in": "header"
+  }
+ },
+ "security": [
+  {
+   "BearerToken": []
+  }
+ ],
+ "tags": [
+  {
+   "description": "Managing workflows",
+   "name": "workflows"
+  }
+ ]
+}

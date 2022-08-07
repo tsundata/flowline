@@ -125,7 +125,7 @@ func (a *APIServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func DefaultBuildHandlerChain(apiHandler http.Handler, config *config.Config) http.Handler {
 	handler := filters.WithCORS(apiHandler, config.CorsAllowedOriginPatterns, nil, nil, nil, "true")
 	handler = filters.WithJWT(handler, []byte(config.JWTSecret), []string{
-		"/apidocs.json",
+		"/swagger.json",
 		"/api/apps/v1/user/session",
 	})
 	return handler
@@ -150,7 +150,7 @@ func installAPI(s *GenericAPIServer, c *config.Config) error {
 func installAPISwagger(s *GenericAPIServer) error {
 	c := restfulspec.Config{
 		WebServices:                   s.Handler.RestfulContainer.RegisteredWebServices(),
-		APIPath:                       "/apidocs.json",
+		APIPath:                       "/swagger.json",
 		PostBuildSwaggerObjectHandler: enrichSwaggerObject,
 	}
 	s.Handler.RestfulContainer.Add(restfulspec.NewOpenAPIService(c))
