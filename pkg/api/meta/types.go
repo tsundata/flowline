@@ -161,7 +161,7 @@ type ListOptions struct {
 	Limit int64 `json:"limit,omitempty"`
 	// The continue option should be set when retrieving more results from the server. Since this value is
 	// server defined, clients may only use to continue value from a previous query result with identical
-	// query parameters (except for the value of continue) and the server may reject a continue value it
+	// query parameters (except for the value of continue) and the server may reject a continued value it
 	// does not recognize. If the specified continue value is no longer valid whether due to expiration
 	// (generally five to fifteen minutes) or a configuration change on the server, the server will
 	// respond with a 410 ResourceExpired error together with a continued token. If the client needs a

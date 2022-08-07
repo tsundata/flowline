@@ -27,11 +27,13 @@ type store struct {
 	leaseManager  *leaseManager
 }
 
-func New(c *clientv3.Client, codec runtime.Codec, newFunc func() runtime.Object, prefix string, transformer value.Transformer, pagingEnabled bool) storage.Interface {
+func New(c *clientv3.Client, codec runtime.Codec, newFunc func() runtime.Object,
+	prefix string, transformer value.Transformer, pagingEnabled bool) storage.Interface {
 	return newStore(c, codec, newFunc, prefix, transformer, pagingEnabled)
 }
 
-func newStore(c *clientv3.Client, codec runtime.Codec, newFunc func() runtime.Object, prefix string, transformer value.Transformer, pagingEnabled bool) *store {
+func newStore(c *clientv3.Client, codec runtime.Codec, newFunc func() runtime.Object,
+	prefix string, transformer value.Transformer, pagingEnabled bool) *store {
 	versioner := storage.APIObjectVersioner{}
 	return &store{
 		client:        c,
@@ -90,7 +92,8 @@ func (s *store) Create(ctx context.Context, key string, obj, out runtime.Object,
 	return nil
 }
 
-func (s *store) Delete(ctx context.Context, key string, out runtime.Object, preconditions interface{}, validateDeletion interface{}, cachedExistingObject runtime.Object) error {
+func (s *store) Delete(ctx context.Context, key string, out runtime.Object,
+	preconditions interface{}, validateDeletion interface{}, cachedExistingObject runtime.Object) error {
 	key = path.Join(s.pathPrefix, key)
 	_, err := s.client.Delete(ctx, key) // todo
 	return err
@@ -149,6 +152,7 @@ func (s *store) GetList(ctx context.Context, key string, opts meta.ListOptions, 
 	var returnedRV int64
 	options := make([]clientv3.OpOption, 0, 4)
 	options = append(options, clientv3.WithPrefix())
+	options = append(options, clientv3.WithSort(clientv3.SortByModRevision, clientv3.SortDescend))
 	getResp, err := s.client.KV.Get(ctx, key, options...)
 	if err != nil {
 		return err
@@ -167,7 +171,8 @@ func (s *store) GetList(ctx context.Context, key string, opts meta.ListOptions, 
 	return s.versioner.UpdateList(listObj, uint64(returnedRV), "", nil)
 }
 
-func (s *store) GuaranteedUpdate(ctx context.Context, key string, destination runtime.Object, ignoreNotFound bool, preconditions interface{}, tryUpdate interface{}, cachedExistingObject runtime.Object) error {
+func (s *store) GuaranteedUpdate(ctx context.Context, key string, destination runtime.Object,
+	ignoreNotFound bool, preconditions interface{}, tryUpdate interface{}, cachedExistingObject runtime.Object) error {
 	key = path.Join(s.pathPrefix, key)
 
 	getResp, err := s.client.KV.Get(ctx, key)
@@ -255,7 +260,8 @@ func decode(codec runtime.Codec, versioner storage.Versioner, value []byte, objP
 }
 
 // appendListItem decodes and appends the object (if it passes filter) to v, which must be a slice.
-func appendListItem(v reflect.Value, data []byte, rev uint64, _ meta.SelectionPredicate, codec runtime.Codec, versioner storage.Versioner, newItemFunc func() runtime.Object) error {
+func appendListItem(v reflect.Value, data []byte, rev uint64, _ meta.SelectionPredicate,
+	codec runtime.Codec, versioner storage.Versioner, newItemFunc func() runtime.Object) error {
 	obj, _, err := codec.Decode(data, nil, newItemFunc())
 	if err != nil {
 		return err

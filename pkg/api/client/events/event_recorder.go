@@ -21,9 +21,9 @@ type recorderImpl struct {
 	clock clock.Clock
 }
 
-func (recorder *recorderImpl) Eventf(regarding runtime.Object, related runtime.Object, eventtype, reason, action, note string, args ...interface{}) {
+func (recorder *recorderImpl) Eventf(regarding runtime.Object, related runtime.Object, eventtype, reason, action, messageFmt string, args ...interface{}) {
 	timestamp := time.Now()
-	message := fmt.Sprintf(note, args...)
+	message := fmt.Sprintf(messageFmt, args...)
 	refRegarding, err := reference.GetReference(recorder.scheme, regarding)
 	if err != nil {
 		flog.Errorf("Could not construct reference to: '%#v' due to: '%v'. Will not report event: '%v' '%v' '%v'", regarding, err, eventtype, reason, message)
@@ -62,7 +62,7 @@ func (recorder *recorderImpl) makeEvent(refRegarding *meta.ObjectReference, refR
 		Reason:              reason,
 		Regarding:           *refRegarding,
 		Related:             refRelated,
-		Note:                message,
+		Message:             message,
 		Type:                eventtype,
 	}
 }

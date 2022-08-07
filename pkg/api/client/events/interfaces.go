@@ -22,7 +22,7 @@ type EventRecorder interface {
 	// (ReportingController is a type of Controller reporting an Event,
 	// take in regarding's name; it should be in UpperCamelCase format (starting with a capital letter).
 	// 'note' is intended to be human-readable.
-	Eventf(regarding runtime.Object, related runtime.Object, eventtype, reason, action, note string, args ...interface{})
+	Eventf(regarding runtime.Object, related runtime.Object, eventtype, reason, action, messageFmt string, args ...interface{})
 }
 
 // EventBroadcaster knows how to receive events and send them to any EventSink, watcher, or log.
