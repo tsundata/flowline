@@ -53,9 +53,11 @@ func NewREST(options *options.StoreOptions) (*REST, error) {
 func (r *REST) Actions() []rest.SubResourceAction {
 	return []rest.SubResourceAction{
 		{
-			Verb:         "GET",
-			SubResource:  "dag",
-			Params:       nil,
+			Verb:        "GET",
+			SubResource: "dag",
+			Params: []*restful.Parameter{
+				restful.QueryParameter("jobUID", "Job UID for query status"),
+			},
 			ReadSample:   meta.Dag{},
 			WriteSample:  meta.Dag{},
 			ReturnSample: meta.Dag{},
@@ -114,6 +116,41 @@ func (r *subResource) workflowGetDag(req *restful.Request, resp *restful.Respons
 	if dag == nil {
 		_ = resp.WriteError(http.StatusNotFound, xerrors.New("dag not found"))
 		return
+	}
+
+	jobUID := req.QueryParameter("jobUID")
+	if jobUID != "" {
+		stageList := &meta.StageList{}
+		err = r.store.Storage.GetList(ctx, rest.WithPrefix("stage"), meta.ListOptions{}, stageList)
+		if err != nil || stageList == nil {
+			_ = resp.WriteError(http.StatusNotFound, xerrors.New("stage not found"))
+			return
+		}
+		var stages []*meta.Stage
+		for i, item := range stageList.Items {
+			if item.JobUID == jobUID {
+				stages = append(stages, &stageList.Items[i])
+			}
+		}
+		nodeState := make(map[string]meta.StageState)
+		for _, stage := range stages {
+			nodeState[stage.NodeID] = stage.State
+		}
+
+		for i, node := range dag.Nodes {
+			if s, ok := nodeState[node.Id]; ok {
+				switch s {
+				case meta.StageSuccess:
+					dag.Nodes[i].Status = meta.NodeSuccess
+				case meta.StageFailed:
+					dag.Nodes[i].Status = meta.NodeError
+				case meta.StageBind:
+					dag.Nodes[i].Status = meta.NodeProcessing
+				default:
+					dag.Nodes[i].Status = meta.NodeDefault
+				}
+			}
+		}
 	}
 
 	_ = resp.WriteEntity(dag)

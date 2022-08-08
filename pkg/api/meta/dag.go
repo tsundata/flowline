@@ -14,6 +14,16 @@ type Dag struct {
 	Edges       []Edge `json:"edges"`
 }
 
+type NodeStatus string
+
+const (
+	NodeDefault    NodeStatus = "default"
+	NodeSuccess    NodeStatus = "success"
+	NodeProcessing NodeStatus = "processing"
+	NodeError      NodeStatus = "error"
+	NodeWarning    NodeStatus = "warning"
+)
+
 type Node struct {
 	Id        string `json:"id,omitempty"`
 	X         int    `json:"x,omitempty"`
@@ -32,10 +42,11 @@ type Node struct {
 		Tooltip   string `json:"tooltip,omitempty"`
 		Connected bool   `json:"connected,omitempty"`
 	} `json:"ports,omitempty"`
-	Order       int      `json:"_order,omitempty"`
-	Code        string   `json:"code"`
-	Variables   []string `json:"variables"`
-	Connections []string `json:"connections"`
+	Order       int        `json:"_order,omitempty"`
+	Code        string     `json:"code"`
+	Variables   []string   `json:"variables"`
+	Connections []string   `json:"connections"`
+	Status      NodeStatus `json:"status,omitempty"`
 }
 
 type Edge struct {
