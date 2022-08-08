@@ -70,6 +70,7 @@ This project requires Go 1.18 or newer
 
 ### codes
 <img src="./docs/codes.png" width="100%"  alt=""/>
+<img src="./docs/code-editor.png" width="100%"  alt=""/>
 
 ### variables
 <img src="./docs/variables.png" width="100%"  alt=""/>
