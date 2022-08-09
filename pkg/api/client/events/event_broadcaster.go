@@ -121,13 +121,14 @@ func (e *eventBroadcasterImpl) finishSeries() {
 func (e *eventBroadcasterImpl) NewRecorder(scheme *runtime.Scheme, reportingController string) EventRecorder {
 	hostname, _ := os.Hostname()
 	reportingInstance := reportingController + "-" + hostname
-	return &recorderImpl{scheme, reportingController, reportingInstance, e.Broadcaster, clock.RealClock{}}
+	source := meta.EventSource{Component: reportingController}
+	return &recorderImpl{scheme, source, reportingController, reportingInstance, e.Broadcaster, clock.RealClock{}}
 }
 
 func (e *eventBroadcasterImpl) recordToSink(event *meta.Event, clock clock.Clock) {
 	// Make a copy before modification, because there could be multiple listeners.
-	//eventCopy := event.DeepCopyObject() todo
-	eventCopy := event
+	objCopy := event.DeepCopyObject()
+	eventCopy := objCopy.(*meta.Event)
 	go func() {
 		evToRecord := func() *meta.Event {
 			e.mu.Lock()

@@ -15,6 +15,7 @@ import (
 
 type recorderImpl struct {
 	scheme              *runtime.Scheme
+	source              meta.EventSource
 	reportingController string
 	reportingInstance   string
 	*watch.Broadcaster
@@ -42,6 +43,7 @@ func (recorder *recorderImpl) Eventf(regarding runtime.Object, related runtime.O
 		return
 	}
 	event := recorder.makeEvent(refRegarding, refRelated, &timestamp, eventtype, reason, message, recorder.reportingController, recorder.reportingInstance, action)
+	event.Source = recorder.source
 	go func() {
 		defer parallelizer.HandleCrash()
 		_ = recorder.Action(watch.Added, event)

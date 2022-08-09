@@ -137,7 +137,11 @@ func (m *Event) GetObjectKind() schema.ObjectKind {
 }
 
 func (m *Event) DeepCopyObject() runtime.Object {
-	return m
+	dp, err := deepcopy.Anything(m)
+	if err != nil {
+		return nil
+	}
+	return dp.(*Event)
 }
 
 type EventList struct {
