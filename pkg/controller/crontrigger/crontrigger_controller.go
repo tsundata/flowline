@@ -9,6 +9,7 @@ import (
 	"github.com/tsundata/flowline/pkg/api/client/events"
 	"github.com/tsundata/flowline/pkg/api/client/record"
 	"github.com/tsundata/flowline/pkg/api/meta"
+	"github.com/tsundata/flowline/pkg/apiserver/storage"
 	"github.com/tsundata/flowline/pkg/informer"
 	informerv1 "github.com/tsundata/flowline/pkg/informer/informers/core/v1"
 	listerv1 "github.com/tsundata/flowline/pkg/informer/listers/core/v1"
@@ -314,6 +315,9 @@ func (jm *Controller) getJobsToBeReconciled(cj *meta.Workflow) ([]*meta.Job, err
 	for i, job := range jobList {
 		if cj.UID == job.WorkflowUID {
 			jobsToBeReconciled = append(jobsToBeReconciled, jobList[i])
+			if IsJobFinished(job) {
+				cj.JobActive = append(cj.JobActive, job.UID)
+			}
 		}
 	}
 
@@ -441,11 +445,7 @@ func getFinishedStatus(j *meta.Job) (bool, meta.JobState) {
 // It returns a copy of the CronJob that is to be used by other functions
 // that mutates the object
 // It also returns a bool to indicate an update to api-server is needed
-func (jm *Controller) syncCronJob(
-	ctx context.Context,
-	cronJob *meta.Workflow,
-	jobs []*meta.Job) (*meta.Workflow, *time.Duration, bool, error) {
-
+func (jm *Controller) syncCronJob(ctx context.Context, cronJob *meta.Workflow, jobs []*meta.Job) (*meta.Workflow, *time.Duration, bool, error) {
 	now := jm.now()
 	updateStatus := false
 
@@ -456,7 +456,7 @@ func (jm *Controller) syncCronJob(
 		if !found && !IsJobFinished(j) {
 			cjCopy, err := jm.workflowControl.GetWorkflow(ctx, cronJob.UID)
 			if err != nil {
-				return nil, nil, updateStatus, err
+				return nil, nil, false, err
 			}
 			if inActiveList(*cjCopy, j.ObjectMeta.UID) {
 				cronJob = cjCopy
@@ -471,7 +471,6 @@ func (jm *Controller) syncCronJob(
 			_, status := getFinishedStatus(j)
 			deleteFromActiveList(cronJob, j.ObjectMeta.UID)
 			jm.recorder.Eventf(cronJob, meta.EventTypeNormal, "SawCompletedJob", "Saw completed job: %s, status: %v", j.UID, status)
-			updateStatus = true
 		} else if IsJobFinished(j) {
 			// a job does not have to be in active list, as long as it is finished, we will process the timestamp
 			if cronJob.LastSuccessfulTimestamp == nil {
@@ -483,6 +482,30 @@ func (jm *Controller) syncCronJob(
 				updateStatus = true
 			}
 		}
+	}
+
+	// Remove any job reference from the active list if the corresponding job does not exist any more.
+	// Otherwise, the cronjob may be stuck in active mode forever even though there is no matching
+	// job running.
+	for _, jUID := range cronJob.JobActive {
+		_, found := childrenJobs[jUID]
+		if found {
+			continue
+		}
+		// Explicitly try to get the job from api-server to avoid a slow watch not able to update
+		// the job lister on time, giving an unwanted miss
+		_, err := jm.jobControl.GetJob(jUID)
+		switch {
+		case errors.Is(err, storage.ErrKeyNotFound):
+			// The job is actually missing, delete from active list and schedule a new one if within
+			// deadline
+			jm.recorder.Eventf(cronJob, meta.EventTypeNormal, "MissingJob", "Active job went missing: %v", jUID)
+			deleteFromActiveList(cronJob, jUID)
+			updateStatus = true
+		case err != nil:
+			return cronJob, nil, updateStatus, err
+		}
+		// the job is missing in the lister but found in api-server
 	}
 
 	if cronJob.DeletionTimestamp != nil {
@@ -566,6 +589,7 @@ func (jm *Controller) syncCronJob(
 	// then post one again.  So, we need to use the job name as a lock to
 	// prevent us from making the job twice (name the job with hash of its
 	// scheduled time).
+	cronJob.JobActive = append(cronJob.JobActive, jobResp.GetUID())
 	cronJob.LastTriggerTimestamp = scheduledTime
 	updateStatus = true
 
@@ -612,8 +636,10 @@ func deleteFromActiveList(cj *meta.Workflow, _ string) {
 }
 
 func inActiveList(cj meta.Workflow, uid string) bool {
-	if cj.Active && cj.UID == uid {
-		return true
+	for _, item := range cj.JobActive {
+		if item == uid {
+			return true
+		}
 	}
 	return false
 }

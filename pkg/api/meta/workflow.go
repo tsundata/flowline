@@ -27,9 +27,10 @@ type Workflow struct {
 	CurrentTriggerTimestamp *time.Time  `json:"currentTriggerTimestamp,omitempty"`
 	LastSuccessfulTimestamp *time.Time  `json:"LastSuccessfulTimestamp,omitempty"`
 
-	StartingDeadlineSeconds    *int64 `json:"-"`
-	FailedJobsHistoryLimit     *int32 `json:"-"`
-	SuccessfulJobsHistoryLimit *int32 `json:"-"`
+	StartingDeadlineSeconds    *int64   `json:"-"`
+	FailedJobsHistoryLimit     *int32   `json:"-"`
+	SuccessfulJobsHistoryLimit *int32   `json:"-"`
+	JobActive                  []string `json:"-"`
 }
 
 func (m *Workflow) GetObjectKind() schema.ObjectKind {
