@@ -265,6 +265,7 @@ func (e *EventAggregator) EventAggregate(newEvent *meta.Event) (*meta.Event, str
 		FirstTimestamp: now,
 		InvolvedObject: newEvent.InvolvedObject,
 		LastTimestamp:  &now,
+		EventTime:      &now,
 		Message:        e.messageFunc(newEvent),
 		Type:           newEvent.Type,
 		Reason:         newEvent.Reason,
@@ -321,6 +322,7 @@ func (e *eventLogger) eventObserve(newEvent *meta.Event, key string) (*meta.Even
 		event.Name = lastObservation.name
 		event.ResourceVersion = lastObservation.resourceVersion
 		event.FirstTimestamp = lastObservation.firstTimestamp
+		event.EventTime = &lastObservation.firstTimestamp
 		event.Count = int32(lastObservation.count) + 1
 
 		lt := time.Unix(0, 0)

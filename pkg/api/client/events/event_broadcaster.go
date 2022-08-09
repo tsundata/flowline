@@ -127,8 +127,7 @@ func (e *eventBroadcasterImpl) NewRecorder(scheme *runtime.Scheme, reportingCont
 
 func (e *eventBroadcasterImpl) recordToSink(event *meta.Event, clock clock.Clock) {
 	// Make a copy before modification, because there could be multiple listeners.
-	objCopy := event.DeepCopyObject()
-	eventCopy := objCopy.(*meta.Event)
+	eventCopy := event
 	go func() {
 		evToRecord := func() *meta.Event {
 			e.mu.Lock()

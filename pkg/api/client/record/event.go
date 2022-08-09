@@ -315,6 +315,7 @@ func (recorder *recorderImpl) makeEvent(ref *meta.ObjectReference, eventtype, re
 		Message:        message,
 		FirstTimestamp: t,
 		LastTimestamp:  &t,
+		EventTime:      &t,
 		Count:          1,
 		Type:           eventtype,
 	}

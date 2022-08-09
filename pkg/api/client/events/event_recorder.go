@@ -56,7 +56,6 @@ func (recorder *recorderImpl) makeEvent(refRegarding *meta.ObjectReference, refR
 		ObjectMeta: meta.ObjectMeta{
 			Name: fmt.Sprintf("%v.%x", refRegarding.UID, t.UnixNano()),
 		},
-		EventTime:           timestamp,
 		Series:              nil,
 		ReportingController: reportingController,
 		ReportingInstance:   reportingInstance,
@@ -66,5 +65,9 @@ func (recorder *recorderImpl) makeEvent(refRegarding *meta.ObjectReference, refR
 		Related:             refRelated,
 		Message:             message,
 		Type:                eventtype,
+		Count:               1,
+		FirstTimestamp:      t,
+		LastTimestamp:       &t,
+		EventTime:           timestamp,
 	}
 }
