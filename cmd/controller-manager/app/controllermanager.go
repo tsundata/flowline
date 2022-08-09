@@ -18,6 +18,7 @@ func NewControllerInitializers() map[string]InitFunc {
 	controllers["crontrigger"] = startCronTriggerController
 	controllers["dag"] = startDagController
 	controllers["stage"] = startStageController
+	controllers["job"] = startJobController
 	return controllers
 }
 

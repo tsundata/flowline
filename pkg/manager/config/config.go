@@ -22,6 +22,7 @@ type Config struct {
 	ConcurrentCronTriggerSyncs int32
 	ConcurrentDagSyncs         int32
 	ConcurrentStageSyncs       int32
+	ConcurrentJobSyncs         int32
 
 	EventBroadcaster record.EventBroadcaster
 	EventRecorder    record.EventRecorder
@@ -63,6 +64,7 @@ func NewConfig() *Config {
 		ConcurrentCronTriggerSyncs: 2,
 		ConcurrentDagSyncs:         2,
 		ConcurrentStageSyncs:       2,
+		ConcurrentJobSyncs:         2,
 		EventBroadcaster:           eventBroadcaster,
 		EventRecorder:              eventRecorder,
 	}

@@ -1,9 +1,8 @@
-package stage
+package job
 
 import (
 	"context"
 	"errors"
-	"github.com/heimdalr/dag"
 	"github.com/tsundata/flowline/pkg/api/client"
 	"github.com/tsundata/flowline/pkg/api/client/events"
 	"github.com/tsundata/flowline/pkg/api/client/record"
@@ -22,6 +21,7 @@ type Controller struct {
 	queue    workqueue.RateLimitingInterface
 	recorder record.EventRecorder
 
+	jobControl   jobControlInterface
 	stageControl stageControlInterface
 
 	stageLister listerv1.StageLister
@@ -38,9 +38,10 @@ func NewController(stageInformer informerv1.StageInformer, client client.Interfa
 	eventBroadcaster.StartRecordingToSink(&events.EventSinkImpl{Interface: client.EventsV1()})
 
 	jm := &Controller{
-		queue:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "stage"),
-		recorder: eventBroadcaster.NewRecorder(runtime.NewScheme(), meta.EventSource{Component: "stage-controller"}),
+		queue:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "job"),
+		recorder: eventBroadcaster.NewRecorder(runtime.NewScheme(), meta.EventSource{Component: "job-controller"}),
 
+		jobControl:   &realJobControl{Client: client},
 		stageControl: &realStageControl{Client: client},
 
 		stageLister:       stageInformer.Lister(),
@@ -103,8 +104,8 @@ func (jm *Controller) Run(ctx context.Context, workers int) {
 	defer parallelizer.HandleCrash()
 	defer jm.queue.ShutDown()
 
-	flog.Info("starting stage controller")
-	defer flog.Info("shutting down stage controller")
+	flog.Info("starting job controller")
+	defer flog.Info("shutting down job controller")
 
 	if !informer.WaitForNamedCacheSync("stage", ctx.Done(), jm.stageListerSynced) {
 		return
@@ -129,10 +130,10 @@ func (jm *Controller) processNextWorkItem(ctx context.Context) bool {
 	}
 	defer jm.queue.Done(key)
 
-	finished, err := jm.depend(ctx, key.(string))
+	finished, err := jm.complete(ctx, key.(string))
 	switch {
 	case err != nil:
-		flog.Errorf("error syncing stage controller %v, requeuing: %v", key.(string), err)
+		flog.Errorf("error syncing job controller %v, requeuing: %v", key.(string), err)
 		jm.queue.AddRateLimited(key)
 	case finished:
 		jm.queue.Forget(key)
@@ -140,7 +141,7 @@ func (jm *Controller) processNextWorkItem(ctx context.Context) bool {
 	return true
 }
 
-func (jm *Controller) depend(ctx context.Context, stageKey string) (bool, error) {
+func (jm *Controller) complete(ctx context.Context, stageKey string) (bool, error) {
 	name := stageKey
 	stage, err := jm.stageLister.Get(name)
 	switch {
@@ -151,7 +152,7 @@ func (jm *Controller) depend(ctx context.Context, stageKey string) (bool, error)
 		return false, err
 	}
 
-	stageList, updateStatus, err := jm.dependStage(ctx, stage)
+	job, updateStatus, err := jm.completeJob(ctx, stage)
 	if err != nil {
 		flog.Infof("Error reconciling stage %s %s", stage.GetName(), err)
 		return false, err
@@ -159,111 +160,65 @@ func (jm *Controller) depend(ctx context.Context, stageKey string) (bool, error)
 
 	// Update the job if needed
 	if updateStatus {
-		if _, err := jm.stageControl.UpdateListStatus(ctx, stageList); err != nil {
+		if _, err := jm.jobControl.UpdateStatus(ctx, job); err != nil {
 			flog.Infof("Unable to update status for job %s %s %s", stage.GetName(), stage.ResourceVersion, err)
 			return false, err
 		}
-		for i, item := range stageList.Items {
-			switch item.State {
-			case meta.StageReady:
-				jm.recorder.Eventf(&stageList.Items[i], meta.EventTypeNormal, "UpdateReadyState", "Stage %v update ready state", item.UID)
-			case meta.StageFailed:
-				jm.recorder.Eventf(&stageList.Items[i], meta.EventTypeWarning, "UpdateFailedState", "Stage %v update failed state", item.UID)
-			}
+		if job.State == meta.JobSuccess {
+			jm.recorder.Eventf(job, meta.EventTypeNormal, "UpdateSuccessState", "Job %v update success state", job.UID)
+		}
+		if job.State == meta.JobFailed {
+			jm.recorder.Eventf(job, meta.EventTypeNormal, "UpdateFailedState", "Job %v update failed state", job.UID)
 		}
 	}
 
 	return true, nil
 }
 
-func (jm *Controller) dependStage(ctx context.Context, upperStage *meta.Stage) (*meta.StageList, bool, error) {
+func (jm *Controller) completeJob(ctx context.Context, stage *meta.Stage) (*meta.Job, bool, error) {
 	updateStatus := false
 
 	stageList, err := jm.stageControl.GetStages(ctx)
 	if err != nil {
 		return nil, false, err
 	}
-	jobStages := make(map[string]*meta.Stage)
+	var checkStage []*meta.Stage
 	for i, item := range stageList.Items {
-		if item.JobUID == upperStage.JobUID {
-			jobStages[item.NodeID] = &stageList.Items[i]
+		if item.JobUID == stage.JobUID {
+			checkStage = append(checkStage, &stageList.Items[i])
 		}
 	}
 
-	d := dag.NewDAG()
-	for _, item := range jobStages {
-		err = d.AddVertexByID(item.NodeID, item.NodeID)
+	stageCount := len(checkStage)
+	successCount := 0
+	failedCount := 0
+	for _, item := range checkStage {
+		if item.State == meta.StageSuccess {
+			successCount++
+		}
+		if item.State == meta.StageFailed {
+			failedCount++
+		}
+	}
+
+	if stageCount > 0 {
+		job, err := jm.jobControl.GetJob(stage.JobUID)
 		if err != nil {
 			return nil, false, err
 		}
-	}
-	for _, item := range jobStages {
-		for _, dependNodeId := range item.DependNodeId {
-			err = d.AddEdge(dependNodeId, item.NodeID)
-			if err != nil {
-				return nil, false, err
-			}
+		now := time.Now()
+		if stageCount == successCount {
+			job.State = meta.JobSuccess
+			job.CompletionTimestamp = &now
+			updateStatus = true
 		}
-	}
-
-	result := &meta.StageList{
-		Items: []meta.Stage{},
-	}
-
-	switch upperStage.State {
-	case meta.StageSuccess:
-		children, err := d.GetChildren(upperStage.NodeID)
-		if err != nil {
-			return nil, false, err
+		if failedCount > 0 {
+			job.State = meta.JobFailed
+			job.CompletionTimestamp = &now
+			updateStatus = true
 		}
-
-		for nodeId := range children {
-			if childrenStage, ok := jobStages[nodeId]; ok && childrenStage != nil {
-				allSuccess := true
-				var input interface{}
-				for _, childrenDependNodeId := range childrenStage.DependNodeId {
-					if childrenDependStage, ok := jobStages[childrenDependNodeId]; ok && childrenDependStage != nil {
-						if childrenDependStage.State != meta.StageSuccess {
-							allSuccess = false
-						} else {
-							// todo merge input
-							input = childrenDependStage.Output
-						}
-					}
-				}
-				if allSuccess {
-					childrenStage.State = meta.StageReady
-					childrenStage.Input = input
-					result.Items = append(result.Items, *childrenStage)
-				}
-			}
-		}
-	case meta.StageFailed:
-		flowCallback := func(d *dag.DAG, id string, parentResults []dag.FlowResult) (interface{}, error) {
-			children, err := d.GetChildren(id)
-			if err != nil {
-				return nil, err
-			}
-			for nodeId := range children {
-				if childrenStage, ok := jobStages[nodeId]; ok && childrenStage != nil {
-					if childrenStage.State == meta.StageCreate {
-						childrenStage.State = meta.StageFailed
-						result.Items = append(result.Items, *childrenStage)
-					}
-				}
-			}
-			return nil, nil
-		}
-		_, err = d.DescendantsFlow(upperStage.NodeID, nil, flowCallback)
-		if err != nil {
-			return nil, false, err
-		}
+		return job, updateStatus, nil
 	}
 
-	// ------------------------------------------------------------------ //
-	if len(result.Items) > 0 {
-		updateStatus = true
-	}
-
-	return result, updateStatus, nil
+	return nil, false, nil
 }
