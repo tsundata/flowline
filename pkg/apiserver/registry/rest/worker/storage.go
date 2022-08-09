@@ -12,6 +12,7 @@ import (
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"golang.org/x/xerrors"
 	"net/http"
+	"time"
 )
 
 type WorkerStorage struct {
@@ -118,11 +119,17 @@ func (r *subResource) workerRegister(req *restful.Request, resp *restful.Respons
 		return
 	}
 
+	now := time.Now()
 	var result runtime.Object
-	_, ok := find.(*meta.Worker)
+	worker, ok := find.(*meta.Worker)
 	if ok {
+		obj.CreationTimestamp = worker.CreationTimestamp
+		if obj.CreationTimestamp == nil {
+			obj.CreationTimestamp = &now
+		}
 		result, _, err = r.store.Update(ctx, obj.UID, &obj, rest.ValidateAllObjectFunc, rest.ValidateAllObjectUpdateFunc, false, &meta.UpdateOptions{})
 	} else {
+		obj.CreationTimestamp = &now
 		result, err = r.store.Create(ctx, &obj, rest.ValidateAllObjectFunc, &meta.CreateOptions{})
 	}
 
