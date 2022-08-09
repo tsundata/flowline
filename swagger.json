@@ -3066,6 +3066,39 @@
     }
    }
   },
+  "/api/apps/v1/workflow/schedule": {
+   "post": {
+    "consumes": [
+     "application/json"
+    ],
+    "produces": [
+     "application/json"
+    ],
+    "tags": [
+     "workflow"
+    ],
+    "summary": "Create workflow resource to schedule subresource",
+    "operationId": "workflowCreateSchedule",
+    "parameters": [
+     {
+      "name": "body",
+      "in": "body",
+      "required": true,
+      "schema": {
+       "$ref": "#/definitions/meta.Workflow"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "schema": {
+       "$ref": "#/definitions/meta.Job"
+      }
+     }
+    }
+   }
+  },
   "/api/apps/v1/workflow/watch": {
    "get": {
     "consumes": [
@@ -3244,6 +3277,12 @@
       "name": "uid",
       "in": "path",
       "required": true
+     },
+     {
+      "type": "string",
+      "description": "Job UID for query status",
+      "name": "jobUID",
+      "in": "query"
      }
     ],
     "responses": {
@@ -4107,6 +4146,9 @@
      }
     },
     "renderKey": {
+     "type": "string"
+    },
+    "status": {
      "type": "string"
     },
     "variables": {
