@@ -1,15 +1,18 @@
 package workflow
 
 import (
+	"fmt"
 	"github.com/emicklei/go-restful/v3"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver/registry"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/options"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest"
 	"github.com/tsundata/flowline/pkg/runtime"
+	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"golang.org/x/xerrors"
 	"net/http"
+	"time"
 )
 
 type WorkflowStorage struct {
@@ -76,6 +79,13 @@ func (r *REST) Actions() []rest.SubResourceAction {
 			ReadSample:   meta.Workflow{},
 			ReturnSample: meta.Workflow{},
 		},
+		{
+			Verb:         "POST",
+			SubResource:  "schedule",
+			Params:       nil,
+			ReadSample:   meta.Workflow{},
+			ReturnSample: meta.Job{},
+		},
 	}
 }
 
@@ -85,6 +95,7 @@ func (r *REST) Handle(verb, subresource string, req *restful.Request, resp *rest
 	srRoute.Match("GET", "dag", sr.workflowGetDag)
 	srRoute.Match("PUT", "dag", sr.workflowUpdateDag)
 	srRoute.Match("PUT", "state", sr.workflowUpdateState)
+	srRoute.Match("POST", "schedule", sr.workflowScheduleNow)
 	if !srRoute.Matched() {
 		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("error subresource path"))
 	}
@@ -217,4 +228,36 @@ func (r *subResource) workflowUpdateState(req *restful.Request, resp *restful.Re
 	}
 
 	_ = resp.WriteEntity(result)
+}
+
+func (r *subResource) workflowScheduleNow(req *restful.Request, resp *restful.Response) {
+	ctx := req.Request.Context()
+	workflow := meta.Workflow{}
+	err := req.ReadEntity(&workflow)
+	if err != nil {
+		flog.Error(err)
+	}
+	workflowUID := workflow.UID
+
+	job := &meta.Job{
+		TypeMeta: meta.TypeMeta{
+			Kind:       "job",
+			APIVersion: constant.Version,
+		},
+		ObjectMeta: meta.ObjectMeta{
+			Name: fmt.Sprintf("%v.%x", workflowUID, time.Now().UnixNano()),
+		},
+		WorkflowUID: workflowUID,
+		State:       meta.JobCreate,
+	}
+	rest.FillObjectMetaSystemFields(job)
+
+	err = r.store.Storage.Create(ctx, rest.WithPrefix(fmt.Sprintf("job/%s", job.UID)), job, job, 0, false)
+	if err != nil {
+		flog.Error(err)
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("workflow create job error"))
+		return
+	}
+
+	_ = resp.WriteEntity(job)
 }
