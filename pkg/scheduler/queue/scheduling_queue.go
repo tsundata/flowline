@@ -354,7 +354,8 @@ func updateStage(oldStageInfo interface{}, newStage *meta.Stage) *framework.Queu
 // schedulable. It drops status of the stage and compares it with old version.
 func isStageUpdated(oldStage, newStage *meta.Stage) bool {
 	strip := func(stage *meta.Stage) *meta.Stage {
-		p := stage // todo deep copy
+		// DeepCopyObject
+		p := stage
 		p.ResourceVersion = ""
 		p.Generation = 0
 		//p.Status = v1.StageStatus{}
@@ -747,7 +748,8 @@ func (npm *nominator) NominatedStagesForWorker(workerName string) []*framework.S
 	// Make a copy of the nominated Stages so the caller can mutate safely.
 	stages := make([]*framework.StageInfo, len(npm.nominatedStages[workerName]))
 	for i := 0; i < len(stages); i++ {
-		stages[i] = npm.nominatedStages[workerName][i] // todo DeepCopy()
+		// DeepCopyObject
+		stages[i] = npm.nominatedStages[workerName][i]
 	}
 	return stages
 }

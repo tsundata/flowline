@@ -379,7 +379,7 @@ func transformErrorToEvent(err error) *watch.Event {
 			Status:  meta.StatusFailure,
 			Message: err.Error(),
 			Reason:  err.Error(),
-			Code:    http.StatusBadRequest, // todo
+			Code:    http.StatusBadRequest,
 		},
 	}
 }

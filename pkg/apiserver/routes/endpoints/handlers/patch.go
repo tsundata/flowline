@@ -13,6 +13,7 @@ import (
 	"github.com/tsundata/flowline/pkg/apiserver/storage"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
+	"github.com/tsundata/flowline/pkg/util/flog"
 	"net/http"
 	"strings"
 )
@@ -158,7 +159,7 @@ func (p *patcher) patchResource(ctx context.Context, _ *registry.RequestScope) (
 			return nil, err
 		}
 		if errors.Is(err, storage.ErrKeyNotFound) {
-			// return nil, err fixme
+			flog.Warnf("patch resource: key %s not found", p.name)
 		}
 		patchedObj, err := p.updatedObjectInfo.UpdatedObject(ctx, find)
 		if err != nil {

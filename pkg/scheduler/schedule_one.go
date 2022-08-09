@@ -45,8 +45,8 @@ func (sched *Scheduler) scheduleOne(ctx context.Context) {
 		sched.handleSchedulingFailure(ctx, fwk, stageInfo, err, "Unschedulable", nominatingInfo)
 		return
 	}
-
-	assumedStageInfo := stageInfo // todo deep copy
+	// DeepCopyObject
+	assumedStageInfo := stageInfo
 	assumedStage := assumedStageInfo.Stage
 	err = sched.assume(assumedStage, scheduleResult.SuggestedHost)
 	if err != nil {

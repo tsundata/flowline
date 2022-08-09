@@ -209,7 +209,6 @@ func (n *WorkerInfo) RemoveStage(stage *meta.Stage) error {
 }
 
 func calculateResource(stage *meta.Stage) (res Resource, non0CPU int64, non0Mem int64) {
-	// todo
 	return
 }
 

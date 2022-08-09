@@ -207,7 +207,7 @@ func recordEvent(sink EventSink, event *meta.Event) (*meta.Event, bool) {
 }
 
 func createPatchBytesForSeries(event *meta.Event) ([]byte, error) {
-	//oldEvent := event.DeepCopyObject() todo
+	// DeepCopyObject
 	oldEvent := event
 	oldEvent.Series = nil
 	oldData, err := json.Marshal(oldEvent)

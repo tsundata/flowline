@@ -103,18 +103,18 @@ func logStackOnRecover(panicReason interface{}, w http.ResponseWriter) {
 	if ct := w.Header().Get("Content-Type"); len(ct) > 0 {
 		headers.Set("Accept", ct)
 	}
-	w.Header().Set("Content-Type", "application/json") // todo
-	w.WriteHeader(http.StatusInternalServerError)      // todo
-	_, _ = w.Write(buffer.Bytes())                     // todo
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusInternalServerError)
+	_, _ = w.Write(buffer.Bytes())
 }
 
 func serviceErrorHandler(serviceError restful.ServiceError, _ *restful.Request, resp *restful.Response) {
 	errText := fmt.Sprintf("error %d %s", serviceError.Code, serviceError.Message)
 	flog.Error(xerrors.New(errText))
 
-	resp.Header().Set("Content-Type", "application/json") // todo
-	resp.WriteHeader(http.StatusInternalServerError)      // todo
-	_, _ = resp.Write([]byte(errText))                    // todo
+	resp.Header().Set("Content-Type", "application/json")
+	resp.WriteHeader(http.StatusInternalServerError)
+	_, _ = resp.Write([]byte(errText))
 }
 
 func (a *APIServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
