@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -322,7 +321,7 @@ func readAndCloseResponseBody(resp *http.Response) {
 	}()
 
 	if resp.ContentLength <= maxBodySlurpSize {
-		_, _ = io.Copy(ioutil.Discard, &io.LimitedReader{R: resp.Body, N: maxBodySlurpSize})
+		_, _ = io.Copy(io.Discard, &io.LimitedReader{R: resp.Body, N: maxBodySlurpSize})
 	}
 }
 

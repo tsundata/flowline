@@ -5,7 +5,6 @@ import (
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"time"
 )
@@ -21,13 +20,13 @@ func limitedReadBody(req *http.Request, limit int64) ([]byte, error) {
 		_ = req.Body.Close()
 	}()
 	if limit <= 0 {
-		return ioutil.ReadAll(req.Body)
+		return io.ReadAll(req.Body)
 	}
 	lr := &io.LimitedReader{
 		R: req.Body,
 		N: limit + 1,
 	}
-	data, err := ioutil.ReadAll(lr)
+	data, err := io.ReadAll(lr)
 	if err != nil {
 		return nil, err
 	}
