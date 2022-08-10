@@ -6,13 +6,13 @@ import (
 	"fmt"
 	dagLib "github.com/heimdalr/dag"
 	"github.com/tsundata/flowline/pkg/api/client"
+	v1 "github.com/tsundata/flowline/pkg/api/client/core/v1"
 	"github.com/tsundata/flowline/pkg/api/client/events"
 	"github.com/tsundata/flowline/pkg/api/client/record"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/informer"
 	informerv1 "github.com/tsundata/flowline/pkg/informer/informers/core/v1"
 	listerv1 "github.com/tsundata/flowline/pkg/informer/listers/core/v1"
-	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
@@ -48,7 +48,7 @@ func NewController(jobInformer informerv1.JobInformer, client client.Interface) 
 
 	jm := &Controller{
 		queue:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "dag"),
-		recorder: eventBroadcaster.NewRecorder(runtime.NewScheme(), meta.EventSource{Component: "dag-controller"}),
+		recorder: eventBroadcaster.NewRecorder(v1.Scheme, meta.EventSource{Component: "dag-controller"}),
 
 		jobControl:   &realJobControl{Client: client},
 		stageControl: &realStageControl{Client: client},

@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"github.com/tsundata/flowline/pkg/api/client"
+	v1 "github.com/tsundata/flowline/pkg/api/client/core/v1"
 	"github.com/tsundata/flowline/pkg/api/client/events"
 	"github.com/tsundata/flowline/pkg/api/client/record"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/informer"
 	informerv1 "github.com/tsundata/flowline/pkg/informer/informers/core/v1"
 	listerv1 "github.com/tsundata/flowline/pkg/informer/listers/core/v1"
-	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
@@ -45,7 +45,7 @@ func NewController(config *config.Config, stageInformer informerv1.StageInformer
 	jm := &Controller{
 		config:   config,
 		queue:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "worker"),
-		recorder: eventBroadcaster.NewRecorder(runtime.NewScheme(), meta.EventSource{Component: "worker"}),
+		recorder: eventBroadcaster.NewRecorder(v1.Scheme, meta.EventSource{Component: "worker"}),
 
 		stageControl:  &realStageControl{Client: client},
 		workerControl: &realWorkerControl{Client: client},

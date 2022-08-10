@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/robfig/cron/v3"
 	"github.com/tsundata/flowline/pkg/api/client"
+	v1 "github.com/tsundata/flowline/pkg/api/client/core/v1"
 	"github.com/tsundata/flowline/pkg/api/client/events"
 	"github.com/tsundata/flowline/pkg/api/client/record"
 	"github.com/tsundata/flowline/pkg/api/meta"
@@ -13,7 +14,6 @@ import (
 	"github.com/tsundata/flowline/pkg/informer"
 	informerv1 "github.com/tsundata/flowline/pkg/informer/informers/core/v1"
 	listerv1 "github.com/tsundata/flowline/pkg/informer/listers/core/v1"
-	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
@@ -46,7 +46,7 @@ func NewController(jobInformer informerv1.JobInformer, workflowInformer informer
 
 	jm := &Controller{
 		queue:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "crontrigger"),
-		recorder: eventBroadcaster.NewRecorder(runtime.NewScheme(), meta.EventSource{Component: "crontrigger-controller"}),
+		recorder: eventBroadcaster.NewRecorder(v1.Scheme, meta.EventSource{Component: "crontrigger-controller"}),
 
 		jobControl:      &realJobControl{Client: client},
 		workflowControl: &realCJControl{Client: client},

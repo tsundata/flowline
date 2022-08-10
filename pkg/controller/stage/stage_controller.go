@@ -5,13 +5,13 @@ import (
 	"errors"
 	"github.com/heimdalr/dag"
 	"github.com/tsundata/flowline/pkg/api/client"
+	v1 "github.com/tsundata/flowline/pkg/api/client/core/v1"
 	"github.com/tsundata/flowline/pkg/api/client/events"
 	"github.com/tsundata/flowline/pkg/api/client/record"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/informer"
 	informerv1 "github.com/tsundata/flowline/pkg/informer/informers/core/v1"
 	listerv1 "github.com/tsundata/flowline/pkg/informer/listers/core/v1"
-	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
 	"github.com/tsundata/flowline/pkg/util/workqueue"
@@ -39,7 +39,7 @@ func NewController(stageInformer informerv1.StageInformer, client client.Interfa
 
 	jm := &Controller{
 		queue:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "stage"),
-		recorder: eventBroadcaster.NewRecorder(runtime.NewScheme(), meta.EventSource{Component: "stage-controller"}),
+		recorder: eventBroadcaster.NewRecorder(v1.Scheme, meta.EventSource{Component: "stage-controller"}),
 
 		stageControl: &realStageControl{Client: client},
 

@@ -55,7 +55,7 @@ type Scheme struct {
 	versionPriority map[string][]string
 
 	// observedVersions keeps track of the order we've seen versions during type registration
-	// observedVersions []schema.GroupVersion
+	observedVersions []schema.GroupVersion
 
 	// schemeName is the name of this scheme.  If you don't specify a name, the stack of the NewScheme caller will be used.
 	// This is useful for error reporting to indicate the origin of the scheme.
@@ -108,4 +108,96 @@ func (s *Scheme) ObjectKinds(obj Object) ([]schema.GroupVersionKind, bool, error
 	_, unversionedType := s.unversionedTypes[t]
 
 	return gvks, unversionedType, nil
+}
+
+// Recognizes returns true if the scheme is able to handle the provided group,version,kind
+// of object.
+func (s *Scheme) Recognizes(gvk schema.GroupVersionKind) bool {
+	_, exists := s.gvkToType[gvk]
+	return exists
+}
+
+// AddKnownTypes registers all types passed in 'types' as being members of version 'version'.
+// All objects passed to types should be pointers to structs. The name that go reports for
+// the struct becomes the "kind" field when encoding. Version may not be empty - use the
+// APIVersionInternal constant if you have a type that does not have a formal version.
+func (s *Scheme) AddKnownTypes(gv schema.GroupVersion, types ...Object) {
+	s.addObservedVersion(gv)
+	for _, obj := range types {
+		t := reflect.TypeOf(obj)
+		if t.Kind() != reflect.Pointer {
+			panic("All types must be pointers to structs.")
+		}
+		t = t.Elem()
+		s.AddKnownTypeWithName(gv.WithKind(t.Name()), obj)
+	}
+}
+
+// AddKnownTypeWithName is like AddKnownTypes, but it lets you specify what this type should
+// be encoded as. Useful for testing when you don't want to make multiple packages to define
+// your structs. Version may not be empty - use the APIVersionInternal constant if you have a
+// type that does not have a formal version.
+func (s *Scheme) AddKnownTypeWithName(gvk schema.GroupVersionKind, obj Object) {
+	s.addObservedVersion(gvk.GroupVersion())
+	t := reflect.TypeOf(obj)
+	if len(gvk.Version) == 0 {
+		panic(fmt.Sprintf("version is required on all types: %s %v", gvk, t))
+	}
+	if t.Kind() != reflect.Pointer {
+		panic("All types must be pointers to structs.")
+	}
+	t = t.Elem()
+	if t.Kind() != reflect.Struct {
+		panic("All types must be pointers to structs.")
+	}
+
+	if oldT, found := s.gvkToType[gvk]; found && oldT != t {
+		panic(fmt.Sprintf("Double registration of different types for %v: old=%v.%v, new=%v.%v in scheme %q", gvk, oldT.PkgPath(), oldT.Name(), t.PkgPath(), t.Name(), s.schemeName))
+	}
+
+	s.gvkToType[gvk] = t
+
+	for _, existingGvk := range s.typeToGVK[t] {
+		if existingGvk == gvk {
+			return
+		}
+	}
+	s.typeToGVK[t] = append(s.typeToGVK[t], gvk)
+
+	// if the type implements DeepCopyInto(<obj>), register a self-conversion
+	if m := reflect.ValueOf(obj).MethodByName("DeepCopyInto"); m.IsValid() && m.Type().NumIn() == 1 && m.Type().NumOut() == 0 && m.Type().In(0) == reflect.TypeOf(obj) {
+		if err := s.AddGeneratedConversionFunc(obj, obj, func(a, b interface{}, scope interface{}) error {
+			// copy a to b
+			reflect.ValueOf(a).MethodByName("DeepCopyInto").Call([]reflect.Value{reflect.ValueOf(b)})
+			// clear TypeMeta to match legacy reflective conversion
+			b.(Object).GetObjectKind().SetGroupVersionKind(schema.GroupVersionKind{})
+			return nil
+		}); err != nil {
+			panic(err)
+		}
+	}
+}
+
+// AddGeneratedConversionFunc registers a function that converts between a and b by passing objects of those
+// types to the provided function. The function *must* accept objects of a and b - this machinery will not enforce
+// any other guarantee.
+func (s *Scheme) AddGeneratedConversionFunc(a, b interface{}, fn interface{}) error {
+	return nil
+}
+
+func (s *Scheme) addObservedVersion(version schema.GroupVersion) {
+	if len(version.Version) == 0 || version.Version == APIVersionInternal {
+		return
+	}
+	for _, observedVersion := range s.observedVersions {
+		if observedVersion == version {
+			return
+		}
+	}
+
+	s.observedVersions = append(s.observedVersions, version)
+}
+
+func (s *Scheme) Name() string {
+	return s.schemeName
 }

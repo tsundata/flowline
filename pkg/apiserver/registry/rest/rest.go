@@ -80,7 +80,7 @@ type Getter interface {
 // RESTful object.
 type Deleter interface {
 	// Delete finds a resource in the storage and deletes it.
-	// The delete attempt is validated by the deleteValidation first.
+	// To delete attempt is validated by the deleteValidation first.
 	// If options are provided, the resource will attempt to honor them or return an invalid
 	// request error.
 	// Although it can return an arbitrary error value, IsNotFound(err) is true for the
@@ -96,7 +96,7 @@ type Deleter interface {
 // of RESTful resources.
 type CollectionDeleter interface {
 	// DeleteCollection selects all resources in the storage matching given 'listOptions'
-	// and deletes them. The delete attempt is validated by the deleteValidation first.
+	// and deletes them. To delete attempt is validated by the deleteValidation first.
 	// If 'options' are provided, the resource will attempt to honor them or return an
 	// invalid request error.
 	// DeleteCollection may not be atomic - i.e. it may delete some objects and still

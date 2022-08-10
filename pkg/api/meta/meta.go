@@ -191,3 +191,12 @@ func (l *ListMeta) GetRemainingItemCount() *int64 {
 func (l *ListMeta) SetRemainingItemCount(c *int64) {
 	l.RemainingItemCount = c
 }
+
+// HasObjectMetaSystemFieldValues returns true if fields that are managed by the system on ObjectMeta have values.
+func HasObjectMetaSystemFieldValues(meta Object) bool {
+	return !meta.GetCreationTimestamp().IsZero() ||
+		len(meta.GetUID()) != 0
+}
+
+// SchemeGroupVersion is group version used to register these objects
+var SchemeGroupVersion = schema.GroupVersion{Group: constant.GroupName, Version: "v1"}

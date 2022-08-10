@@ -16,6 +16,24 @@ import (
 	"strings"
 )
 
+// FinishFunc is a function returned by Begin hooks to complete an operation.
+type FinishFunc func(ctx context.Context, success bool)
+
+// AfterDeleteFunc is the type used for the Store.AfterDelete hook.
+type AfterDeleteFunc func(obj runtime.Object, options *meta.DeleteOptions)
+
+// BeginCreateFunc is the type used for the Store.BeginCreate hook.
+type BeginCreateFunc func(ctx context.Context, obj runtime.Object, options *meta.CreateOptions) (FinishFunc, error)
+
+// AfterCreateFunc is the type used for the Store.AfterCreate hook.
+type AfterCreateFunc func(obj runtime.Object, options *meta.CreateOptions)
+
+// BeginUpdateFunc is the type used for the Store.BeginUpdate hook.
+type BeginUpdateFunc func(ctx context.Context, obj, old runtime.Object, options *meta.UpdateOptions) (FinishFunc, error)
+
+// AfterUpdateFunc is the type used for the Store.AfterUpdate hook.
+type AfterUpdateFunc func(obj runtime.Object, options *meta.UpdateOptions)
+
 type Store struct {
 	// NewFunc returns a new instance of the type this registry returns for a
 	// GET of a single object, e.g.:
@@ -93,10 +111,33 @@ type Store struct {
 
 	// CreateStrategy implements resource-specific behavior during creation.
 	CreateStrategy rest.RESTCreateStrategy
+	// BeginCreate is an optional hook that returns a "transaction-like"
+	// commit/revert function which will be called at the end of the operation,
+	// but before AfterCreate and Decorator, indicating via the argument
+	// whether the operation succeeded.  If this returns an error, the function
+	// is not called.  Almost nobody should use this hook.
+	BeginCreate BeginCreateFunc
+	// AfterCreate implements a further operation to run after a resource is
+	// created and before it is decorated, optional.
+	AfterCreate AfterCreateFunc
+
 	// UpdateStrategy implements resource-specific behavior during updates.
 	UpdateStrategy rest.RESTUpdateStrategy
+	// BeginUpdate is an optional hook that returns a "transaction-like"
+	// commit/revert function which will be called at the end of the operation,
+	// but before AfterUpdate and Decorator, indicating via the argument
+	// whether the operation succeeded.  If this returns an error, the function
+	// is not called.  Almost nobody should use this hook.
+	BeginUpdate BeginUpdateFunc
+	// AfterUpdate implements a further operation to run after a resource is
+	// updated and before it is decorated, optional.
+	AfterUpdate AfterUpdateFunc
+
 	// DeleteStrategy implements resource-specific behavior during deletion.
 	DeleteStrategy rest.RESTDeleteStrategy
+	// AfterDelete implements a further operation to run after a resource is
+	// deleted and before it is decorated, optional.
+	AfterDelete AfterDeleteFunc
 
 	// ResetFieldsStrategy provides the fields reset by the strategy that
 	// should not be modified by the user.
@@ -285,14 +326,37 @@ func (e *Store) CompleteWithOptions(options *options.StoreOptions) error {
 	return nil
 }
 
-func (e *Store) Create(ctx context.Context, obj runtime.Object, createValidation rest.ValidateObjectFunc, _ *meta.CreateOptions) (runtime.Object, error) {
+// finishNothing is a do-nothing FinishFunc.
+func finishNothing(context.Context, bool) {}
+
+func (e *Store) Create(ctx context.Context, obj runtime.Object, createValidation rest.ValidateObjectFunc, options *meta.CreateOptions) (runtime.Object, error) {
+	var finishCreate FinishFunc = finishNothing
+
 	if objectMeta, err := meta.Accessor(obj); err != nil {
 		return nil, err
 	} else {
 		rest.FillObjectMetaSystemFields(objectMeta)
 	}
-	if err := createValidation(ctx, obj); err != nil {
+
+	if e.BeginCreate != nil {
+		fn, err := e.BeginCreate(ctx, obj, options)
+		if err != nil {
+			return nil, err
+		}
+		finishCreate = fn
+		defer func() {
+			finishCreate(ctx, false)
+		}()
+	}
+
+	if err := rest.BeforeCreate(e.CreateStrategy, ctx, obj); err != nil {
 		return nil, err
+	}
+
+	if createValidation != nil {
+		if err := createValidation(ctx, obj); err != nil {
+			return nil, err
+		}
 	}
 
 	uid, err := e.ObjectUIDFunc(obj)
@@ -311,47 +375,150 @@ func (e *Store) Create(ctx context.Context, obj runtime.Object, createValidation
 	if err = e.Storage.Create(ctx, key, obj, out, ttl, false); err != nil {
 		return nil, err
 	}
+
+	// The operation has succeeded.  Call the finish function if there is one,
+	// and then make sure to defer doesn't call it again.
+	fn := finishCreate
+	finishCreate = finishNothing
+	fn(ctx, true)
+
+	if e.AfterCreate != nil {
+		e.AfterCreate(out, options)
+	}
 	if e.Decorator != nil {
 		e.Decorator(out)
 	}
 	return out, nil
 }
 
-func (e *Store) Update(ctx context.Context, name string, objInfo runtime.Object, createValidation rest.ValidateObjectFunc, updateValidation rest.ValidateObjectUpdateFunc, forceAllowCreate bool, _ *meta.UpdateOptions) (runtime.Object, bool, error) {
+func (e *Store) Update(ctx context.Context, name string, objInfo runtime.Object, createValidation rest.ValidateObjectFunc, updateValidation rest.ValidateObjectUpdateFunc, forceAllowCreate bool, options *meta.UpdateOptions) (runtime.Object, bool, error) {
 	key, err := e.KeyFunc(ctx, name)
 	if err != nil {
 		return nil, false, err
 	}
+
+	var (
+		creating = false
+	)
 
 	out := objInfo
 	if err := updateValidation(ctx, objInfo, out); err != nil {
 		return nil, false, err
 	}
 
+	existing, err := e.Get(ctx, key, &meta.GetOptions{})
 	if forceAllowCreate {
-		if err := createValidation(ctx, out); err != nil {
-			return nil, false, err
-		}
-
-		_, err = e.Get(ctx, key, &meta.GetOptions{})
 		if errors.Is(err, storage.ErrKeyNotFound) {
-			createOut := e.NewFunc()
-			err = e.Storage.Create(ctx, key, out, createOut, 0, false)
-			if err != nil {
-				return nil, true, err
+			creating = true
+
+			// Init metadata as early as possible.
+			if objectMeta, err := meta.Accessor(out); err != nil {
+				return nil, creating, err
+			} else {
+				rest.FillObjectMetaSystemFields(objectMeta)
 			}
-			return createOut, true, nil
+			var finishCreate FinishFunc = finishNothing
+
+			if e.BeginCreate != nil {
+				fn, err := e.BeginCreate(ctx, out, newCreateOptionsFromUpdateOptions(options))
+				if err != nil {
+					return nil, creating, err
+				}
+				finishCreate = fn
+				defer func() {
+					finishCreate(ctx, false)
+				}()
+			}
+
+			if err := rest.BeforeCreate(e.CreateStrategy, ctx, out); err != nil {
+				return nil, creating, err
+			}
+			if createValidation != nil {
+				if err := createValidation(ctx, out); err != nil {
+					return nil, creating, err
+				}
+			}
+			ttl, err := e.calculateTTL(out, 0, false)
+			if err != nil {
+				return nil, creating, err
+			}
+			createOut := e.NewFunc()
+			err = e.Storage.Create(ctx, key, out, createOut, ttl, false)
+			if err != nil {
+				return nil, creating, err
+			}
+
+			// The operation has succeeded.  Call the finish function if there is one,
+			// and then make sure to defer doesn't call it again.
+			fn := finishCreate
+			finishCreate = finishNothing
+			fn(ctx, true)
+
+			if e.AfterCreate != nil {
+				e.AfterCreate(out, newCreateOptionsFromUpdateOptions(options))
+			}
+
+			return createOut, creating, nil
 		}
+	}
+
+	var finishUpdate FinishFunc = finishNothing
+
+	if e.BeginUpdate != nil {
+		fn, err := e.BeginUpdate(ctx, out, existing, options)
+		if err != nil {
+			return nil, creating, err
+		}
+		finishUpdate = fn
+		defer func() {
+			finishUpdate(ctx, false)
+		}()
+	}
+
+	if err := rest.BeforeUpdate(e.UpdateStrategy, ctx, out, existing); err != nil {
+		return nil, creating, err
+	}
+	if updateValidation != nil {
+		if err := updateValidation(ctx, out, existing); err != nil {
+			return nil, creating, err
+		}
+	}
+	_, err = e.calculateTTL(out, 0, true)
+	if err != nil {
+		return nil, creating, err
 	}
 
 	err = e.Storage.GuaranteedUpdate(ctx, key, out, true, nil, nil, false, nil)
 	if err != nil {
-		return nil, false, err
+		return nil, creating, err
 	}
+
+	// The operation has succeeded.  Call the finish function if there is one,
+	// and then make sure to defer doesn't call it again.
+	fn := finishUpdate
+	finishUpdate = finishNothing
+	fn(ctx, true)
+
+	if e.AfterUpdate != nil {
+		e.AfterUpdate(out, options)
+	}
+
 	if e.Decorator != nil {
 		e.Decorator(out)
 	}
-	return out, false, nil
+	return out, creating, nil
+}
+
+// This is a helper to convert UpdateOptions to CreateOptions for the
+// create-on-update path.
+func newCreateOptionsFromUpdateOptions(in *meta.UpdateOptions) *meta.CreateOptions {
+	co := &meta.CreateOptions{
+		DryRun:          in.DryRun,
+		FieldManager:    in.FieldManager,
+		FieldValidation: in.FieldValidation,
+	}
+	co.TypeMeta.SetGroupVersionKind(meta.SchemeGroupVersion.WithKind("CreateOptions"))
+	return co
 }
 
 func (e *Store) Get(ctx context.Context, name string, options *meta.GetOptions) (runtime.Object, error) {
@@ -369,7 +536,7 @@ func (e *Store) Get(ctx context.Context, name string, options *meta.GetOptions) 
 	return obj, nil
 }
 
-func (e *Store) Delete(ctx context.Context, name string, deleteValidation rest.ValidateObjectFunc, _ *meta.DeleteOptions) (runtime.Object, bool, error) {
+func (e *Store) Delete(ctx context.Context, name string, deleteValidation rest.ValidateObjectFunc, options *meta.DeleteOptions) (runtime.Object, bool, error) {
 	key, err := e.KeyFunc(ctx, name)
 	if err != nil {
 		return nil, false, err
@@ -383,10 +550,20 @@ func (e *Store) Delete(ctx context.Context, name string, deleteValidation rest.V
 		return nil, false, fmt.Errorf("InterpretDeleteError %s", err)
 	}
 
+	_, _, err = rest.BeforeDelete(e.DeleteStrategy, ctx, obj, options)
+	if err != nil {
+		return nil, false, err
+	}
+
 	out := e.NewFunc()
 	if err = e.Storage.Delete(ctx, key, out, nil, nil, false, nil); err != nil {
 		return nil, false, err
 	}
+
+	if e.AfterDelete != nil {
+		e.AfterDelete(out, options)
+	}
+
 	return out, true, nil
 }
 

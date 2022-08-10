@@ -13,6 +13,19 @@ const (
 	APIVersionInternal = "v1"
 )
 
+// ObjectTyper contains methods for extracting the APIVersion and Kind
+// of objects.
+type ObjectTyper interface {
+	// ObjectKinds returns the all possible group,version,kind of the provided object, true if
+	// the object is unversioned, or an error if the object is not recognized
+	// (IsNotRegisteredError will return true).
+	ObjectKinds(Object) ([]schema.GroupVersionKind, bool, error)
+	// Recognizes returns true if the scheme is able to handle the provided version and kind,
+	// or more precisely that the provided version is a possible conversion or decoding
+	// target.
+	Recognizes(gvk schema.GroupVersionKind) bool
+}
+
 // Object interface must be supported by all API types registered with Scheme. Since objects in a scheme are
 // expected to be serialized to the wire, the interface an Object must provide to the Scheme allows
 // serializers to set the kind, version, and group the object is represented as. An Object may choose

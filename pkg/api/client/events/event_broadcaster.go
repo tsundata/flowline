@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/tsundata/flowline/pkg/api/client"
+	v1 "github.com/tsundata/flowline/pkg/api/client/core/v1"
 	eventsv1 "github.com/tsundata/flowline/pkg/api/client/events/v1"
 	"github.com/tsundata/flowline/pkg/api/client/record"
 	"github.com/tsundata/flowline/pkg/api/client/record/util"
@@ -325,13 +326,13 @@ func (e *eventBroadcasterAdapterImpl) StartRecordingToSink(stopCh <-chan struct{
 
 func (e *eventBroadcasterAdapterImpl) NewRecorder(name string) EventRecorder {
 	if e.eventsv1Broadcaster != nil && e.eventsv1Client != nil {
-		return e.eventsv1Broadcaster.NewRecorder(runtime.NewScheme(), name)
+		return e.eventsv1Broadcaster.NewRecorder(v1.Scheme, name)
 	}
 	return record.NewEventRecorderAdapter(e.DeprecatedNewLegacyRecorder(name))
 }
 
 func (e *eventBroadcasterAdapterImpl) DeprecatedNewLegacyRecorder(name string) record.EventRecorder {
-	return e.coreBroadcaster.NewRecorder(runtime.NewScheme(), meta.EventSource{Component: name})
+	return e.coreBroadcaster.NewRecorder(v1.Scheme, meta.EventSource{Component: name})
 }
 
 func (e *eventBroadcasterAdapterImpl) Shutdown() {
