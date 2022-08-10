@@ -3,7 +3,6 @@ package scheduler
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/config"
@@ -169,7 +168,7 @@ func (h *HTTPExtender) Filter(stage *meta.Stage, workers []*meta.Worker) (filter
 			if n, ok := fromWorkerName[workerName]; ok {
 				workerResult[i] = n
 			} else {
-				return nil, nil, nil, fmt.Errorf(
+				return nil, nil, nil, xerrors.Errorf(
 					"extender %q claims a filtered worker %q which is not found in the input worker list",
 					h.extenderURL, workerName)
 			}
@@ -228,7 +227,7 @@ func (h *HTTPExtender) Prioritize(stage *meta.Stage, workers []*meta.Worker) (ho
 func (h *HTTPExtender) Bind(binding *meta.Binding) error {
 	var result ExtenderBindingResult
 	if !h.IsBinder() {
-		return fmt.Errorf("unexpected empty bindVerb in extender")
+		return xerrors.Errorf("unexpected empty bindVerb in extender")
 	}
 	req := map[string]interface{}{
 		"StageName": binding.Name,
@@ -299,7 +298,7 @@ func (h *HTTPExtender) send(action string, args interface{}, result interface{})
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed %v with extender at URL %v, code %v", action, url, resp.StatusCode)
+		return xerrors.Errorf("failed %v with extender at URL %v, code %v", action, url, resp.StatusCode)
 	}
 
 	return json.NewDecoder(resp.Body).Decode(result)

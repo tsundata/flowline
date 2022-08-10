@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"context"
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/client"
 	"github.com/tsundata/flowline/pkg/api/client/rest"
 	"github.com/tsundata/flowline/pkg/api/meta"
@@ -501,7 +500,7 @@ func buildExtenders(extenders []config.Extender, profiles []config.Profile) ([]f
 			}
 		}
 		if !found {
-			return nil, fmt.Errorf("can't find WorkerResourcesFitArgs in plugin config")
+			return nil, xerrors.Errorf("can't find WorkerResourcesFitArgs in plugin config")
 		}
 	}
 	return fExtenders, nil

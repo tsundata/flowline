@@ -1,7 +1,6 @@
 package meta
 
 import (
-	"fmt"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"golang.org/x/xerrors"
 	"reflect"
@@ -100,9 +99,9 @@ func SetZeroValue(objPtr runtime.Object) error {
 
 // errNotList is returned when an object implements the Object style interfaces but not the List style
 // interfaces.
-// var errNotList = fmt.Errorf("object does not implement the List interfaces")
+// var errNotList = xerrors.Errorf("object does not implement the List interfaces")
 
-var errNotCommon = fmt.Errorf("object does not implement the common interface for accessing the SelfLink")
+var errNotCommon = xerrors.Errorf("object does not implement the common interface for accessing the SelfLink")
 
 // CommonAccessor returns a Common interface for the provided object or an error if the object does
 // not provide List.
@@ -156,7 +155,7 @@ func ExtractList(obj runtime.Object) ([]runtime.Object, error) {
 		default:
 			var found bool
 			if list[i], found = raw.Addr().Interface().(runtime.Object); !found {
-				return nil, fmt.Errorf("%v: item[%v]: Expected object, got %#v(%s)", obj, i, raw.Interface(), raw.Kind())
+				return nil, xerrors.Errorf("%v: item[%v]: Expected object, got %#v(%s)", obj, i, raw.Interface(), raw.Kind())
 			}
 		}
 	}

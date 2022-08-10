@@ -2,9 +2,9 @@ package rest
 
 import (
 	"context"
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
+	"golang.org/x/xerrors"
 	"time"
 )
 
@@ -40,12 +40,12 @@ func BeforeDelete(strategy RESTDeleteStrategy, ctx context.Context, obj runtime.
 	if options.Preconditions != nil {
 		if options.Preconditions.UID != nil && *options.Preconditions.UID != objectMeta.GetUID() {
 			return false, false,
-				fmt.Errorf("the UID in the precondition (%s) does not match the UID in record (%s). The object might have been deleted and then recreated",
+				xerrors.Errorf("the UID in the precondition (%s) does not match the UID in record (%s). The object might have been deleted and then recreated",
 					*options.Preconditions.UID, objectMeta.GetUID())
 		}
 		if options.Preconditions.ResourceVersion != nil && *options.Preconditions.ResourceVersion != objectMeta.GetResourceVersion() {
 			return false, false,
-				fmt.Errorf("the ResourceVersion in the precondition (%s) does not match the ResourceVersion in record (%s). The object might have been modified",
+				xerrors.Errorf("the ResourceVersion in the precondition (%s) does not match the ResourceVersion in record (%s). The object might have been modified",
 					*options.Preconditions.ResourceVersion, objectMeta.GetResourceVersion())
 		}
 	}
@@ -103,7 +103,7 @@ func BeforeDelete(strategy RESTDeleteStrategy, ctx context.Context, obj runtime.
 	}
 
 	if options.GracePeriodSeconds == nil {
-		return false, false, fmt.Errorf("options.GracePeriodSeconds should not be nil")
+		return false, false, xerrors.Errorf("options.GracePeriodSeconds should not be nil")
 	}
 
 	now := time.Now().Add(time.Second * time.Duration(*options.GracePeriodSeconds))

@@ -2,9 +2,9 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"github.com/tsundata/flowline/pkg/controller/job"
 	"github.com/tsundata/flowline/pkg/manager/controller"
+	"golang.org/x/xerrors"
 )
 
 func startJobController(ctx context.Context, controllerContext ControllerContext) (controller.Interface, bool, error) {
@@ -13,7 +13,7 @@ func startJobController(ctx context.Context, controllerContext ControllerContext
 		controllerContext.ComponentConfig.Client,
 	)
 	if err != nil {
-		return nil, true, fmt.Errorf("error creating job controller %v", err)
+		return nil, true, xerrors.Errorf("error creating job controller %v", err)
 	}
 
 	go cj.Run(ctx, int(controllerContext.ComponentConfig.ConcurrentJobSyncs))

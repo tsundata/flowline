@@ -1,7 +1,6 @@
 package informer
 
 import (
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/util/clock"
@@ -170,21 +169,21 @@ func (r *Reflector) ListAndWatch(stopCh <-chan struct{}) error {
 
 		if err != nil {
 			flog.Warnf("%s: failed to list %v: %v", r.name, r.expectedTypeName, err)
-			return fmt.Errorf("failed to list %v: %w", r.expectedTypeName, err)
+			return xerrors.Errorf("failed to list %v: %w", r.expectedTypeName, err)
 		}
 
 		r.setIsLastSyncResourceVersionUnavailable(false)
 		listMetaInterface, err := meta.ListAccessor(list)
 		if err != nil {
-			return fmt.Errorf("unable to understand list result %#v: %v", list, err)
+			return xerrors.Errorf("unable to understand list result %#v: %v", list, err)
 		}
 		resourceVersion = listMetaInterface.GetResourceVersion()
 		items, err := meta.ExtractList(list)
 		if err != nil {
-			return fmt.Errorf("unable to understand list result %#v (%v)", list, err)
+			return xerrors.Errorf("unable to understand list result %#v (%v)", list, err)
 		}
 		if err := r.syncWith(items, resourceVersion); err != nil {
-			return fmt.Errorf("unable to sync list result: %v", err)
+			return xerrors.Errorf("unable to sync list result: %v", err)
 		}
 		r.setLastSyncResourceVersion(resourceVersion)
 		return nil
@@ -286,7 +285,7 @@ loop:
 				break loop
 			}
 			if event.Type == watch.Error {
-				return fmt.Errorf("%s %+v", event.Type, event.Object)
+				return xerrors.Errorf("%s %+v", event.Type, event.Object)
 			}
 			if r.expectedType != nil {
 				if e, a := r.expectedType, reflect.TypeOf(event.Object); e != a {
@@ -331,7 +330,7 @@ loop:
 
 	watchDuration := r.clock.Since(start)
 	if watchDuration < 1*time.Second && eventCount == 0 {
-		return fmt.Errorf("very short watch: %s: Unexpected watch close - watch lasted less than a second and no items received", r.name)
+		return xerrors.Errorf("very short watch: %s: Unexpected watch close - watch lasted less than a second and no items received", r.name)
 	}
 	flog.Infof("%s: Watch close - %v total %v items received", r.name, r.expectedTypeName, eventCount)
 	return nil

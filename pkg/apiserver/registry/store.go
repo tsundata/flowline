@@ -223,20 +223,20 @@ func (e *Store) GetDeleteStrategy() rest.RESTDeleteStrategy {
 // defaults common fields.
 func (e *Store) CompleteWithOptions(options *options.StoreOptions) error {
 	if e.DefaultQualifiedResource.Empty() {
-		return fmt.Errorf("store %#v must have a non-empty qualified resource", e)
+		return xerrors.Errorf("store %#v must have a non-empty qualified resource", e)
 	}
 	if e.NewFunc == nil {
-		return fmt.Errorf("store for %s must have NewFunc set", e.DefaultQualifiedResource.String())
+		return xerrors.Errorf("store for %s must have NewFunc set", e.DefaultQualifiedResource.String())
 	}
 	if e.NewListFunc == nil {
-		return fmt.Errorf("store for %s must have NewListFunc set", e.DefaultQualifiedResource.String())
+		return xerrors.Errorf("store for %s must have NewListFunc set", e.DefaultQualifiedResource.String())
 	}
 	if (e.KeyRootFunc == nil) != (e.KeyFunc == nil) {
-		return fmt.Errorf("store for %s must set both KeyRootFunc and KeyFunc or neither", e.DefaultQualifiedResource.String())
+		return xerrors.Errorf("store for %s must set both KeyRootFunc and KeyFunc or neither", e.DefaultQualifiedResource.String())
 	}
 
 	if options.RESTOptions == nil {
-		return fmt.Errorf("options for %s must have RESTOptions set", e.DefaultQualifiedResource.String())
+		return xerrors.Errorf("options for %s must have RESTOptions set", e.DefaultQualifiedResource.String())
 	}
 
 	attrFunc := options.AttrFunc
@@ -264,7 +264,7 @@ func (e *Store) CompleteWithOptions(options *options.StoreOptions) error {
 		prefix = "/" + prefix
 	}
 	if prefix == "/" {
-		return fmt.Errorf("store for %s has an invalid prefix %q", e.DefaultQualifiedResource.String(), opts.ResourcePrefix)
+		return xerrors.Errorf("store for %s has an invalid prefix %q", e.DefaultQualifiedResource.String(), opts.ResourcePrefix)
 	}
 
 	// Set the default behavior for storage key generation
@@ -299,9 +299,6 @@ func (e *Store) CompleteWithOptions(options *options.StoreOptions) error {
 			accessor, err := meta.Accessor(obj)
 			if err != nil {
 				return "", err
-			}
-			if e, ok := obj.(*meta.Event); ok {
-				return e.Name, nil
 			}
 			return accessor.GetUID(), nil
 		}
@@ -406,7 +403,11 @@ func (e *Store) Update(ctx context.Context, name string, objInfo runtime.Object,
 		return nil, false, err
 	}
 
-	existing, err := e.Get(ctx, key, &meta.GetOptions{})
+	existing := e.NewFunc()
+	err = e.Storage.Get(ctx, key, meta.GetOptions{}, existing)
+	if err != nil {
+		return nil, false, err
+	}
 	if forceAllowCreate {
 		if errors.Is(err, storage.ErrKeyNotFound) {
 			creating = true
@@ -547,7 +548,7 @@ func (e *Store) Delete(ctx context.Context, name string, deleteValidation rest.V
 	}
 
 	if err = e.Storage.Get(ctx, key, meta.GetOptions{}, obj); err != nil {
-		return nil, false, fmt.Errorf("InterpretDeleteError %s", err)
+		return nil, false, xerrors.Errorf("InterpretDeleteError %s", err)
 	}
 
 	_, _, err = rest.BeforeDelete(e.DeleteStrategy, ctx, obj, options)
@@ -676,7 +677,7 @@ func NoNamespaceKeyFunc(_ context.Context, prefix string, uid string) (string, e
 		return "", xerrors.New("name parameter required")
 	}
 	if msgs := IsValidPathSegmentName(uid); len(msgs) != 0 {
-		return "", fmt.Errorf(fmt.Sprintf("UID parameter invalid: %q: %s", uid, strings.Join(msgs, ";")))
+		return "", xerrors.Errorf(fmt.Sprintf("UID parameter invalid: %q: %s", uid, strings.Join(msgs, ";")))
 	}
 	key := prefix + "/" + uid
 	return key, nil

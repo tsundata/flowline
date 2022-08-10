@@ -13,6 +13,7 @@ import (
 	"github.com/tsundata/flowline/pkg/scheduler/framework/config"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
+	"golang.org/x/xerrors"
 	"reflect"
 	"sort"
 	"sync"
@@ -114,7 +115,7 @@ func NewFramework(r Registry, profile *config.Profile, stopCh <-chan struct{}, o
 	for i := range profile.PluginConfig {
 		name := profile.PluginConfig[i].Name
 		if _, ok := pluginConfig[name]; ok {
-			return nil, fmt.Errorf("repeated config for plugin %s", name)
+			return nil, xerrors.Errorf("repeated config for plugin %s", name)
 		}
 		pluginConfig[name] = profile.PluginConfig[i].Args
 	}
@@ -140,7 +141,7 @@ func NewFramework(r Registry, profile *config.Profile, stopCh <-chan struct{}, o
 		}
 		p, err := factory(args, f)
 		if err != nil {
-			return nil, fmt.Errorf("initializing plugin %q: %w", name, err)
+			return nil, xerrors.Errorf("initializing plugin %q: %w", name, err)
 		}
 		pluginsMap[name] = p
 
@@ -156,10 +157,10 @@ func NewFramework(r Registry, profile *config.Profile, stopCh <-chan struct{}, o
 	}
 
 	if len(f.queueSortPlugins) != 1 {
-		return nil, fmt.Errorf("only one queue sort plugin required for profile with scheduler name %q, but got %d", profile.SchedulerName, len(f.queueSortPlugins))
+		return nil, xerrors.Errorf("only one queue sort plugin required for profile with scheduler name %q, but got %d", profile.SchedulerName, len(f.queueSortPlugins))
 	}
 	if len(f.bindPlugins) == 0 {
-		return nil, fmt.Errorf("at least one bind plugin is needed for profile with scheduler name %q", profile.SchedulerName)
+		return nil, xerrors.Errorf("at least one bind plugin is needed for profile with scheduler name %q", profile.SchedulerName)
 	}
 
 	if err := getScoreWeights(f, pluginsMap, profile.Plugins.Score.Enabled); err != nil {
@@ -170,7 +171,7 @@ func NewFramework(r Registry, profile *config.Profile, stopCh <-chan struct{}, o
 	// value from the one used in the configuration.
 	for _, scorePlugin := range f.scorePlugins {
 		if f.scorePluginWeight[scorePlugin.Name()] == 0 {
-			return nil, fmt.Errorf("score plugin %q is not configured with weight", scorePlugin.Name())
+			return nil, xerrors.Errorf("score plugin %q is not configured with weight", scorePlugin.Name())
 		}
 	}
 
@@ -359,7 +360,7 @@ func (f *frameworkImpl) RunScorePlugins(ctx context.Context, state *framework.Cy
 			workerName := workers[index].UID
 			s, ss := f.runScorePlugin(ctx, pl, state, stage, workerName)
 			if !ss.IsSuccess() {
-				err := fmt.Errorf("plugin %q failed with: %w", pl.Name(), ss.AsError())
+				err := xerrors.Errorf("plugin %q failed with: %w", pl.Name(), ss.AsError())
 				errCh.SendErrorWithCancel(err, cancel)
 				return
 			}
@@ -370,7 +371,7 @@ func (f *frameworkImpl) RunScorePlugins(ctx context.Context, state *framework.Cy
 		}
 	})
 	if err := errCh.ReceiveError(); err != nil {
-		return nil, framework.AsStatus(fmt.Errorf("running Score plugins: %w", err))
+		return nil, framework.AsStatus(xerrors.Errorf("running Score plugins: %w", err))
 	}
 
 	// Run NormalizeScore method for each ScorePlugin in parallel.
@@ -382,13 +383,13 @@ func (f *frameworkImpl) RunScorePlugins(ctx context.Context, state *framework.Cy
 		}
 		ss := f.runScoreExtension(ctx, pl, state, stage, workerScoreList)
 		if !ss.IsSuccess() {
-			err := fmt.Errorf("plugin %q failed with: %w", pl.Name(), ss.AsError())
+			err := xerrors.Errorf("plugin %q failed with: %w", pl.Name(), ss.AsError())
 			errCh.SendErrorWithCancel(err, cancel)
 			return
 		}
 	})
 	if err := errCh.ReceiveError(); err != nil {
-		return nil, framework.AsStatus(fmt.Errorf("running Normalize on Score plugins: %w", err))
+		return nil, framework.AsStatus(xerrors.Errorf("running Normalize on Score plugins: %w", err))
 	}
 
 	// Apply score defaultWeights for each ScorePlugin in parallel.
@@ -401,7 +402,7 @@ func (f *frameworkImpl) RunScorePlugins(ctx context.Context, state *framework.Cy
 		for i, workerScore := range workerScoreList {
 			// return error if score plugin returns invalid score.
 			if workerScore.Score > framework.MaxWorkerScore || workerScore.Score < framework.MinWorkerScore {
-				err := fmt.Errorf("plugin %q returns an invalid score %v, it should in the range of [%v, %v] after normalizing", pl.Name(), workerScore.Score, framework.MinWorkerScore, framework.MaxWorkerScore)
+				err := xerrors.Errorf("plugin %q returns an invalid score %v, it should in the range of [%v, %v] after normalizing", pl.Name(), workerScore.Score, framework.MinWorkerScore, framework.MaxWorkerScore)
 				errCh.SendErrorWithCancel(err, cancel)
 				return
 			}
@@ -409,7 +410,7 @@ func (f *frameworkImpl) RunScorePlugins(ctx context.Context, state *framework.Cy
 		}
 	})
 	if err := errCh.ReceiveError(); err != nil {
-		return nil, framework.AsStatus(fmt.Errorf("applying score defaultWeights on Score plugins: %w", err))
+		return nil, framework.AsStatus(xerrors.Errorf("applying score defaultWeights on Score plugins: %w", err))
 	}
 
 	return pluginToWorkerScores, nil
@@ -439,7 +440,7 @@ func (f *frameworkImpl) RunFilterPlugins(ctx context.Context, state *framework.C
 			if !pluginStatus.IsUnschedulable() {
 				// Filter plugins are not supposed to return any status other than
 				// Success or Unschedulable.
-				errStatus := framework.AsStatus(fmt.Errorf("running %q filter plugin: %w", pl.Name(), pluginStatus.AsError())).WithFailedPlugin(pl.Name())
+				errStatus := framework.AsStatus(xerrors.Errorf("running %q filter plugin: %w", pl.Name(), pluginStatus.AsError())).WithFailedPlugin(pl.Name())
 				return map[string]*framework.Status{pl.Name(): errStatus}
 			}
 			pluginStatus.SetFailedPlugin(pl.Name())

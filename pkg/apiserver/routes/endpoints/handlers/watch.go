@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"github.com/emicklei/go-restful/v3"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver/registry"
@@ -16,6 +15,7 @@ import (
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
 	"github.com/tsundata/flowline/pkg/watch"
 	"golang.org/x/net/websocket"
+	"golang.org/x/xerrors"
 	"io"
 	"net/http"
 	"regexp"
@@ -102,7 +102,7 @@ func serveWatch(watcher watch.Interface, scope *registry.RequestScope, mediaType
 	streamSerializer := serializer.StreamSerializer.Serializer
 	encoder := scope.Serializer.EncoderForVersion(streamSerializer, scope.Kind.GroupVersion())
 	if framer == nil {
-		err = fmt.Errorf("no framer defined for %q available for embedded encoding", serializer.MediaType)
+		err = xerrors.Errorf("no framer defined for %q available for embedded encoding", serializer.MediaType)
 		flog.Error(err)
 		return
 	}
@@ -175,7 +175,7 @@ func (s *WatchServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	flusher, ok := w.(http.Flusher)
 	if !ok {
-		err := fmt.Errorf("unable to start watch - can't get http.Flusher: %#v", w)
+		err := xerrors.Errorf("unable to start watch - can't get http.Flusher: %#v", w)
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(err.Error()))
 		return
@@ -183,7 +183,7 @@ func (s *WatchServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	framer := s.Framer.NewFrameWriter(w)
 	if framer == nil {
-		err := fmt.Errorf("no stream framing support is available for media type %q", s.MediaType)
+		err := xerrors.Errorf("no stream framing support is available for media type %q", s.MediaType)
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(err.Error()))
 		return
@@ -239,7 +239,7 @@ func (s *WatchServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 			obj := s.Fixup(event.Object)
 			if err := embeddedEncodeFn(obj, buf); err != nil {
-				err = fmt.Errorf("unable to encode watch object %T: %v", obj, err)
+				err = xerrors.Errorf("unable to encode watch object %T: %v", obj, err)
 				flog.Error(err)
 				return
 			}
@@ -256,12 +256,12 @@ func (s *WatchServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 			err := ConvertInternalEventToWatchEvent(&event, outEvent)
 			if err != nil {
-				err = fmt.Errorf("unable to convert watch object: %v", err)
+				err = xerrors.Errorf("unable to convert watch object: %v", err)
 				flog.Error(err)
 				return
 			}
 			if err := e.Encode(outEvent); err != nil {
-				err = fmt.Errorf("unable to encode watch object %T: %v (%#v)", outEvent, err, e)
+				err = xerrors.Errorf("unable to encode watch object %T: %v (%#v)", outEvent, err, e)
 				flog.Error(err)
 				return
 			}
@@ -301,7 +301,7 @@ func (s *WatchServer) handleWS(ws *websocket.Conn) {
 			}
 			obj := s.Fixup(event.Object)
 			if err := s.EmbeddedEncoder.Encode(obj, buf); err != nil {
-				err = fmt.Errorf("unable to encode watch object %T: %v", obj, err)
+				err = xerrors.Errorf("unable to encode watch object %T: %v", obj, err)
 				flog.Error(err)
 				return
 			}
@@ -316,7 +316,7 @@ func (s *WatchServer) handleWS(ws *websocket.Conn) {
 				return
 			}
 			if err := s.Encoder.Encode(outEvent, streamBuf); err != nil {
-				err = fmt.Errorf("unable to encode event: %v", err)
+				err = xerrors.Errorf("unable to encode event: %v", err)
 				flog.Error(err)
 				return
 			}

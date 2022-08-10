@@ -2,13 +2,13 @@ package scheduler
 
 import (
 	"context"
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/client"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
 	"github.com/tsundata/flowline/pkg/scheduler/queue"
 	"github.com/tsundata/flowline/pkg/util/flog"
+	"golang.org/x/xerrors"
 	"math/rand"
 	"sync"
 )
@@ -149,7 +149,7 @@ func (sched *Scheduler) bind(ctx context.Context, fwk framework.Framework, assum
 	if bindStatus.Code() == framework.Error {
 		return bindStatus.AsError()
 	}
-	return fmt.Errorf("bind status: %v, %v", bindStatus.Code(), bindStatus.Message())
+	return xerrors.Errorf("bind status: %v, %v", bindStatus.Code(), bindStatus.Message())
 }
 
 func (sched *Scheduler) extendersBinding(stage *meta.Stage, worker string) (bool, error) {
@@ -212,7 +212,7 @@ func (sched *Scheduler) frameworkForStage(stage *meta.Stage) (framework.Framewor
 	stage.SchedulerName = constant.DefaultSchedulerName
 	fwk, ok := sched.Profiles[stage.SchedulerName]
 	if !ok {
-		return nil, fmt.Errorf("profile not found for scheduler name %q", stage.SchedulerName)
+		return nil, xerrors.Errorf("profile not found for scheduler name %q", stage.SchedulerName)
 	}
 	return fwk, nil
 }
@@ -335,7 +335,7 @@ const MaxExtenderPriority = 10
 // in a reservoir sampling manner from the workers that had the highest score.
 func selectHost(workerScoreList framework.WorkerScoreList) (string, error) {
 	if len(workerScoreList) == 0 {
-		return "", fmt.Errorf("empty priorityList")
+		return "", xerrors.Errorf("empty priorityList")
 	}
 	maxScore := workerScoreList[0].Score
 	selected := workerScoreList[0].UID

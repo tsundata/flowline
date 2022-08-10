@@ -103,7 +103,7 @@ func (s *Scheme) ObjectKinds(obj Object) ([]schema.GroupVersionKind, bool, error
 
 	gvks, ok := s.typeToGVK[t]
 	if !ok {
-		return nil, false, fmt.Errorf("NewNotRegisteredErrForType %s %v", s.schemeName, t)
+		return nil, false, xerrors.Errorf("NewNotRegisteredErrForType %s %v", s.schemeName, t)
 	}
 	_, unversionedType := s.unversionedTypes[t]
 

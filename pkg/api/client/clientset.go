@@ -1,11 +1,11 @@
 package client
 
 import (
-	"fmt"
 	corev1 "github.com/tsundata/flowline/pkg/api/client/core/v1"
 	eventsv1 "github.com/tsundata/flowline/pkg/api/client/events/v1"
 	"github.com/tsundata/flowline/pkg/api/client/rest"
 	"github.com/tsundata/flowline/pkg/util/flowcontrol"
+	"golang.org/x/xerrors"
 	"net/http"
 )
 
@@ -56,7 +56,7 @@ func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*Clientset,
 	configShallowCopy := *c
 	if configShallowCopy.RateLimiter == nil && configShallowCopy.QPS > 0 {
 		if configShallowCopy.Burst <= 0 {
-			return nil, fmt.Errorf("burst is required to be greater than 0 when RateLimiter is not set and QPS is set to greater than 0")
+			return nil, xerrors.Errorf("burst is required to be greater than 0 when RateLimiter is not set and QPS is set to greater than 0")
 		}
 		configShallowCopy.RateLimiter = flowcontrol.NewTokenBucketRateLimiter(configShallowCopy.QPS, configShallowCopy.Burst)
 	}

@@ -1,8 +1,10 @@
 package meta
 
 import (
+	dagLib "github.com/heimdalr/dag"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
+	"golang.org/x/xerrors"
 )
 
 type Dag struct {
@@ -74,6 +76,32 @@ func (m *Dag) GetObjectKind() schema.ObjectKind {
 
 func (m *Dag) DeepCopyObject() runtime.Object {
 	return m
+}
+
+type nodeId string
+
+func (n nodeId) ID() string {
+	return string(n)
+}
+
+func (m *Dag) Validate() error {
+	d := dagLib.NewDAG()
+	for _, node := range m.Nodes {
+		if node.Code == "" {
+			return xerrors.Errorf("dag %s node %s not code error", m.UID, node.Id)
+		}
+		_, err := d.AddVertex(nodeId(node.Id))
+		if err != nil {
+			return err
+		}
+	}
+	for _, edge := range m.Edges {
+		err := d.AddEdge(edge.Source, edge.Target)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type DagList struct {

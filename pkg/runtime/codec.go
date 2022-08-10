@@ -2,8 +2,8 @@ package runtime
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
+	"golang.org/x/xerrors"
 	"io"
 	"reflect"
 )
@@ -91,7 +91,7 @@ func DecodeInto(d Decoder, data []byte, into Object) error {
 		return err
 	}
 	if out != into {
-		return fmt.Errorf("unable to decode %s into %v", gvk, reflect.TypeOf(into))
+		return xerrors.Errorf("unable to decode %s into %v", gvk, reflect.TypeOf(into))
 	}
 	return nil
 }

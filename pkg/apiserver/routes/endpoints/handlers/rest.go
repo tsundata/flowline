@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
+	"golang.org/x/xerrors"
 	"io"
 	"net/http"
 	"time"
@@ -31,7 +31,7 @@ func limitedReadBody(req *http.Request, limit int64) ([]byte, error) {
 		return nil, err
 	}
 	if lr.N <= 0 {
-		return nil, fmt.Errorf("NewRequestEntityTooLargeError limit is %d", limit)
+		return nil, xerrors.Errorf("NewRequestEntityTooLargeError limit is %d", limit)
 	}
 	return data, nil
 }

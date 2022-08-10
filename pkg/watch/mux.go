@@ -1,9 +1,9 @@
 package watch
 
 import (
-	"fmt"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
+	"golang.org/x/xerrors"
 	"sync"
 )
 
@@ -135,7 +135,7 @@ func (m *Broadcaster) Watch() (Interface, error) {
 		m.watchers[id] = w
 	})
 	if w == nil {
-		return nil, fmt.Errorf("broadcaster already stopped")
+		return nil, xerrors.Errorf("broadcaster already stopped")
 	}
 	return w, nil
 }
@@ -166,7 +166,7 @@ func (m *Broadcaster) WatchWithPrefix(queuedEvents []Event) (Interface, error) {
 		}
 	})
 	if w == nil {
-		return nil, fmt.Errorf("broadcaster already stopped")
+		return nil, xerrors.Errorf("broadcaster already stopped")
 	}
 	return w, nil
 }
@@ -200,7 +200,7 @@ func (m *Broadcaster) Action(action EventType, obj runtime.Object) error {
 	defer m.incomingBlock.Unlock()
 	select {
 	case <-m.stopped:
-		return fmt.Errorf("broadcaster already stopped")
+		return xerrors.Errorf("broadcaster already stopped")
 	default:
 	}
 
@@ -218,7 +218,7 @@ func (m *Broadcaster) ActionOrDrop(action EventType, obj runtime.Object) (bool, 
 	// Ensure that if the broadcaster is stopped we do not send events to it.
 	select {
 	case <-m.stopped:
-		return false, fmt.Errorf("broadcaster already stopped")
+		return false, xerrors.Errorf("broadcaster already stopped")
 	default:
 	}
 

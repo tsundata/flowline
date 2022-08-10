@@ -1,8 +1,8 @@
 package informer
 
 import (
-	"fmt"
 	"github.com/tsundata/flowline/pkg/util/sets"
+	"golang.org/x/xerrors"
 	"sync"
 )
 
@@ -123,7 +123,7 @@ func (c *threadSafeMap) Index(indexName string, obj interface{}) ([]interface{},
 
 	indexFunc := c.indexers[indexName]
 	if indexFunc == nil {
-		return nil, fmt.Errorf("Index with name %s does not exist", indexName)
+		return nil, xerrors.Errorf("Index with name %s does not exist", indexName)
 	}
 
 	indexedValues, err := indexFunc(obj)
@@ -162,7 +162,7 @@ func (c *threadSafeMap) ByIndex(indexName, indexedValue string) ([]interface{}, 
 
 	indexFunc := c.indexers[indexName]
 	if indexFunc == nil {
-		return nil, fmt.Errorf("Index with name %s does not exist", indexName)
+		return nil, xerrors.Errorf("Index with name %s does not exist", indexName)
 	}
 
 	index := c.indices[indexName]
@@ -184,7 +184,7 @@ func (c *threadSafeMap) IndexKeys(indexName, indexedValue string) ([]string, err
 
 	indexFunc := c.indexers[indexName]
 	if indexFunc == nil {
-		return nil, fmt.Errorf("Index with name %s does not exist", indexName)
+		return nil, xerrors.Errorf("Index with name %s does not exist", indexName)
 	}
 
 	index := c.indices[indexName]
@@ -214,14 +214,14 @@ func (c *threadSafeMap) AddIndexers(newIndexers Indexers) error {
 	defer c.lock.Unlock()
 
 	if len(c.items) > 0 {
-		return fmt.Errorf("cannot add indexers to running index")
+		return xerrors.Errorf("cannot add indexers to running index")
 	}
 
 	oldKeys := sets.StringKeySet(c.indexers)
 	newKeys := sets.StringKeySet(newIndexers)
 
 	if oldKeys.HasAny(newKeys.List()...) {
-		return fmt.Errorf("indexer conflict: %v", oldKeys.Intersection(newKeys))
+		return xerrors.Errorf("indexer conflict: %v", oldKeys.Intersection(newKeys))
 	}
 
 	for k, v := range newIndexers {
@@ -245,7 +245,7 @@ func (c *threadSafeMap) updateIndices(oldObj interface{}, newObj interface{}, ke
 			oldIndexValues = oldIndexValues[:0]
 		}
 		if err != nil {
-			panic(fmt.Errorf("unable to calculate an index entry for key %q on index %q: %v", key, name, err))
+			panic(xerrors.Errorf("unable to calculate an index entry for key %q on index %q: %v", key, name, err))
 		}
 
 		if newObj != nil {
@@ -254,7 +254,7 @@ func (c *threadSafeMap) updateIndices(oldObj interface{}, newObj interface{}, ke
 			indexValues = indexValues[:0]
 		}
 		if err != nil {
-			panic(fmt.Errorf("unable to calculate an index entry for key %q on index %q: %v", key, name, err))
+			panic(xerrors.Errorf("unable to calculate an index entry for key %q on index %q: %v", key, name, err))
 		}
 
 		index := c.indices[name]

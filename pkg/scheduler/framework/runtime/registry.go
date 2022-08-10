@@ -1,9 +1,9 @@
 package runtime
 
 import (
-	"fmt"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
+	"golang.org/x/xerrors"
 )
 
 // PluginFactory is a function that builds a plugin.
@@ -18,7 +18,7 @@ type Registry map[string]PluginFactory
 // exists, it returns an error.
 func (r Registry) Register(name string, factory PluginFactory) error {
 	if _, ok := r[name]; ok {
-		return fmt.Errorf("a plugin named %v already exists", name)
+		return xerrors.Errorf("a plugin named %v already exists", name)
 	}
 	r[name] = factory
 	return nil
@@ -28,7 +28,7 @@ func (r Registry) Register(name string, factory PluginFactory) error {
 // the provided name exists, it returns an error.
 func (r Registry) Unregister(name string) error {
 	if _, ok := r[name]; !ok {
-		return fmt.Errorf("no plugin named %v exists", name)
+		return xerrors.Errorf("no plugin named %v exists", name)
 	}
 	delete(r, name)
 	return nil

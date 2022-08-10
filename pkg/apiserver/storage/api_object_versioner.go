@@ -1,9 +1,9 @@
 package storage
 
 import (
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/util/flog"
+	"golang.org/x/xerrors"
 	"strconv"
 )
 
@@ -29,7 +29,7 @@ func (a APIObjectVersioner) UpdateObject(obj interface{}, resourceVersion uint64
 // UpdateList implements Versioner
 func (a APIObjectVersioner) UpdateList(obj interface{}, resourceVersion uint64, nextKey string, count *int64) error {
 	if resourceVersion == 0 {
-		return fmt.Errorf("illegal resource version from storage: %d", resourceVersion)
+		return xerrors.Errorf("illegal resource version from storage: %d", resourceVersion)
 	}
 	listAccessor, err := meta.ListAccessor(obj)
 	if err != nil || listAccessor == nil {
@@ -75,7 +75,7 @@ func (a APIObjectVersioner) ParseResourceVersion(resourceVersion string) (uint64
 	}
 	version, err := strconv.ParseUint(resourceVersion, 10, 64)
 	if err != nil {
-		return 0, fmt.Errorf("%s, %s",
+		return 0, xerrors.Errorf("%s, %s",
 			// Validation errors are supposed to return version-specific field
 			// paths, but this is probably close enough.
 			resourceVersion, err.Error(),

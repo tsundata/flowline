@@ -86,7 +86,7 @@ func BeforeUpdate(strategy RESTUpdateStrategy, ctx context.Context, obj, old run
 		objectMeta.SetCreationTimestamp(oldMeta.GetCreationTimestamp())
 	}
 	// an update can never remove/change a deletion timestamp
-	if !oldMeta.GetDeletionTimestamp().IsZero() {
+	if oldMeta.GetDeletionTimestamp() != nil && !oldMeta.GetDeletionTimestamp().IsZero() {
 		objectMeta.SetDeletionTimestamp(oldMeta.GetDeletionTimestamp())
 	}
 	// an update can never remove/change grace period seconds

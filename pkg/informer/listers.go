@@ -1,10 +1,10 @@
 package informer
 
 import (
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
+	"golang.org/x/xerrors"
 )
 
 // AppendFunc is used to add a matching item to whatever list the caller is using
@@ -62,7 +62,7 @@ func (s *genericLister) Get(name string) (runtime.Object, error) {
 		return nil, err
 	}
 	if !exists {
-		return nil, fmt.Errorf("NewNotFound %s %s", s.resource, name)
+		return nil, xerrors.Errorf("NewNotFound %s %s", s.resource, name)
 	}
 	return obj.(runtime.Object), nil
 }

@@ -2,9 +2,9 @@ package streaming
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
+	"golang.org/x/xerrors"
 	"io"
 )
 
@@ -49,7 +49,7 @@ func NewDecoder(r io.ReadCloser, d runtime.Decoder) Decoder {
 	}
 }
 
-var ErrObjectTooLarge = fmt.Errorf("object to decode was longer than maximum allowed size")
+var ErrObjectTooLarge = xerrors.Errorf("object to decode was longer than maximum allowed size")
 
 // Decode reads the next object from the stream and decodes it.
 func (d *decoder) Decode(defaults *schema.GroupVersionKind, into runtime.Object) (runtime.Object, *schema.GroupVersionKind, error) {
@@ -58,7 +58,7 @@ func (d *decoder) Decode(defaults *schema.GroupVersionKind, into runtime.Object)
 		n, err := d.reader.Read(d.buf[base:])
 		if err == io.ErrShortBuffer {
 			if n == 0 {
-				return nil, nil, fmt.Errorf("got short buffer with n=0, base=%d, cap=%d", base, cap(d.buf))
+				return nil, nil, xerrors.Errorf("got short buffer with n=0, base=%d, cap=%d", base, cap(d.buf))
 			}
 			if d.resetRead {
 				continue

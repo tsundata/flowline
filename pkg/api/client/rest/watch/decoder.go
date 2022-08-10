@@ -1,11 +1,11 @@
 package watch
 
 import (
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/serializer/streaming"
 	"github.com/tsundata/flowline/pkg/watch"
+	"golang.org/x/xerrors"
 )
 
 // Decoder implements the watch.Decoder interface for io.ReadClosers that
@@ -34,18 +34,18 @@ func (d *Decoder) Decode() (watch.EventType, runtime.Object, error) {
 		return "", nil, err
 	}
 	if res != &got {
-		return "", nil, fmt.Errorf("unable to decode to meta.Event")
+		return "", nil, xerrors.Errorf("unable to decode to meta.Event")
 	}
 	switch got.Type {
 	case string(watch.Added), string(watch.Modified), string(watch.Deleted), string(watch.Error), string(watch.Bookmark):
 	default:
-		return "", nil, fmt.Errorf("got invalid watch event type: %v", got.Type)
+		return "", nil, xerrors.Errorf("got invalid watch event type: %v", got.Type)
 	}
 
 	into := meta.FactoryNewObject(got.Kind)
 	obj, err := runtime.Decode(d.embeddedDecoder, got.Object.Raw, into)
 	if err != nil {
-		return "", nil, fmt.Errorf("unable to decode watch event: %v", err)
+		return "", nil, xerrors.Errorf("unable to decode watch event: %v", err)
 	}
 	return watch.EventType(got.Type), obj, nil
 }

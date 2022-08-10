@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/tsundata/flowline/pkg/util/flog"
+	"golang.org/x/xerrors"
 	"io"
 	"net/http"
 	"net/url"
@@ -223,7 +224,7 @@ func (r *withRetry) Before(ctx context.Context, request *Request) error {
 	// the same TCP connection.
 	if seeker, ok := request.body.(io.Seeker); ok && request.body != nil {
 		if _, err := seeker.Seek(0, io.SeekStart); err != nil {
-			err = fmt.Errorf("failed to reset the request body while retrying a request: %v", err)
+			err = xerrors.Errorf("failed to reset the request body while retrying a request: %v", err)
 			r.trackPreviousError(err)
 			return err
 		}

@@ -1,9 +1,9 @@
 package v1
 
 import (
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/informer"
+	"golang.org/x/xerrors"
 )
 
 type StageLister interface {
@@ -32,7 +32,7 @@ func (s *stageLister) Get(name string) (*meta.Stage, error) {
 		return nil, err
 	}
 	if !exists {
-		return nil, fmt.Errorf("NewNotFound %s", name)
+		return nil, xerrors.Errorf("NewNotFound %s", name)
 	}
 	return obj.(*meta.Stage), nil
 }

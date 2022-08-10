@@ -2,7 +2,6 @@ package etcd
 
 import (
 	"context"
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver/storage"
 	"github.com/tsundata/flowline/pkg/apiserver/storage/value"
@@ -56,7 +55,7 @@ func (s *store) Create(ctx context.Context, key string, obj, out runtime.Object,
 		return xerrors.New("resourceVersion should not be set on objects to be created")
 	}
 	if err := s.versioner.PrepareObjectForStorage(obj); err != nil {
-		return fmt.Errorf("PrepareObjectForStorage failed: %v", err)
+		return xerrors.Errorf("PrepareObjectForStorage failed: %v", err)
 	}
 	data, err := runtime.Encode(s.codec, obj)
 	if err != nil {
@@ -81,7 +80,7 @@ func (s *store) Create(ctx context.Context, key string, obj, out runtime.Object,
 	}
 
 	if !txnResp.Succeeded {
-		return fmt.Errorf("key exists %s", key)
+		return xerrors.Errorf("key exists %s", key)
 	}
 
 	if out != nil {
@@ -135,7 +134,7 @@ func (s *store) GetList(ctx context.Context, key string, opts meta.ListOptions, 
 	}
 	v, err := runtime.EnforcePtr(listPtr)
 	if err != nil || v.Kind() != reflect.Slice {
-		return fmt.Errorf("need ptr to slice: %v", err)
+		return xerrors.Errorf("need ptr to slice: %v", err)
 	}
 	key = path.Join(s.pathPrefix, key)
 
@@ -180,7 +179,7 @@ func (s *store) GuaranteedUpdate(ctx context.Context, key string, destination ru
 		return err
 	}
 	if getResp.Kvs == nil {
-		return fmt.Errorf("not found %s", key)
+		return xerrors.Errorf("not found %s", key)
 	}
 	rev := getResp.Kvs[0].ModRevision
 
@@ -207,7 +206,7 @@ func (s *store) GuaranteedUpdate(ctx context.Context, key string, destination ru
 		return err
 	}
 	if !txnResp.Succeeded {
-		return fmt.Errorf("update error %s", key)
+		return xerrors.Errorf("update error %s", key)
 	}
 	putResp := txnResp.Responses[0].GetResponsePut()
 

@@ -11,6 +11,7 @@ import (
 	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
+	"golang.org/x/xerrors"
 	"net/http"
 	"sort"
 )
@@ -182,7 +183,7 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 				Metadata(restfulspec.KeyOpenAPITags, tags)
 			rs = append(rs, watchListRoute)
 		default:
-			return fmt.Errorf("unrecognized action verb: %s", action.Verb)
+			return xerrors.Errorf("unrecognized action verb: %s", action.Verb)
 		}
 	}
 
@@ -290,7 +291,7 @@ func (a *APIInstaller) registerResourceHandlers(resource string, storage rest.St
 				}
 				rs = append(rs, watchListRoute)
 			default:
-				return fmt.Errorf("unrecognized action verb: %s", action.Verb)
+				return xerrors.Errorf("unrecognized action verb: %s", action.Verb)
 			}
 		}
 	}

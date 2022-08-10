@@ -177,6 +177,12 @@ func (r *subResource) workflowUpdateDag(req *restful.Request, resp *restful.Resp
 		flog.Error(err)
 	}
 
+	if err := obj.Validate(); err != nil {
+		flog.Error(err)
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("dag validate failed"))
+		return
+	}
+
 	// query created dag
 	list := &meta.DagList{}
 	err = r.store.Storage.GetList(ctx, rest.WithPrefix("dag"), meta.ListOptions{}, list)

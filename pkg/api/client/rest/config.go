@@ -7,6 +7,7 @@ import (
 	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"github.com/tsundata/flowline/pkg/util/flowcontrol"
+	"golang.org/x/xerrors"
 	"net"
 	"net/http"
 	"net/url"
@@ -159,10 +160,10 @@ type ClientContentConfig struct {
 
 func RESTClientFor(config *Config) (*RESTClient, error) {
 	if config.GroupVersion == nil {
-		return nil, fmt.Errorf("GroupVersion is required when initializing a RESTClient")
+		return nil, xerrors.Errorf("GroupVersion is required when initializing a RESTClient")
 	}
 	if config.NegotiatedSerializer == nil {
-		return nil, fmt.Errorf("NegotiatedSerializer is required when initializing a RESTClient")
+		return nil, xerrors.Errorf("NegotiatedSerializer is required when initializing a RESTClient")
 	}
 
 	// Validate config.Host before constructing the transport/client so we can fail fast.
@@ -193,10 +194,10 @@ const (
 // The http client defaults to the `http.DefaultClient` if nil.
 func RESTClientForConfigAndClient(config *Config, httpClient *http.Client) (*RESTClient, error) {
 	if config.GroupVersion == nil {
-		return nil, fmt.Errorf("GroupVersion is required when initializing a RESTClient")
+		return nil, xerrors.Errorf("GroupVersion is required when initializing a RESTClient")
 	}
 	if config.NegotiatedSerializer == nil {
-		return nil, fmt.Errorf("NegotiatedSerializer is required when initializing a RESTClient")
+		return nil, xerrors.Errorf("NegotiatedSerializer is required when initializing a RESTClient")
 	}
 
 	baseURL, versionedAPIPath, err := defaultServerUrlFor(config)
@@ -273,7 +274,7 @@ func defaultServerUrlFor(config *Config) (*url.URL, string, error) {
 // Kubernetes API.
 func DefaultServerURL(host, apiPath string, groupVersion schema.GroupVersion, defaultTLS bool) (*url.URL, string, error) {
 	if host == "" {
-		return nil, "", fmt.Errorf("host must be a URL or a host:port pair")
+		return nil, "", xerrors.Errorf("host must be a URL or a host:port pair")
 	}
 	base := host
 	hostURL, err := url.Parse(base)
@@ -287,7 +288,7 @@ func DefaultServerURL(host, apiPath string, groupVersion schema.GroupVersion, de
 			return nil, "", err
 		}
 		if hostURL.Path != "" && hostURL.Path != "/" {
-			return nil, "", fmt.Errorf("host must be a URL or a host:port pair: %q", base)
+			return nil, "", xerrors.Errorf("host must be a URL or a host:port pair: %q", base)
 		}
 	}
 

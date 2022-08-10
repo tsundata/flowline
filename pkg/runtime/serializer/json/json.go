@@ -3,13 +3,13 @@ package json
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/framer"
+	"golang.org/x/xerrors"
 	"io"
 	"strconv"
 	"unicode"
@@ -131,7 +131,7 @@ func (s *Serializer) Decode(originalData []byte, gvk *schema.GroupVersionKind, i
 		return nil, actual, err
 	} else if len(strictErrs) > 0 {
 		flog.Error(strictErrs[0])
-		return into, actual, fmt.Errorf("strictErrs")
+		return into, actual, xerrors.Errorf("strictErrs")
 	}
 	return into, actual, nil
 }
@@ -204,7 +204,7 @@ func (SimpleMetaFactory) Interpret(data []byte) (*schema.GroupVersionKind, error
 		Kind string `json:"kind,omitempty"`
 	}{}
 	if err := json.Unmarshal(data, &findKind); err != nil {
-		return nil, fmt.Errorf("couldn't get version/kind; json parse error: %v", err)
+		return nil, xerrors.Errorf("couldn't get version/kind; json parse error: %v", err)
 	}
 	return &schema.GroupVersionKind{Group: constant.GroupName, Version: constant.Version, Kind: findKind.Kind}, nil
 }

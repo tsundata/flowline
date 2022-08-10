@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"fmt"
 	"golang.org/x/xerrors"
 	"reflect"
 )
@@ -13,7 +12,7 @@ import (
 func GetItemsPtr(list Object) (interface{}, error) {
 	obj, err := getItemsPtr(list)
 	if err != nil {
-		return nil, fmt.Errorf("%T is not a list: %v", list, err)
+		return nil, xerrors.Errorf("%T is not a list: %v", list, err)
 	}
 	return obj, nil
 }
@@ -50,12 +49,12 @@ func EnforcePtr(obj interface{}) (reflect.Value, error) {
 	v := reflect.ValueOf(obj)
 	if v.Kind() != reflect.Pointer {
 		if v.Kind() == reflect.Invalid {
-			return reflect.Value{}, fmt.Errorf("expected pointer, but got invalid kind")
+			return reflect.Value{}, xerrors.Errorf("expected pointer, but got invalid kind")
 		}
-		return reflect.Value{}, fmt.Errorf("expected pointer, but got %v type", v.Type())
+		return reflect.Value{}, xerrors.Errorf("expected pointer, but got %v type", v.Type())
 	}
 	if v.IsNil() {
-		return reflect.Value{}, fmt.Errorf("expected pointer, but got nil")
+		return reflect.Value{}, xerrors.Errorf("expected pointer, but got nil")
 	}
 	return v.Elem(), nil
 }

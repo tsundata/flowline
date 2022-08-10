@@ -149,7 +149,7 @@ func (s *sharedIndexInformer) AddIndexers(indexers Indexers) error {
 	defer s.startedLock.Unlock()
 
 	if s.started {
-		return fmt.Errorf("informer has already started")
+		return xerrors.Errorf("informer has already started")
 	}
 
 	return s.indexer.AddIndexers(indexers)
@@ -343,7 +343,7 @@ func (s *sharedIndexInformer) SetWatchErrorHandler(handler WatchErrorHandler) er
 	defer s.startedLock.Unlock()
 
 	if s.started {
-		return fmt.Errorf("informer has already started")
+		return xerrors.Errorf("informer has already started")
 	}
 
 	s.watchErrorHandler = handler
@@ -355,7 +355,7 @@ func (s *sharedIndexInformer) SetTransform(handler TransformFunc) error {
 	defer s.startedLock.Unlock()
 
 	if s.started {
-		return fmt.Errorf("informer has already started")
+		return xerrors.Errorf("informer has already started")
 	}
 
 	s.transform = handler
@@ -698,7 +698,7 @@ func WaitForNamedCacheSync(controllerName string, stopCh <-chan struct{}, cacheS
 	flog.Infof("Waiting for caches to sync for %s", controllerName)
 
 	if !WaitForCacheSync(stopCh, cacheSyncs...) {
-		flog.Error(fmt.Errorf("unable to sync caches for %s", controllerName))
+		flog.Error(xerrors.Errorf("unable to sync caches for %s", controllerName))
 		return false
 	}
 

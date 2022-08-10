@@ -9,6 +9,7 @@ import (
 	"github.com/tsundata/flowline/pkg/util/clock"
 	"github.com/tsundata/flowline/pkg/util/flowcontrol"
 	"github.com/tsundata/flowline/pkg/util/sets"
+	"golang.org/x/xerrors"
 	"strings"
 	"sync"
 	"time"
@@ -489,7 +490,7 @@ func populateDefaults(options CorrelatorOptions) CorrelatorOptions {
 // EventCorrelate filters, aggregates, counts, and de-duplicates all incoming events
 func (c *EventCorrelator) EventCorrelate(newEvent *meta.Event) (*EventCorrelateResult, error) {
 	if newEvent == nil {
-		return nil, fmt.Errorf("event is nil")
+		return nil, xerrors.Errorf("event is nil")
 	}
 	aggregateEvent, ckey := c.aggregator.EventAggregate(newEvent)
 	observedEvent, patch, err := c.logger.eventObserve(aggregateEvent, ckey)

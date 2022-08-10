@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"golang.org/x/xerrors"
@@ -65,7 +64,7 @@ func (nt *workerTree) removeWorker(n *meta.Worker) error {
 		}
 	}
 	flog.Errorf("Worker in listed group was not found %v", zone)
-	return fmt.Errorf("worker %q in group %q was not found", n.Name, zone)
+	return xerrors.Errorf("worker %q in group %q was not found", n.Name, zone)
 }
 
 // removeZone removes a zone from tree.

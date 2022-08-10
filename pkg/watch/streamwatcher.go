@@ -1,11 +1,11 @@
 package watch
 
 import (
-	"fmt"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/net"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
+	"golang.org/x/xerrors"
 	"io"
 	"sync"
 )
@@ -100,7 +100,7 @@ func (sw *StreamWatcher) receive() {
 					case <-sw.done:
 					case sw.result <- Event{
 						Type:   Error,
-						Object: sw.reporter.AsObject(fmt.Errorf("unable to decode an event from the watch stream: %v", err)),
+						Object: sw.reporter.AsObject(xerrors.Errorf("unable to decode an event from the watch stream: %v", err)),
 					}:
 					}
 				}

@@ -18,6 +18,7 @@ import (
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
 	"github.com/tsundata/flowline/pkg/util/workqueue"
+	"golang.org/x/xerrors"
 	"sort"
 	"time"
 )
@@ -718,7 +719,7 @@ func getMostRecentScheduleTime(earliestTime time.Time, now time.Time, schedule c
 	// In this case the timeBetweenTwoSchedules will be 0, and we error out the invalid schedule
 	timeBetweenTwoSchedules := int64(t2.Sub(t1).Round(time.Second).Seconds())
 	if timeBetweenTwoSchedules < 1 {
-		return nil, 0, fmt.Errorf("time difference between two schedules less than 1 second")
+		return nil, 0, xerrors.Errorf("time difference between two schedules less than 1 second")
 	}
 	timeElapsed := int64(now.Sub(t1).Seconds())
 	numberOfMissedSchedules := (timeElapsed / timeBetweenTwoSchedules) + 1

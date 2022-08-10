@@ -1,7 +1,6 @@
 package framework
 
 import (
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"golang.org/x/xerrors"
@@ -205,7 +204,7 @@ func (n *WorkerInfo) RemoveStage(stage *meta.Stage) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("no corresponding stage %s in stages of worker %s", stage.UID, n.worker.UID)
+	return xerrors.Errorf("no corresponding stage %s in stages of worker %s", stage.UID, n.worker.UID)
 }
 
 func calculateResource(stage *meta.Stage) (res Resource, non0CPU int64, non0Mem int64) {

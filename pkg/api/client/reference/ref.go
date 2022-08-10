@@ -1,7 +1,6 @@
 package reference
 
 import (
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"golang.org/x/xerrors"
@@ -46,7 +45,7 @@ func GetReference(scheme *runtime.Scheme, obj runtime.Object) (*meta.ObjectRefer
 			return nil, err
 		}
 		if len(gvks) == 0 || gvks[0].Empty() {
-			return nil, fmt.Errorf("unexpected gvks registered for object %T: %v", obj, gvks)
+			return nil, xerrors.Errorf("unexpected gvks registered for object %T: %v", obj, gvks)
 		}
 		gvk = gvks[0]
 	}

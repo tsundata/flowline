@@ -303,7 +303,7 @@ func dagSort(dag *meta.Dag) ([]dagStage, error) {
 	nodeMap := make(map[string]meta.Node)
 	for i, node := range dag.Nodes {
 		if node.Code == "" {
-			return nil, fmt.Errorf("dag %s node %s not code error", dag.UID, node.Id)
+			return nil, xerrors.Errorf("dag %s node %s not code error", dag.UID, node.Id)
 		}
 		_, err := d.AddVertex(nodeId(node.Id))
 		if err != nil {
@@ -359,7 +359,7 @@ func getStageFromTemplate(
 	// code
 	code, ok := codes[item.Code]
 	if !ok || code == nil {
-		return nil, fmt.Errorf("not found code %s", item.Code)
+		return nil, xerrors.Errorf("not found code %s", item.Code)
 	}
 
 	// variables
@@ -367,7 +367,7 @@ func getStageFromTemplate(
 	for _, uid := range item.Variables {
 		variable, ok := variables[uid]
 		if !ok || variable == nil {
-			return nil, fmt.Errorf("not found variable %s", uid)
+			return nil, xerrors.Errorf("not found variable %s", uid)
 		}
 		stageVariables = append(stageVariables, *variable)
 	}
@@ -377,7 +377,7 @@ func getStageFromTemplate(
 	for _, uid := range item.Connections {
 		connection, ok := connections[uid]
 		if !ok || connection == nil {
-			return nil, fmt.Errorf("not found connection %s", uid)
+			return nil, xerrors.Errorf("not found connection %s", uid)
 		}
 		stageConnections = append(stageConnections, *connection)
 	}

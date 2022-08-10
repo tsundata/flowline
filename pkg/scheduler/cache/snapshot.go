@@ -1,9 +1,9 @@
 package cache
 
 import (
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
+	"golang.org/x/xerrors"
 )
 
 // Snapshot is a snapshot of cache WorkerInfo and WorkerTree order. The scheduler takes a
@@ -93,5 +93,5 @@ func (s *Snapshot) Get(workerName string) (*framework.WorkerInfo, error) {
 	if v, ok := s.workerInfoMap[workerName]; ok && v.Worker() != nil {
 		return v, nil
 	}
-	return nil, fmt.Errorf("workerinfo not found for worker name %q", workerName)
+	return nil, xerrors.Errorf("workerinfo not found for worker name %q", workerName)
 }

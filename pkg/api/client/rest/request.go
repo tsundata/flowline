@@ -14,6 +14,7 @@ import (
 	"github.com/tsundata/flowline/pkg/util/net"
 	"github.com/tsundata/flowline/pkg/watch"
 	"golang.org/x/net/http2"
+	"golang.org/x/xerrors"
 	"io"
 	"mime"
 	"net/http"
@@ -168,7 +169,7 @@ func (r *Request) Resource(resource string) *Request {
 		return r
 	}
 	if len(r.resource) != 0 {
-		r.err = fmt.Errorf("resource already set to %q, cannot change to %q", r.resource, resource)
+		r.err = xerrors.Errorf("resource already set to %q, cannot change to %q", r.resource, resource)
 		return r
 	}
 	r.resource = resource
@@ -201,7 +202,7 @@ func (r *Request) SubResource(subresources ...string) *Request {
 	}
 	subresource := path.Join(subresources...)
 	if len(r.subresource) != 0 {
-		r.err = fmt.Errorf("subresource already set to %q, cannot change to %q", r.subresource, subresource)
+		r.err = xerrors.Errorf("subresource already set to %q, cannot change to %q", r.subresource, subresource)
 		return r
 	}
 	r.subresource = subresource
@@ -214,11 +215,11 @@ func (r *Request) Name(resourceName string) *Request {
 		return r
 	}
 	if len(resourceName) == 0 {
-		r.err = fmt.Errorf("resource name may not be empty")
+		r.err = xerrors.Errorf("resource name may not be empty")
 		return r
 	}
 	if len(r.resourceName) != 0 {
-		r.err = fmt.Errorf("resource name already set to %q, cannot change to %q", r.resourceName, resourceName)
+		r.err = xerrors.Errorf("resource name already set to %q, cannot change to %q", r.resourceName, resourceName)
 		return r
 	}
 	r.resourceName = resourceName
@@ -355,7 +356,7 @@ func (r *Request) Body(obj interface{}) *Request {
 		r.body = bytes.NewReader(data)
 		r.SetHeader("Content-Type", r.c.content.ContentType)
 	default:
-		r.err = fmt.Errorf("unknown type used for body: %+v", obj)
+		r.err = xerrors.Errorf("unknown type used for body: %+v", obj)
 	}
 	return r
 }
@@ -414,7 +415,7 @@ func (r *Request) tryThrottleWithInfo(ctx context.Context, retryInfo string) err
 
 	err := r.rateLimiter.Wait(ctx)
 	if err != nil {
-		err = fmt.Errorf("client rate limiter Wait returned an error: %w", err)
+		err = xerrors.Errorf("client rate limiter Wait returned an error: %w", err)
 	}
 	latency := time.Since(now)
 
@@ -491,7 +492,7 @@ func (r *Request) Watch(ctx context.Context) (watch.Interface, error) {
 			if result := r.transformResponse(resp, req); result.err != nil {
 				return true, result.err
 			}
-			return true, fmt.Errorf("for request %s, got status: %v", u, resp.StatusCode)
+			return true, xerrors.Errorf("for request %s, got status: %v", u, resp.StatusCode)
 		}()
 		if done {
 			if isErrRetryableFunc(req, err) {
@@ -519,13 +520,13 @@ func (r *Request) transformResponse(resp *http.Response, req *http.Request) Resu
 			// This is trying to catch the scenario that the server may close the connection when sending the
 			// response body. This can be caused by server timeout due to a slow network connection.
 			flog.Infof("Stream error %#v when reading response body, may be caused by closed connection.", err)
-			streamErr := fmt.Errorf("stream error when reading response body, may be caused by closed connection. Please retry. Original error: %w", err)
+			streamErr := xerrors.Errorf("stream error when reading response body, may be caused by closed connection. Please retry. Original error: %w", err)
 			return Result{
 				err: streamErr,
 			}
 		default:
 			flog.Errorf("Unexpected error when reading response body: %v", err)
-			unexpectedErr := fmt.Errorf("unexpected error when reading response body. Please retry. Original error: %w", err)
+			unexpectedErr := xerrors.Errorf("unexpected error when reading response body. Please retry. Original error: %w", err)
 			return Result{
 				err: unexpectedErr,
 			}
@@ -646,7 +647,7 @@ func (r *Request) newUnstructuredResponseError(body []byte, isTextResponse bool,
 		groupResource.Group = r.c.content.GroupVersion.Group
 		groupResource.Resource = r.resource
 	}
-	return fmt.Errorf("response error %d %s %v %s %s %d",
+	return xerrors.Errorf("response error %d %s %v %s %s %d",
 		statusCode,
 		method,
 		groupResource,
@@ -734,7 +735,7 @@ func (r *Request) Stream(ctx context.Context) (io.ReadCloser, error) {
 				if err := result.Error(); err != nil {
 					return true, err
 				}
-				return true, fmt.Errorf("%d while accessing %v: %s", result.statusCode, u, string(result.body))
+				return true, xerrors.Errorf("%d while accessing %v: %s", result.statusCode, u, string(result.body))
 			}()
 			if done {
 				return nil, transformErr
@@ -935,7 +936,7 @@ func (r Result) Get() (runtime.Object, error) {
 		return nil, r.Error()
 	}
 	if r.decoder == nil {
-		return nil, fmt.Errorf("serializer for %s doesn't exist", r.contentType)
+		return nil, xerrors.Errorf("serializer for %s doesn't exist", r.contentType)
 	}
 
 	// decode, but if the result is Status return that as an error instead.
@@ -962,10 +963,10 @@ func (r Result) Into(obj runtime.Object) error {
 		return r.Error()
 	}
 	if r.decoder == nil {
-		return fmt.Errorf("serializer for %s doesn't exist", r.contentType)
+		return xerrors.Errorf("serializer for %s doesn't exist", r.contentType)
 	}
 	if len(r.body) == 0 {
-		return fmt.Errorf("0-length response with status code: %d and content type: %s",
+		return xerrors.Errorf("0-length response with status code: %d and content type: %s",
 			r.statusCode, r.contentType)
 	}
 

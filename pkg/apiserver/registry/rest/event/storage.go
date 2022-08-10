@@ -40,6 +40,17 @@ func NewREST(options *options.StoreOptions) (*REST, error) {
 		UpdateStrategy:      Strategy,
 		DeleteStrategy:      Strategy,
 		ResetFieldsStrategy: Strategy,
+
+		ObjectUIDFunc: func(obj runtime.Object) (string, error) {
+			accessor, err := meta.Accessor(obj)
+			if err != nil {
+				return "", err
+			}
+			if e, ok := obj.(*meta.Event); ok {
+				return e.Name, nil
+			}
+			return accessor.GetUID(), nil
+		},
 	}
 
 	err := store.CompleteWithOptions(options)

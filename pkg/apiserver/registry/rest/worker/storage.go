@@ -127,7 +127,7 @@ func (r *subResource) workerRegister(req *restful.Request, resp *restful.Respons
 		if obj.CreationTimestamp == nil {
 			obj.CreationTimestamp = &now
 		}
-		result, _, err = r.store.Update(ctx, obj.UID, &obj, rest.ValidateAllObjectFunc, rest.ValidateAllObjectUpdateFunc, false, &meta.UpdateOptions{})
+		result, _, err = r.store.Update(ctx, obj.UID, &obj, rest.ValidateAllObjectFunc, rest.ValidateAllObjectUpdateFunc, true, &meta.UpdateOptions{})
 	} else {
 		obj.CreationTimestamp = &now
 		result, err = r.store.Create(ctx, &obj, rest.ValidateAllObjectFunc, &meta.CreateOptions{})

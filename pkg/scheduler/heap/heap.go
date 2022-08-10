@@ -3,6 +3,7 @@ package heap
 import (
 	"container/heap"
 	"fmt"
+	"golang.org/x/xerrors"
 )
 
 // KeyFunc is a function type to get the key from an object.
@@ -139,7 +140,7 @@ func (h *Heap) Delete(obj interface{}) error {
 		heap.Remove(h.data, item.index)
 		return nil
 	}
-	return fmt.Errorf("object not found")
+	return xerrors.Errorf("object not found")
 }
 
 // Peek returns the head of the heap without removing it.
@@ -153,7 +154,7 @@ func (h *Heap) Pop() (interface{}, error) {
 	if obj != nil {
 		return obj, nil
 	}
-	return nil, fmt.Errorf("object was removed from heap data")
+	return nil, xerrors.Errorf("object was removed from heap data")
 }
 
 // Get returns the requested item, or sets exists=false.

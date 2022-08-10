@@ -2,7 +2,6 @@ package rest
 
 import (
 	"context"
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver/warning"
 	"github.com/tsundata/flowline/pkg/runtime"
@@ -72,7 +71,7 @@ func BeforeCreate(strategy RESTCreateStrategy, ctx context.Context, obj runtime.
 
 	// ensure that system-critical metadata has been populated
 	if !meta.HasObjectMetaSystemFieldValues(objectMeta) {
-		return fmt.Errorf("system metadata was not initialized")
+		return xerrors.Errorf("system metadata was not initialized")
 	}
 
 	strategy.PrepareForCreate(ctx, obj)

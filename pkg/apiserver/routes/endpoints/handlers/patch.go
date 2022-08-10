@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/emicklei/go-restful/v3"
 	jsonpatch "github.com/evanphx/json-patch/v5"
 	"github.com/tsundata/flowline/pkg/api/meta"
@@ -14,6 +13,7 @@ import (
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
 	"github.com/tsundata/flowline/pkg/util/flog"
+	"golang.org/x/xerrors"
 	"net/http"
 	"strings"
 )
@@ -59,7 +59,7 @@ func patchHandler(r rest.Patcher, scope *registry.RequestScope) restful.RouteFun
 		baseContentType := runtime.ContentTypeJSON
 		s, ok := runtime.SerializerInfoForMediaType(scope.Serializer.SupportedMediaTypes(), baseContentType)
 		if !ok {
-			_ = resp.WriteError(http.StatusInternalServerError, fmt.Errorf("no serializer defined for %v", baseContentType))
+			_ = resp.WriteError(http.StatusInternalServerError, xerrors.Errorf("no serializer defined for %v", baseContentType))
 			return
 		}
 
@@ -146,7 +146,7 @@ func (p *patcher) patchResource(ctx context.Context, _ *registry.RequestScope) (
 			patcher: p,
 		}
 	default:
-		return nil, false, fmt.Errorf("%s: unimplemented patch type", p.patchType)
+		return nil, false, xerrors.Errorf("%s: unimplemented patch type", p.patchType)
 	}
 
 	wasCreated := false
@@ -215,7 +215,7 @@ func (p *patcher) applyPatch(ctx context.Context, _, currentObject runtime.Objec
 		if err != nil {
 			return nil, err
 		}
-		return nil, fmt.Errorf("uid mismatch: the provided object specified uid %s, and no existing object was found", accessor.GetUID())
+		return nil, xerrors.Errorf("uid mismatch: the provided object specified uid %s, and no existing object was found", accessor.GetUID())
 	}
 
 	return objToUpdate, nil
@@ -248,14 +248,14 @@ func (p *jsonPatcher) applyPatchToCurrentObject(_ context.Context, currentObject
 	if err := runtime.DecodeInto(p.codec, patchedObjJS, objToUpdate); err != nil {
 		return nil, err
 	} else if len(appliedStrictErrs) > 0 {
-		return nil, fmt.Errorf("StrictDecodingError %v", appliedStrictErrs)
+		return nil, xerrors.Errorf("StrictDecodingError %v", appliedStrictErrs)
 	}
 
 	return objToUpdate, nil
 }
 
 func (p *jsonPatcher) createNewObject(_ context.Context) (runtime.Object, error) {
-	return nil, fmt.Errorf("NotFound %s %s", p.resource.GroupResource(), p.name)
+	return nil, xerrors.Errorf("NotFound %s %s", p.resource.GroupResource(), p.name)
 }
 
 // applyJSPatch applies the patch. Input and output objects must both have
@@ -268,7 +268,7 @@ func (p *jsonPatcher) applyJSPatch(versionedJS []byte) (patchedJS []byte, strict
 			return nil, nil, err
 		}
 		if len(patchObj) > maxJSONPatchOperations {
-			return nil, nil, fmt.Errorf("the allowed maximum operations in a JSON patch is %d, got %d",
+			return nil, nil, xerrors.Errorf("the allowed maximum operations in a JSON patch is %d, got %d",
 				maxJSONPatchOperations, len(patchObj))
 		}
 		patchedJS, err := patchObj.Apply(versionedJS)
@@ -284,6 +284,6 @@ func (p *jsonPatcher) applyJSPatch(versionedJS []byte) (patchedJS []byte, strict
 		return patchedJS, strictErrors, retErr
 	default:
 		// only here as a safety net - go-restful filters content-type
-		return nil, nil, fmt.Errorf("unknown Content-Type header for patch: %v", p.patchType)
+		return nil, nil, xerrors.Errorf("unknown Content-Type header for patch: %v", p.patchType)
 	}
 }

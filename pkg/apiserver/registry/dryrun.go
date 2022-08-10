@@ -2,11 +2,11 @@ package registry
 
 import (
 	"context"
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver/storage"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/watch"
+	"golang.org/x/xerrors"
 )
 
 type DryRunnableStorage struct {
@@ -21,7 +21,7 @@ func (s *DryRunnableStorage) Versioner() storage.Versioner {
 func (s *DryRunnableStorage) Create(ctx context.Context, key string, obj, out runtime.Object, ttl uint64, dryRun bool) error {
 	if dryRun {
 		if err := s.Storage.Get(ctx, key, meta.GetOptions{}, out); err == nil {
-			return fmt.Errorf("KeyExistsError %s", key)
+			return xerrors.Errorf("KeyExistsError %s", key)
 		}
 		return s.copyInto(obj, out)
 	}

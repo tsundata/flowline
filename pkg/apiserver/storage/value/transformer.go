@@ -3,7 +3,6 @@ package value
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"golang.org/x/xerrors"
 	"strings"
 	"sync"
@@ -97,7 +96,7 @@ var _ Transformer = &prefixTransformers{}
 // the store.
 func NewPrefixTransformers(err error, transformers ...PrefixTransformer) Transformer {
 	if err == nil {
-		err = fmt.Errorf("the provided value does not match any of the supported transformers")
+		err = xerrors.Errorf("the provided value does not match any of the supported transformers")
 	}
 	return &prefixTransformers{
 		transformers: transformers,

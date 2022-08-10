@@ -6,6 +6,7 @@ import (
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
+	"golang.org/x/xerrors"
 	"os"
 	"sync"
 	"time"
@@ -81,7 +82,7 @@ func (c *cacheImpl) AssumeStage(stage *meta.Stage) error {
 	defer c.mu.RUnlock()
 
 	if _, ok := c.stageStates[key]; ok {
-		return fmt.Errorf("stage %v is in the cache, so can't be assumed", key)
+		return xerrors.Errorf("stage %v is in the cache, so can't be assumed", key)
 	}
 
 	return c.addStage(stage, true)
@@ -126,7 +127,7 @@ func (c *cacheImpl) ForgetStage(stage *meta.Stage) error {
 
 	currState, ok := c.stageStates[key]
 	if ok && currState.stage.WorkerUID != stage.WorkerUID {
-		return fmt.Errorf("stage %v was assumed on %v but assigned to %v", key, stage.WorkerUID, currState.stage.WorkerUID)
+		return xerrors.Errorf("stage %v was assumed on %v but assigned to %v", key, stage.WorkerUID, currState.stage.WorkerUID)
 	}
 
 	// Only assumed stage can be forgotten.
@@ -134,7 +135,7 @@ func (c *cacheImpl) ForgetStage(stage *meta.Stage) error {
 	if ok && has {
 		return c.removeStage(stage)
 	}
-	return fmt.Errorf("stage %v wasn't assumed so cannot be forgotten", key)
+	return xerrors.Errorf("stage %v wasn't assumed so cannot be forgotten", key)
 }
 
 func (c *cacheImpl) AddStage(stage *meta.Stage) error {
@@ -167,7 +168,7 @@ func (c *cacheImpl) AddStage(stage *meta.Stage) error {
 			flog.Errorf("Error occurred while adding stage %s", err)
 		}
 	default:
-		return fmt.Errorf("stage %v was already in added state", key)
+		return xerrors.Errorf("stage %v was already in added state", key)
 	}
 	return nil
 }
@@ -193,7 +194,7 @@ func (c *cacheImpl) UpdateStage(oldStage, newStage *meta.Stage) error {
 		}
 		return c.updateStage(oldStage, newStage)
 	}
-	return fmt.Errorf("stage %v is not added to scheduler cache, so cannot be updated", key)
+	return xerrors.Errorf("stage %v is not added to scheduler cache, so cannot be updated", key)
 }
 
 func (c *cacheImpl) updateStage(oldStage, newStage *meta.Stage) error {
@@ -236,7 +237,7 @@ func (c *cacheImpl) RemoveStage(stage *meta.Stage) error {
 
 	currState, ok := c.stageStates[key]
 	if !ok {
-		return fmt.Errorf("stage %v is not found in scheduler cache, so cannot be removed from it", key)
+		return xerrors.Errorf("stage %v is not found in scheduler cache, so cannot be removed from it", key)
 	}
 	if currState.stage.WorkerUID != stage.WorkerUID {
 		flog.Errorf("Stage was added to a different worker than it was assumed %s %s", stage.WorkerUID, currState.stage.WorkerUID)
@@ -286,7 +287,7 @@ func (c *cacheImpl) GetStage(stage *meta.Stage) (*meta.Stage, error) {
 
 	stageState, ok := c.stageStates[key]
 	if !ok {
-		return nil, fmt.Errorf("stage %v does not exist in scheduler cache", key)
+		return nil, xerrors.Errorf("stage %v does not exist in scheduler cache", key)
 	}
 
 	return stageState.stage, nil
@@ -350,7 +351,7 @@ func (c *cacheImpl) RemoveWorker(worker *meta.Worker) error {
 
 	n, ok := c.workers[worker.UID]
 	if !ok {
-		return fmt.Errorf("worker %v is not found", worker.UID)
+		return xerrors.Errorf("worker %v is not found", worker.UID)
 	}
 	n.info.RemoveWorker()
 
@@ -468,7 +469,7 @@ func (c *cacheImpl) UpdateSnapshot(workerSnapshot *Snapshot) error {
 		// We will try to recover by re-creating the lists for the next scheduling cycle, but still return an
 		// error to surface the problem, the error will likely cause a failure to the current scheduling cycle.
 		c.updateWorkerInfoSnapshotList(workerSnapshot, true)
-		return fmt.Errorf(errMsg)
+		return xerrors.Errorf(errMsg)
 	}
 
 	return nil

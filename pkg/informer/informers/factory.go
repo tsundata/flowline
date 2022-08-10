@@ -1,7 +1,6 @@
 package informers
 
 import (
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/client"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/informer"
@@ -9,6 +8,7 @@ import (
 	"github.com/tsundata/flowline/pkg/informer/informers/internalinterfaces"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/schema"
+	"golang.org/x/xerrors"
 	"reflect"
 	"sync"
 	"time"
@@ -142,7 +142,7 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{informer: f.Core().V1().Workers().Informer(), resource: resource.GroupResource()}, nil
 	}
 
-	return nil, fmt.Errorf("no informer found for %v", resource)
+	return nil, xerrors.Errorf("no informer found for %v", resource)
 }
 
 func (f *sharedInformerFactory) Core() core.Interface {

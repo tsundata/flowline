@@ -3,6 +3,7 @@ package informer
 import (
 	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
+	"golang.org/x/xerrors"
 )
 
 // Store is a generic object storage and processing interface.  A
@@ -215,7 +216,7 @@ func MetaNamespaceKeyFunc(obj interface{}) (string, error) {
 	}
 	objMeta, err := meta.Accessor(obj)
 	if err != nil {
-		return "", fmt.Errorf("object has no meta: %v", err)
+		return "", xerrors.Errorf("object has no meta: %v", err)
 	}
 	return objMeta.GetUID(), nil
 }

@@ -1,7 +1,6 @@
 package queue
 
 import (
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/informer/informers"
 	v1 "github.com/tsundata/flowline/pkg/informer/listers/core/v1"
@@ -10,6 +9,7 @@ import (
 	"github.com/tsundata/flowline/pkg/util/clock"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
+	"golang.org/x/xerrors"
 	"reflect"
 	"sync"
 	"time"
@@ -287,14 +287,14 @@ func (p *PriorityQueue) AddUnschedulableIfNotPresent(pInfo *framework.QueuedStag
 
 	stage := pInfo.Stage
 	if p.unschedulableStages.get(stage) != nil {
-		return fmt.Errorf("stage %v %s is already present in unschedulable queue", stage.Name, stage.UID)
+		return xerrors.Errorf("stage %v %s is already present in unschedulable queue", stage.Name, stage.UID)
 	}
 
 	if _, exists, _ := p.activeQ.Get(pInfo); exists {
-		return fmt.Errorf("stage %v is already present in the active queue", stage)
+		return xerrors.Errorf("stage %v is already present in the active queue", stage)
 	}
 	if _, exists, _ := p.stageBackoffQ.Get(pInfo); exists {
-		return fmt.Errorf("stage %v is already present in the backoff queue", stage)
+		return xerrors.Errorf("stage %v is already present in the backoff queue", stage)
 	}
 
 	// Refresh the timestamp since the stage is re-added.
@@ -304,7 +304,7 @@ func (p *PriorityQueue) AddUnschedulableIfNotPresent(pInfo *framework.QueuedStag
 	// it to unschedulableStages.
 	if p.moveRequestCycle >= stageSchedulingCycle {
 		if err := p.stageBackoffQ.Add(pInfo); err != nil {
-			return fmt.Errorf("error adding stage %v to the backoff queue: %v", stage.Name, err)
+			return xerrors.Errorf("error adding stage %v to the backoff queue: %v", stage.Name, err)
 		}
 	} else {
 		p.unschedulableStages.addOrUpdate(pInfo)
@@ -330,7 +330,7 @@ func (p *PriorityQueue) Pop() (*framework.QueuedStageInfo, error) {
 		// When Close() is called, the p.closed is set and the condition is broadcast,
 		// which causes this loop to continue and return from the Pop().
 		if p.closed {
-			return nil, fmt.Errorf(queueClosed)
+			return nil, xerrors.Errorf(queueClosed)
 		}
 		p.cond.Wait()
 	}
@@ -866,7 +866,7 @@ func MetaNamespaceKeyFunc(obj interface{}) (string, error) {
 	}
 	m, err := meta.Accessor(obj)
 	if err != nil {
-		return "", fmt.Errorf("object has no meta: %v", err)
+		return "", xerrors.Errorf("object has no meta: %v", err)
 	}
 	return m.GetName(), nil
 }

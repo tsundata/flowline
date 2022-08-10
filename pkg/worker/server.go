@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"fmt"
 	"github.com/tsundata/flowline/pkg/api/client"
 	"github.com/tsundata/flowline/pkg/api/client/events"
 	"github.com/tsundata/flowline/pkg/informer/informers"
@@ -9,6 +8,7 @@ import (
 	"github.com/tsundata/flowline/pkg/util/parallelizer"
 	"github.com/tsundata/flowline/pkg/worker/config"
 	"github.com/tsundata/flowline/pkg/worker/sandbox"
+	"golang.org/x/xerrors"
 	"math/rand"
 	"time"
 )
@@ -44,7 +44,7 @@ func (g *GenericWorkerServer) Run(stopCh <-chan struct{}) error {
 		g.client,
 	)
 	if err != nil {
-		return fmt.Errorf("error new worker controller %v", err)
+		return xerrors.Errorf("error new worker controller %v", err)
 	}
 
 	// Start events processing pipeline.

@@ -1,7 +1,6 @@
 package informer
 
 import (
-	"fmt"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"github.com/tsundata/flowline/pkg/util/sets"
 	"golang.org/x/xerrors"
@@ -319,7 +318,7 @@ func (f *DeltaFIFO) Delete(obj interface{}) error {
 func (f *DeltaFIFO) AddIfNotPresent(obj interface{}) error {
 	deltas, ok := obj.(Deltas)
 	if !ok {
-		return fmt.Errorf("object must be of type deltas, but got: %#v", obj)
+		return xerrors.Errorf("object must be of type deltas, but got: %#v", obj)
 	}
 	id, err := f.KeyOf(deltas)
 	if err != nil {
@@ -408,7 +407,7 @@ func (f *DeltaFIFO) queueActionLocked(actionType DeltaType, obj interface{}) err
 		}
 		flog.Errorf("Impossible dedupDeltas for id=%q: oldDeltas=%#+v, obj=%#+v; breaking invariant by storing empty Deltas", id, oldDeltas, obj)
 		f.items[id] = newDeltas
-		return fmt.Errorf("impossible dedupDeltas for id=%q: oldDeltas=%#+v, obj=%#+v; broke DeltaFIFO invariant by storing empty Deltas", id, oldDeltas, obj)
+		return xerrors.Errorf("impossible dedupDeltas for id=%q: oldDeltas=%#+v, obj=%#+v; broke DeltaFIFO invariant by storing empty Deltas", id, oldDeltas, obj)
 	}
 	return nil
 }
@@ -561,7 +560,7 @@ func (f *DeltaFIFO) Replace(list []interface{}, _ string) error {
 		}
 		keys.Insert(key)
 		if err := f.queueActionLocked(action, item); err != nil {
-			return fmt.Errorf("couldn't enqueue object: %v", err)
+			return xerrors.Errorf("couldn't enqueue object: %v", err)
 		}
 	}
 
@@ -668,7 +667,7 @@ func (f *DeltaFIFO) syncKeyLocked(key string) error {
 	}
 
 	if err := f.queueActionLocked(Sync, obj); err != nil {
-		return fmt.Errorf("couldn't queue object: %v", err)
+		return xerrors.Errorf("couldn't queue object: %v", err)
 	}
 	return nil
 }

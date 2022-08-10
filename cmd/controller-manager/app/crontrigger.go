@@ -2,9 +2,9 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"github.com/tsundata/flowline/pkg/controller/crontrigger"
 	"github.com/tsundata/flowline/pkg/manager/controller"
+	"golang.org/x/xerrors"
 )
 
 func startCronTriggerController(ctx context.Context, controllerContext ControllerContext) (controller.Interface, bool, error) {
@@ -14,7 +14,7 @@ func startCronTriggerController(ctx context.Context, controllerContext Controlle
 		controllerContext.ComponentConfig.Client,
 	)
 	if err != nil {
-		return nil, true, fmt.Errorf("error creating crontrigger controller %v", err)
+		return nil, true, xerrors.Errorf("error creating crontrigger controller %v", err)
 	}
 
 	go cj.Run(ctx, int(controllerContext.ComponentConfig.ConcurrentCronTriggerSyncs))
