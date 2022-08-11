@@ -16,7 +16,8 @@ type User struct {
 	Avatar      string `json:"avatar,omitempty"`
 	UnreadCount int    `json:"unreadCount,omitempty"`
 
-	Roles []string `json:"roles,omitempty"`
+	Groups []string `json:"groups,omitempty"`
+	Roles  []string `json:"roles,omitempty"`
 }
 
 func (m *User) GetObjectKind() schema.ObjectKind {

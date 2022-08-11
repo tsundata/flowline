@@ -9,7 +9,8 @@ type Role struct {
 	TypeMeta   `json:",inline"`
 	ObjectMeta `json:",inline"`
 
-	Permissions []interface{} `json:"permissions,omitempty"`
+	Verbs     []string `json:"verbs,omitempty"`
+	Resources []string `json:"resources,omitempty"`
 }
 
 func (m *Role) GetObjectKind() schema.ObjectKind {
