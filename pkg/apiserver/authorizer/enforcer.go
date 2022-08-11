@@ -25,7 +25,7 @@ func NewEnforcer(a persist.Adapter) (*Enforcer, error) {
 }
 
 func (e *Enforcer) Authorize(_ context.Context, a Attributes) (authorized Decision, reason string, err error) {
-	ok, err := e.Enforce(a.GetUser().GetUID(), a.GetResource(), a.GetSubresource(), a.GetVerb())
+	ok, err := e.Enforce(a.GetUser().GetUID(), a.GetResource(), a.GetVerb())
 	if err != nil {
 		return 0, "", err
 	}

@@ -2,12 +2,14 @@ package filters
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/tsundata/flowline/pkg/apiserver/authenticator/user"
 	"github.com/tsundata/flowline/pkg/apiserver/authorizer"
 	"github.com/tsundata/flowline/pkg/apiserver/registry"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"net/http"
+	"strings"
 )
 
 func WithRBAC(handler http.Handler, storage *registry.DryRunnableStorage, whitelist []string) http.Handler {
@@ -39,19 +41,20 @@ func WithRBAC(handler http.Handler, storage *registry.DryRunnableStorage, whitel
 			return
 		}
 
-		decision, reason, err := enforcer.Authorize(req.Context(), authorizer.AttributesRecord{
+		resource, subresource := parseResource(req)
+		attributes := authorizer.AttributesRecord{
 			User: &user.DefaultInfo{
 				UID: uid,
 			},
-			Verb:            "", // todo
+			Verb:            parseVerb(req),
 			APIGroup:        constant.GroupName,
 			APIVersion:      constant.Version,
-			Resource:        "", // todo
-			Subresource:     "", // todo
-			Name:            "", // todo
+			Resource:        resource,
+			Subresource:     subresource,
 			ResourceRequest: true,
 			Path:            req.URL.Path,
-		})
+		}
+		decision, reason, err := enforcer.Authorize(req.Context(), attributes)
 		if err != nil {
 			flog.Error(err)
 			w.WriteHeader(http.StatusUnauthorized)
@@ -67,4 +70,51 @@ func WithRBAC(handler http.Handler, storage *registry.DryRunnableStorage, whitel
 			return
 		}
 	})
+}
+
+func parseVerb(req *http.Request) string {
+	switch req.Method {
+	case http.MethodGet:
+		if strings.HasSuffix(req.URL.Path, "list") {
+			return "LIST"
+		}
+		if strings.HasSuffix(req.URL.Path, "watch") {
+			return "WATCH"
+		}
+		return "GET"
+	case http.MethodPost:
+		return "POST"
+	case http.MethodPut:
+		return "LIST"
+	case http.MethodDelete:
+		// or DELETECOLLECTION
+		return "DELETE"
+	case http.MethodPatch:
+		return "PATCH"
+	}
+	return ""
+}
+
+func parseResource(req *http.Request) (string, string) {
+	paths := strings.Split(req.URL.Path, "/")
+	var resources []string
+	for _, path := range paths {
+		if path == constant.RestPrefix || path == constant.GroupName || path == constant.Version {
+			continue
+		}
+		if _, err := uuid.Parse(path); err == nil {
+			continue
+		}
+		if path == "" {
+			continue
+		}
+		resources = append(resources, path)
+	}
+	if len(resources) >= 2 {
+		return resources[0], resources[1]
+	}
+	if len(resources) >= 1 {
+		return resources[0], ""
+	}
+	return "", ""
 }
