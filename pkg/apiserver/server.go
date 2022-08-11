@@ -3,6 +3,7 @@ package apiserver
 import (
 	"github.com/tsundata/flowline/pkg/apiserver/config"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest"
+	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/user"
 	"github.com/tsundata/flowline/pkg/util/flog"
 	"net"
 	"net/http"
@@ -17,6 +18,9 @@ type GenericAPIServer struct {
 
 func NewGenericAPIServer(name string, config *config.Config) *GenericAPIServer {
 	handlerChainBuilder := func(handler http.Handler) http.Handler {
+		sm := StorageMap(config)
+		r := sm["user"].(*user.REST)
+		config.Storage = &r.Storage
 		return config.BuildHandlerChainFunc(handler, config)
 	}
 	apiServerHandler := NewAPIServerHandler(name, handlerChainBuilder, nil)

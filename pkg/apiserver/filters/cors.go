@@ -38,7 +38,7 @@ func WithCORS(handler http.Handler, allowedOriginPatterns []string, allowedMetho
 				w.Header().Set("Access-Control-Expose-Headers", strings.Join(exposedHeaders, ", "))
 				w.Header().Set("Access-Control-Allow-Credentials", allowCredentials)
 
-				// Stop here if its a preflight OPTIONS request
+				// Stop here if it's a preflight OPTIONS request
 				if req.Method == "OPTIONS" {
 					w.WriteHeader(http.StatusNoContent)
 					return

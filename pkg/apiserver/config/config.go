@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/tsundata/flowline/pkg/apiserver/registry"
 	"github.com/tsundata/flowline/pkg/apiserver/storage/config"
 	"net/http"
 	"time"
@@ -29,6 +30,8 @@ type Config struct {
 	HTTPReadTimeout    time.Duration
 	HTTPWriteTimeout   time.Duration
 	HTTPMaxHeaderBytes int
+
+	Storage *registry.DryRunnableStorage
 }
 
 // NewConfig Default Config

@@ -15,6 +15,8 @@ type User struct {
 	Active      bool   `json:"active,omitempty"`
 	Avatar      string `json:"avatar,omitempty"`
 	UnreadCount int    `json:"unreadCount,omitempty"`
+
+	Roles []string `json:"roles,omitempty"`
 }
 
 func (m *User) GetObjectKind() schema.ObjectKind {
@@ -74,4 +76,41 @@ type Dashboard struct {
 type DashboardData struct {
 	Date     string `json:"date"`
 	Schedule int    `json:"schedule"`
+}
+
+type Policy struct {
+	TypeMeta   `json:",inline"`
+	ObjectMeta `json:",inline"`
+
+	Key   string `json:"key"`
+	PType string `json:"ptype"`
+	V0    string `json:"v0"`
+	V1    string `json:"v1"`
+	V2    string `json:"v2"`
+	V3    string `json:"v3"`
+	V4    string `json:"v4"`
+	V5    string `json:"v5"`
+}
+
+func (m *Policy) GetObjectKind() schema.ObjectKind {
+	return m
+}
+
+func (m *Policy) DeepCopyObject() runtime.Object {
+	return m
+}
+
+type PolicyList struct {
+	TypeMeta `json:",inline"`
+	ListMeta `json:",inline"`
+
+	Items []Policy `json:"items"`
+}
+
+func (m *PolicyList) GetObjectKind() schema.ObjectKind {
+	return m
+}
+
+func (m *PolicyList) DeepCopyObject() runtime.Object {
+	return m
 }

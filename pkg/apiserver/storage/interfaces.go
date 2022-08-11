@@ -60,7 +60,7 @@ type Interface interface {
 	// other writers are simultaneously updating it, so tryUpdate() needs to take into account
 	// the current contents of the object when deciding how the update object should look.
 	// If the key doesn't exist, it will return NotFound storage error if ignoreNotFound=false
-	// else `destination` will be set to the zero value of it's type.
+	// else `destination` will be set to the zero value of its type.
 	// If the eventual successful invocation of `tryUpdate` returns an output with the same serialized
 	// contents as the input, it won't perform any update, but instead set `destination` to an object with those
 	// contents.
@@ -82,7 +82,7 @@ type Interface interface {
 	//       curr.Counter++
 	//
 	//       // Return the modified object - return an error to stop iterating. Return
-	//       // a uint64 to alter the TTL on the object, or nil to keep it the same value.
+	//       // an uint64 to alter the TTL on the object, or nil to keep it the same value.
 	//       return cur, nil, nil
 	//    }, cachedExistingObject
 	// )
@@ -120,7 +120,7 @@ type Versioner interface {
 	ObjectResourceVersion(obj interface{}) (uint64, error)
 
 	// ParseResourceVersion takes a resource version argument and
-	// converts it to the storage backend. For watch we should pass to helper.Watch().
+	// converts it to the storage backend. For watch, we should pass to helper.Watch().
 	// Because resourceVersion is an opaque value, the default watch
 	// behavior for non-zero watch is to watch the next value (if you pass
 	// "1", you will see updates from "2" onwards).

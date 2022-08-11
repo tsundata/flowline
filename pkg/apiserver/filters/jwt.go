@@ -2,17 +2,15 @@ package filters
 
 import (
 	"context"
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/tsundata/flowline/pkg/api/meta"
+	"github.com/tsundata/flowline/pkg/apiserver/authenticator"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
 	"github.com/tsundata/flowline/pkg/util/flog"
-	"golang.org/x/xerrors"
 	"net/http"
 	"regexp"
 	"strings"
 )
 
-func WithJWT(handler http.Handler, secret []byte, whitelist []string) http.Handler {
+func WithJWT(handler http.Handler, secret string, whitelist []string) http.Handler {
 	whitelistREs := whitelistRegexps(whitelist)
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		allowed := false
@@ -26,36 +24,19 @@ func WithJWT(handler http.Handler, secret []byte, whitelist []string) http.Handl
 			return
 		}
 
-		authHeader := req.Header.Get("Authorization")
-		token, err := validJWT(authHeader, secret)
-		if err != nil || !token.Valid {
+		// authenticator
+		auth := authenticator.NewBearerToken(authenticator.NewJWT([]byte(secret)))
+		resp, ok, err := auth.AuthenticateRequest(req)
+		if err != nil || !ok {
 			w.WriteHeader(http.StatusUnauthorized)
 			_, _ = w.Write([]byte("error jwt token"))
 			return
 		}
-		if claims, ok := token.Claims.(*meta.UserClaims); ok {
-			ctx := context.WithValue(req.Context(), constant.UserUID, claims.ID)
+		if resp != nil && resp.User.GetUID() != "" {
+			ctx := context.WithValue(req.Context(), constant.UserUID, resp.User.GetUID())
 			req = req.WithContext(ctx)
 			handler.ServeHTTP(w, req)
-		} else {
-			w.WriteHeader(http.StatusUnauthorized)
-			_, _ = w.Write([]byte("error jwt token"))
-			return
 		}
-	})
-}
-
-func validJWT(authHeader string, secret []byte) (*jwt.Token, error) {
-	if !strings.HasPrefix(authHeader, "Bearer ") {
-		return nil, xerrors.New("token error")
-	}
-	jwtToken := strings.Split(authHeader, " ")
-	if len(jwtToken) < 2 {
-		return nil, xerrors.New("token error")
-	}
-
-	return jwt.ParseWithClaims(jwtToken[1], &meta.UserClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return secret, nil
 	})
 }
 
