@@ -1545,249 +1545,6 @@
     }
    }
   },
-  "/api/apps/v1/rolebinding": {
-   "post": {
-    "consumes": [
-     "application/json"
-    ],
-    "produces": [
-     "application/json"
-    ],
-    "tags": [
-     "rolebinding"
-    ],
-    "summary": "Create rolebinding resource",
-    "operationId": "rolebindingCreate",
-    "parameters": [
-     {
-      "name": "body",
-      "in": "body",
-      "required": true,
-      "schema": {
-       "$ref": "#/definitions/meta.RoleBinding"
-      }
-     }
-    ],
-    "responses": {
-     "200": {
-      "description": "OK",
-      "schema": {
-       "$ref": "#/definitions/meta.RoleBinding"
-      }
-     }
-    }
-   }
-  },
-  "/api/apps/v1/rolebinding/list": {
-   "get": {
-    "consumes": [
-     "application/json"
-    ],
-    "produces": [
-     "application/json"
-    ],
-    "tags": [
-     "rolebinding"
-    ],
-    "summary": "List rolebinding resource",
-    "operationId": "rolebindingList",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "schema": {
-       "$ref": "#/definitions/meta.RoleBindingList"
-      }
-     }
-    }
-   }
-  },
-  "/api/apps/v1/rolebinding/watch": {
-   "get": {
-    "consumes": [
-     "application/json"
-    ],
-    "produces": [
-     "application/json"
-    ],
-    "tags": [
-     "rolebinding"
-    ],
-    "summary": "Watch List rolebinding resource",
-    "operationId": "rolebindingWatchList",
-    "responses": {
-     "200": {
-      "description": "OK"
-     }
-    }
-   }
-  },
-  "/api/apps/v1/rolebinding/{uid}": {
-   "get": {
-    "consumes": [
-     "application/json"
-    ],
-    "produces": [
-     "application/json"
-    ],
-    "tags": [
-     "rolebinding"
-    ],
-    "summary": "Get rolebinding resource",
-    "operationId": "rolebindingGet",
-    "parameters": [
-     {
-      "type": "string",
-      "description": "uid of the resource",
-      "name": "uid",
-      "in": "path",
-      "required": true
-     }
-    ],
-    "responses": {
-     "200": {
-      "description": "OK",
-      "schema": {
-       "$ref": "#/definitions/meta.RoleBinding"
-      }
-     }
-    }
-   },
-   "put": {
-    "consumes": [
-     "application/json"
-    ],
-    "produces": [
-     "application/json"
-    ],
-    "tags": [
-     "rolebinding"
-    ],
-    "summary": "Update rolebinding resource",
-    "operationId": "rolebindingUpdate",
-    "parameters": [
-     {
-      "name": "body",
-      "in": "body",
-      "required": true,
-      "schema": {
-       "$ref": "#/definitions/meta.RoleBinding"
-      }
-     },
-     {
-      "type": "string",
-      "description": "uid of the resource",
-      "name": "uid",
-      "in": "path",
-      "required": true
-     }
-    ],
-    "responses": {
-     "200": {
-      "description": "OK",
-      "schema": {
-       "$ref": "#/definitions/meta.RoleBinding"
-      }
-     }
-    }
-   },
-   "delete": {
-    "consumes": [
-     "application/json"
-    ],
-    "produces": [
-     "application/json"
-    ],
-    "tags": [
-     "rolebinding"
-    ],
-    "summary": "Delete rolebinding resource",
-    "operationId": "rolebindingDelete",
-    "parameters": [
-     {
-      "type": "string",
-      "description": "uid of the resource",
-      "name": "uid",
-      "in": "path",
-      "required": true
-     }
-    ],
-    "responses": {
-     "200": {
-      "description": "OK",
-      "schema": {
-       "$ref": "#/definitions/meta.RoleBinding"
-      }
-     }
-    }
-   },
-   "patch": {
-    "consumes": [
-     "application/merge-patch+json"
-    ],
-    "produces": [
-     "application/json"
-    ],
-    "tags": [
-     "rolebinding"
-    ],
-    "summary": "Patch rolebinding resource",
-    "operationId": "rolebindingPatch",
-    "parameters": [
-     {
-      "name": "body",
-      "in": "body",
-      "required": true,
-      "schema": {
-       "$ref": "#/definitions/meta.RoleBinding"
-      }
-     },
-     {
-      "type": "string",
-      "description": "uid of the resource",
-      "name": "uid",
-      "in": "path",
-      "required": true
-     }
-    ],
-    "responses": {
-     "200": {
-      "description": "OK",
-      "schema": {
-       "$ref": "#/definitions/meta.RoleBinding"
-      }
-     }
-    }
-   }
-  },
-  "/api/apps/v1/rolebinding/{uid}/watch": {
-   "get": {
-    "consumes": [
-     "application/json"
-    ],
-    "produces": [
-     "application/json"
-    ],
-    "tags": [
-     "rolebinding"
-    ],
-    "summary": "Watch rolebinding resource",
-    "operationId": "rolebindingWatch",
-    "parameters": [
-     {
-      "type": "string",
-      "description": "uid of the resource",
-      "name": "uid",
-      "in": "path",
-      "required": true
-     }
-    ],
-    "responses": {
-     "200": {
-      "description": "OK"
-     }
-    }
-   }
-  },
   "/api/apps/v1/stage": {
    "post": {
     "consumes": [
@@ -4292,100 +4049,23 @@
     "name": {
      "type": "string"
     },
-    "permissions": {
-     "type": "array",
-     "items": {
-      "$ref": "#/definitions/meta.Role.permissions"
-     }
-    },
     "resourceVersion": {
      "type": "string"
     },
-    "uid": {
-     "type": "string"
-    }
-   }
-  },
-  "meta.Role.permissions": {},
-  "meta.RoleBinding": {
-   "properties": {
-    "apiVersion": {
-     "type": "string"
-    },
-    "creationTimestamp": {
-     "type": "string",
-     "format": "date-time"
-    },
-    "deletionGracePeriodSeconds": {
-     "type": "integer",
-     "format": "int64"
-    },
-    "deletionTimestamp": {
-     "type": "string",
-     "format": "date-time"
-    },
-    "finalizers": {
+    "resources": {
      "type": "array",
      "items": {
       "type": "string"
      }
     },
-    "generation": {
-     "type": "integer",
-     "format": "int64"
-    },
-    "kind": {
-     "type": "string"
-    },
-    "labels": {
-     "type": "object",
-     "additionalProperties": {
-      "type": "string"
-     }
-    },
-    "name": {
-     "type": "string"
-    },
-    "resourceVersion": {
-     "type": "string"
-    },
-    "roleUID": {
-     "type": "string"
-    },
     "uid": {
      "type": "string"
     },
-    "userUID": {
-     "type": "string"
-    }
-   }
-  },
-  "meta.RoleBindingList": {
-   "required": [
-    "items"
-   ],
-   "properties": {
-    "apiVersion": {
-     "type": "string"
-    },
-    "continue": {
-     "type": "string"
-    },
-    "items": {
+    "verbs": {
      "type": "array",
      "items": {
-      "$ref": "#/definitions/meta.RoleBinding"
+      "type": "string"
      }
-    },
-    "kind": {
-     "type": "string"
-    },
-    "remainingItemCount": {
-     "type": "integer",
-     "format": "int64"
-    },
-    "resourceVersion": {
-     "type": "string"
     }
    }
   },
@@ -4662,6 +4342,12 @@
      "type": "integer",
      "format": "int64"
     },
+    "groups": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
     "kind": {
      "type": "string"
     },
@@ -4679,6 +4365,12 @@
     },
     "resourceVersion": {
      "type": "string"
+    },
+    "roles": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
     },
     "uid": {
      "type": "string"

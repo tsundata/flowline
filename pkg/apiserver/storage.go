@@ -12,7 +12,6 @@ import (
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/event"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/job"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/role"
-	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/rolebinding"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/stage"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/user"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest/variable"
@@ -33,7 +32,6 @@ func StorageMap(config *config.Config) map[string]rest.Storage {
 	eventRestStorage(config, storageMap)
 	jobRestStorage(config, storageMap)
 	roleRestStorage(config, storageMap)
-	rolebindingRestStorage(config, storageMap)
 	stageRestStorage(config, storageMap)
 	userRestStorage(config, storageMap)
 	variableRestStorage(config, storageMap)
@@ -88,14 +86,6 @@ func roleRestStorage(config *config.Config, storageMap map[string]rest.Storage) 
 		flog.Panic(err)
 	}
 	storageMap["role"] = s
-}
-
-func rolebindingRestStorage(config *config.Config, storageMap map[string]rest.Storage) {
-	s, err := rolebinding.NewREST(makeStoreOptions(config, "rolebinding"))
-	if err != nil {
-		flog.Panic(err)
-	}
-	storageMap["rolebinding"] = s
 }
 
 func stageRestStorage(config *config.Config, storageMap map[string]rest.Storage) {
