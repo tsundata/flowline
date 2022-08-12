@@ -78,9 +78,7 @@ func NewREST(config *config.Config, options *options.StoreOptions) (*REST, error
 		}
 		user.Password = string(password)
 
-		return func(ctx context.Context, success bool) {
-			return
-		}, nil
+		return func(ctx context.Context, success bool) {}, nil
 	}
 
 	// BeginUpdate
@@ -108,9 +106,7 @@ func NewREST(config *config.Config, options *options.StoreOptions) (*REST, error
 					}
 				}
 			}
-			return func(ctx context.Context, success bool) {
-				return
-			}, nil
+			return func(ctx context.Context, success bool) {}, nil
 		}
 
 		// password
@@ -122,9 +118,7 @@ func NewREST(config *config.Config, options *options.StoreOptions) (*REST, error
 			user.Password = string(password)
 		}
 
-		return func(ctx context.Context, success bool) {
-			return
-		}, nil
+		return func(ctx context.Context, success bool) {}, nil
 	}
 
 	// AfterUpdate
