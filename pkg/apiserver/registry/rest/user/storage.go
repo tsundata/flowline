@@ -1,6 +1,7 @@
 package user
 
 import (
+	"context"
 	"fmt"
 	"github.com/emicklei/go-restful/v3"
 	"github.com/golang-jwt/jwt/v4"
@@ -48,6 +49,82 @@ func NewREST(config *config.Config, options *options.StoreOptions) (*REST, error
 		UpdateStrategy:      Strategy,
 		DeleteStrategy:      Strategy,
 		ResetFieldsStrategy: Strategy,
+	}
+
+	// BeginCreate
+	store.BeginCreate = func(ctx context.Context, obj runtime.Object, options *meta.CreateOptions) (registry.FinishFunc, error) {
+		user, ok := obj.(*meta.User)
+		if !ok {
+			return nil, xerrors.New("error user info")
+		}
+
+		listObj, err := store.List(ctx, &meta.ListOptions{})
+		if err != nil {
+			return nil, err
+		}
+
+		if userList, ok := listObj.(*meta.UserList); ok {
+			for _, item := range userList.Items {
+				if user.Name == item.Name {
+					return nil, xerrors.New("Duplicate username")
+				}
+			}
+		}
+
+		// password
+		password, err := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
+		if err != nil {
+			return nil, err
+		}
+		user.Password = string(password)
+
+		return func(ctx context.Context, success bool) {
+			return
+		}, nil
+	}
+
+	// BeginUpdate
+	store.BeginUpdate = func(ctx context.Context, obj, old runtime.Object, options *meta.UpdateOptions) (registry.FinishFunc, error) {
+		user, ok := obj.(*meta.User)
+		if !ok {
+			return nil, xerrors.New("error user info")
+		}
+		oldUser, ok := old.(*meta.User)
+		if !ok {
+			return nil, xerrors.New("error user info")
+		}
+
+		// username
+		if user.Name != oldUser.Name {
+			listObj, err := store.List(ctx, &meta.ListOptions{})
+			if err != nil {
+				return nil, err
+			}
+
+			if userList, ok := listObj.(*meta.UserList); ok {
+				for _, item := range userList.Items {
+					if user.Name == item.Name {
+						return nil, xerrors.New("Duplicate username")
+					}
+				}
+			}
+			return func(ctx context.Context, success bool) {
+				return
+			}, nil
+		}
+
+		// password
+		if user.Password != oldUser.Password {
+			password, err := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
+			if err != nil {
+				return nil, err
+			}
+			user.Password = string(password)
+		}
+
+		return func(ctx context.Context, success bool) {
+			return
+		}, nil
 	}
 
 	// AfterUpdate
