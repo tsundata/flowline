@@ -2,13 +2,11 @@ package authorizer
 
 import (
 	"context"
-	"errors"
 	casbinModel "github.com/casbin/casbin/v2/model"
 	"github.com/casbin/casbin/v2/persist"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver/registry"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest"
-	"github.com/tsundata/flowline/pkg/apiserver/storage"
 	"strings"
 )
 
@@ -70,6 +68,11 @@ func (a *Adapter) loadPolicy(policy meta.Policy, model casbinModel.Model) {
 }
 
 func (a *Adapter) SavePolicy(model casbinModel.Model) error {
+	err := a.destroy()
+	if err != nil {
+		return err
+	}
+
 	obj := &meta.PolicyList{}
 	var policy []meta.Policy
 
@@ -92,20 +95,17 @@ func (a *Adapter) savePolicy(obj *meta.PolicyList) error {
 	ctx := context.Background()
 	for i, policy := range obj.Items {
 		key := rest.WithPrefix("policy/" + policy.Key)
-		err := a.storage.Get(ctx, key, meta.GetOptions{}, &obj.Items[i])
-		if err != nil && !errors.Is(err, storage.ErrKeyNotFound) {
-			return err
-		}
-		if errors.Is(err, storage.ErrKeyNotFound) {
-			err = a.storage.Create(ctx, key, &policy, &obj.Items[i], 0, false)
-		} else {
-			err = a.storage.GuaranteedUpdate(ctx, key, &policy, false, nil, nil, false, nil)
-		}
+		err := a.storage.Create(ctx, key, &obj.Items[i], &obj.Items[i], 0, false)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func (a *Adapter) destroy() error {
+	ctx := context.Background()
+	return a.storage.Delete(ctx, rest.WithPrefix("policy"), nil, nil, nil, false, nil)
 }
 
 func (a *Adapter) convertRule(ptype string, line []string) meta.Policy {

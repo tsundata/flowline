@@ -55,6 +55,7 @@ func WithRBAC(handler http.Handler, storage *registry.DryRunnableStorage, whitel
 			Path:            req.URL.Path,
 		}
 		decision, reason, err := enforcer.Authorize(req.Context(), attributes)
+		flog.Debugf("RBAC: %s %s %s ~ %d", uid, resource, parseVerb(req), decision)
 		if err != nil {
 			flog.Error(err)
 			w.WriteHeader(http.StatusUnauthorized)
@@ -85,7 +86,7 @@ func parseVerb(req *http.Request) string {
 	case http.MethodPost:
 		return "POST"
 	case http.MethodPut:
-		return "LIST"
+		return "PUT"
 	case http.MethodDelete:
 		// or DELETECOLLECTION
 		return "DELETE"

@@ -128,7 +128,7 @@ func DefaultBuildHandlerChain(apiHandler http.Handler, config *config.Config) ht
 		"/swagger.json",
 		"/api/apps/v1/user/session",
 	}
-	//handler = filters.WithRBAC(handler, config.Storage, authWhiteList)
+	handler = filters.WithRBAC(handler, config.Storage, authWhiteList)
 	handler = filters.WithJWT(handler, config.JWTSecret, authWhiteList)
 	return handler
 }

@@ -9,7 +9,7 @@ import (
 )
 
 type Enforcer struct {
-	*casbin.CachedEnforcer
+	*casbin.Enforcer
 }
 
 func NewEnforcer(a persist.Adapter) (*Enforcer, error) {
@@ -17,7 +17,7 @@ func NewEnforcer(a persist.Adapter) (*Enforcer, error) {
 	if err != nil {
 		return nil, err
 	}
-	e, err := casbin.NewCachedEnforcer(m, a)
+	e, err := casbin.NewEnforcer(m, a)
 	if err != nil {
 		return nil, err
 	}
