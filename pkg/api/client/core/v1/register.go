@@ -34,8 +34,6 @@ func addKnownTypes(schema *runtime.Scheme) error {
 		&meta.JobList{},
 		&meta.Role{},
 		&meta.RoleList{},
-		&meta.RoleBinding{},
-		&meta.RoleBindingList{},
 		&meta.Stage{},
 		&meta.StageList{},
 		&meta.User{},
