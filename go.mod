@@ -8,7 +8,7 @@ require (
 	github.com/emicklei/go-restful-openapi/v2 v2.9.0
 	github.com/emicklei/go-restful/v3 v3.9.0
 	github.com/evanphx/json-patch/v5 v5.6.0
-	github.com/go-openapi/spec v0.20.6
+	github.com/go-openapi/spec v0.20.7
 	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/google/go-cmp v0.5.8
