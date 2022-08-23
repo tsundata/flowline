@@ -62,11 +62,12 @@ func NewAPIServerCommand() *cli.App {
 		}),
 	}
 	return &cli.App{
-		Name:    "apiserver",
-		Usage:   "api server cli",
-		Version: version.Version,
-		Before:  altsrc.InitInputSourceWithContext(flags, altsrc.NewYamlSourceFromFlagFunc("load")),
-		Flags:   flags,
+		Name:                 "apiserver",
+		Usage:                "api server cli",
+		EnableBashCompletion: true,
+		Version:              version.Version,
+		Before:               altsrc.InitInputSourceWithContext(flags, altsrc.NewYamlSourceFromFlagFunc("load")),
+		Flags:                flags,
 		Action: func(c *cli.Context) error {
 			conf := config.NewConfig()
 			conf.BuildHandlerChainFunc = apiserver.DefaultBuildHandlerChain

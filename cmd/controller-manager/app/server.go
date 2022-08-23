@@ -42,11 +42,12 @@ func NewControllerManagerCommand() *cli.App {
 		}),
 	}
 	return &cli.App{
-		Name:    "controller-manager",
-		Usage:   "controller manager server cli",
-		Version: version.Version,
-		Before:  altsrc.InitInputSourceWithContext(flags, altsrc.NewYamlSourceFromFlagFunc("load")),
-		Flags:   flags,
+		Name:                 "controller-manager",
+		Usage:                "controller manager server cli",
+		EnableBashCompletion: true,
+		Version:              version.Version,
+		Before:               altsrc.InitInputSourceWithContext(flags, altsrc.NewYamlSourceFromFlagFunc("load")),
+		Flags:                flags,
 		Action: func(c *cli.Context) error {
 			conf := config.NewConfig()
 			conf.RestConfig.Host = c.String("api-url")
