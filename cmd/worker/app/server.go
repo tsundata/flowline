@@ -8,6 +8,7 @@ import (
 	"github.com/tsundata/flowline/pkg/worker"
 	"github.com/tsundata/flowline/pkg/worker/config"
 	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v2/altsrc"
 )
 
 func NewWorkerCommand() *cli.App {
@@ -19,31 +20,37 @@ func NewWorkerCommand() *cli.App {
 	cli.VersionPrinter = func(_ *cli.Context) {
 		fmt.Printf("version=%s\n", version.Version)
 	}
+	flags := []cli.Flag{
+		&cli.StringFlag{
+			Name:  "load",
+			Usage: "load yaml config",
+		},
+		altsrc.NewStringFlag(&cli.StringFlag{
+			Name:    "worker-id",
+			Aliases: []string{"I"},
+			Usage:   "worker id",
+			EnvVars: []string{"WORKER_ID"},
+		}),
+		altsrc.NewStringFlag(&cli.StringFlag{
+			Name:    "api-host",
+			Aliases: []string{"A"},
+			Value:   "127.0.0.1:5000",
+			Usage:   "apiserver host",
+			EnvVars: []string{"API_HOST"},
+		}),
+		altsrc.NewStringFlag(&cli.StringFlag{
+			Name:    "token",
+			Aliases: []string{"T"},
+			Usage:   "auth token",
+			EnvVars: []string{"AUTH_TOKEN"},
+		}),
+	}
 	return &cli.App{
 		Name:    "worker",
 		Usage:   "worker server cli",
 		Version: version.Version,
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:    "api-host",
-				Aliases: []string{"A"},
-				Value:   "127.0.0.1:5000",
-				Usage:   "apiserver host",
-				EnvVars: []string{"API_HOST"},
-			},
-			&cli.StringFlag{
-				Name:    "worker-id",
-				Aliases: []string{"I"},
-				Usage:   "worker id",
-				EnvVars: []string{"WORKER_ID"},
-			},
-			&cli.StringFlag{
-				Name:    "token",
-				Aliases: []string{"T"},
-				Usage:   "auth token",
-				EnvVars: []string{"AUTH_TOKEN"},
-			},
-		},
+		Before:  altsrc.InitInputSourceWithContext(flags, altsrc.NewYamlSourceFromFlagFunc("load")),
+		Flags:   flags,
 		Action: func(c *cli.Context) error {
 			conf := config.NewConfig()
 			conf.WorkerID = c.String("worker-id")

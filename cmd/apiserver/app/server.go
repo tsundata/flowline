@@ -10,6 +10,7 @@ import (
 	"github.com/tsundata/flowline/pkg/util/signal"
 	"github.com/tsundata/flowline/pkg/util/version"
 	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v2/altsrc"
 	"golang.org/x/xerrors"
 	"time"
 )
@@ -23,43 +24,49 @@ func NewAPIServerCommand() *cli.App {
 	cli.VersionPrinter = func(_ *cli.Context) {
 		fmt.Printf("version=%s\n", version.Version)
 	}
+	flags := []cli.Flag{
+		&cli.StringFlag{
+			Name:  "load",
+			Usage: "load yaml config",
+		},
+		altsrc.NewStringFlag(&cli.StringFlag{
+			Name:    "host",
+			Aliases: []string{"H"},
+			Value:   "127.0.0.1",
+			Usage:   "server host",
+			EnvVars: []string{"APISERVER_HOST"},
+		}),
+		altsrc.NewIntFlag(&cli.IntFlag{
+			Name:    "port",
+			Aliases: []string{"P"},
+			Value:   5000,
+			Usage:   "server port",
+			EnvVars: []string{"APISERVER_PORT"},
+		}),
+		altsrc.NewStringFlag(&cli.StringFlag{
+			Name:    "secret",
+			Aliases: []string{"S"},
+			Usage:   "jwt secret",
+			EnvVars: []string{"APISERVER_SECRET"},
+		}),
+		altsrc.NewStringFlag(&cli.StringFlag{
+			Name:    "etcd",
+			Aliases: []string{"E"},
+			Usage:   "etcd server host",
+			EnvVars: []string{"APISERVER_ETCD"},
+		}),
+		altsrc.NewStringFlag(&cli.StringFlag{
+			Name:    "user",
+			Aliases: []string{"U"},
+			Usage:   "user uid",
+		}),
+	}
 	return &cli.App{
 		Name:    "apiserver",
 		Usage:   "api server cli",
 		Version: version.Version,
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:    "host",
-				Aliases: []string{"H"},
-				Value:   "127.0.0.1",
-				Usage:   "server host",
-				EnvVars: []string{"APISERVER_HOST"},
-			},
-			&cli.IntFlag{
-				Name:    "port",
-				Aliases: []string{"P"},
-				Value:   5000,
-				Usage:   "server port",
-				EnvVars: []string{"APISERVER_PORT"},
-			},
-			&cli.StringFlag{
-				Name:    "secret",
-				Aliases: []string{"S"},
-				Usage:   "jwt secret",
-				EnvVars: []string{"APISERVER_SECRET"},
-			},
-			&cli.StringFlag{
-				Name:    "etcd",
-				Aliases: []string{"E"},
-				Usage:   "etcd server host",
-				EnvVars: []string{"APISERVER_ETCD"},
-			},
-			&cli.StringFlag{
-				Name:    "user",
-				Aliases: []string{"U"},
-				Usage:   "user uid",
-			},
-		},
+		Before:  altsrc.InitInputSourceWithContext(flags, altsrc.NewYamlSourceFromFlagFunc("load")),
+		Flags:   flags,
 		Action: func(c *cli.Context) error {
 			conf := config.NewConfig()
 			conf.BuildHandlerChainFunc = apiserver.DefaultBuildHandlerChain
@@ -81,6 +88,9 @@ func NewAPIServerCommand() *cli.App {
 				Aliases: []string{"T"},
 				Usage:   "generate token",
 				Action: func(c *cli.Context) error {
+					if c.String("user") == "" {
+						return xerrors.New("error user")
+					}
 					var jc = jwt.NewWithClaims(
 						jwt.SigningMethodHS512,
 						&meta.UserClaims{
