@@ -121,7 +121,7 @@ func (a *APIServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	a.FullHandlerChain.ServeHTTP(w, r)
 }
 
-//DefaultBuildHandlerChain set default filters
+// DefaultBuildHandlerChain set default filters
 func DefaultBuildHandlerChain(apiHandler http.Handler, config *config.Config) http.Handler {
 	handler := filters.WithCORS(apiHandler, config.CorsAllowedOriginPatterns, nil, nil, nil, "true")
 	authWhiteList := []string{
@@ -133,7 +133,7 @@ func DefaultBuildHandlerChain(apiHandler http.Handler, config *config.Config) ht
 	return handler
 }
 
-//installAPI install routes
+// installAPI install routes
 func installAPI(s *GenericAPIServer, c *config.Config) error {
 	if c.EnableIndex {
 		routes.Index{}.Install(s.Handler.NonRestfulMux)

@@ -24,7 +24,7 @@ Flowline is a workflow system for schedule
 
 ## Requirements
 
-This project requires Go 1.18 or newer
+This project requires Go 1.19 or newer
 
 ## Installation
 

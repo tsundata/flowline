@@ -14,31 +14,31 @@ import (
 //
 // State Machine of a stage's events in scheduler's cache:
 //
+//	+-------------------------------------------+  +----+
+//	|                            Add            |  |    |
+//	|                                           |  |    | Update
+//	+      Assume                Add            v  v    |
 //
-//   +-------------------------------------------+  +----+
-//   |                            Add            |  |    |
-//   |                                           |  |    | Update
-//   +      Assume                Add            v  v    |
-//Initial +--------> Assumed +------------+---> Added <--+
-//   ^                +   +               |       +
-//   |                |   |               |       |
-//   |                |   |           Add |       | Remove
-//   |                |   |               |       |
-//   |                |   |               +       |
-//   +----------------+   +-----------> Expired   +----> Deleted
-//         Forget             Expire
+// Initial +--------> Assumed +------------+---> Added <--+
 //
+//	^                +   +               |       +
+//	|                |   |               |       |
+//	|                |   |           Add |       | Remove
+//	|                |   |               |       |
+//	|                |   |               +       |
+//	+----------------+   +-----------> Expired   +----> Deleted
+//	      Forget             Expire
 //
 // Note that an assumed stage can expire, because if we haven't received Add event notifying us
 // for a while, there might be some problems and we shouldn't keep the stage in cache anymore.
 //
 // Note that "Initial", "Expired", and "Deleted" stages do not actually exist in cache.
 // Based on existing use cases, we are making the following assumptions:
-// - No stage would be assumed twice
-// - A stage could be added without going through scheduler. In this case, we will see Add but not Assume event.
-// - If a stage wasn't added, it wouldn't be removed or updated.
-// - Both "Expired" and "Deleted" are valid end states. In case of some problems, e.g. network issue,
-//   a stage might have changed its state (e.g. added and deleted) without delivering notification to the cache.
+//   - No stage would be assumed twice
+//   - A stage could be added without going through scheduler. In this case, we will see Add but not Assume event.
+//   - If a stage wasn't added, it wouldn't be removed or updated.
+//   - Both "Expired" and "Deleted" are valid end states. In case of some problems, e.g. network issue,
+//     a stage might have changed its state (e.g. added and deleted) without delivering notification to the cache.
 type Cache interface {
 	// WorkerCount returns the number of workers in the cache.
 	// DO NOT use outside of tests.

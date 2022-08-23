@@ -254,7 +254,7 @@ func poll(ctx context.Context, immediate bool, wait WaitWithContextFunc, conditi
 
 // WaitForWithContext continually checks 'fn' as driven by 'wait'.
 //
-// WaitForWithContext gets a channel from 'wait()'', and then invokes 'fn'
+// WaitForWithContext gets a channel from 'wait()”, and then invokes 'fn'
 // once for every value placed on the channel and once more when the
 // channel is closed. If the channel is closed and 'fn'
 // returns false without error, WaitForWithContext returns ErrWaitTimeout.

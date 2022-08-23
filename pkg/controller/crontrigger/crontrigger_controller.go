@@ -646,7 +646,9 @@ func inActiveList(cj meta.Workflow, uid string) bool {
 }
 
 // getNextScheduleTime gets the time of next schedule after last scheduled and before now
-//  it returns nil if no unmet schedule times.
+//
+//	it returns nil if no unmet schedule times.
+//
 // If there are too many (>100) unstarted times, it will raise a warning and still return
 // the list of missed times.
 func getNextScheduleTime(cj meta.Workflow, now time.Time, schedule cron.Schedule) (*time.Time, error) {

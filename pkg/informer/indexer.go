@@ -7,10 +7,10 @@ import "github.com/tsundata/flowline/pkg/util/sets"
 // Delete).
 //
 // There are three kinds of strings here:
-// 1. a storage key, as defined in the Store interface,
-// 2. a name of an index, and
-// 3. an "indexed value", which is produced by an IndexFunc and
-//    can be a field value or any other string computed from the object.
+//  1. a storage key, as defined in the Store interface,
+//  2. a name of an index, and
+//  3. an "indexed value", which is produced by an IndexFunc and
+//     can be a field value or any other string computed from the object.
 type Indexer interface {
 	Store
 	// Index returns the stored objects whose set of indexed values

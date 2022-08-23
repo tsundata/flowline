@@ -68,8 +68,9 @@ type ExtenderPreemptionArgs struct {
 }
 
 // Victims represents:
-//   stages:  a group of stages expected to be preempted.
-//   numPDBViolations: the count of violations of StageDisruptionBudget
+//
+//	stages:  a group of stages expected to be preempted.
+//	numPDBViolations: the count of violations of StageDisruptionBudget
 type Victims struct {
 	Stages           []*meta.Stage
 	NumPDBViolations int64

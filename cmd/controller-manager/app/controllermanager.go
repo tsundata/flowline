@@ -77,7 +77,8 @@ func ResyncPeriod(c *config.Config) func() time.Duration {
 }
 
 // ControllerInitializersFunc is used to create a collection of initializers
-//  given the loopMode.
+//
+//	given the loopMode.
 type ControllerInitializersFunc func() (initializers map[string]InitFunc)
 
 // ControllerContext defines the context object for controller

@@ -6,12 +6,14 @@ import "sync"
 // by caching created but unused items for later reuse, relieving pressure on the garbage collector.
 //
 // Usage:
-//  memoryAllocator := runtime.AllocatorPool.Get().(*runtime.Allocator)
-//  defer runtime.AllocatorPool.Put(memoryAllocator)
+//
+//	memoryAllocator := runtime.AllocatorPool.Get().(*runtime.Allocator)
+//	defer runtime.AllocatorPool.Put(memoryAllocator)
 //
 // A note for future:
-//  consider introducing multiple pools for storing buffers of different sizes
-//  perhaps this could allow us to be more efficient.
+//
+//	consider introducing multiple pools for storing buffers of different sizes
+//	perhaps this could allow us to be more efficient.
 var AllocatorPool = sync.Pool{
 	New: func() interface{} {
 		return &Allocator{}

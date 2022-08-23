@@ -148,11 +148,11 @@ func newQueuedStageInfoForLookup(stage *meta.Stage, plugins ...string) *framewor
 // The head of PriorityQueue is the highest priority pending stage. This structure
 // has two sub queues and a additional data structure, namely: activeQ,
 // backoffQ and unschedulableStages.
-// - activeQ holds stages that are being considered for scheduling.
-// - backoffQ holds stages that moved from unschedulableStages and will move to
-//   activeQ when their backoff periods complete.
-// - unschedulableStages holds stages that were already attempted for scheduling and
-//   are currently determined to be unschedulable.
+//   - activeQ holds stages that are being considered for scheduling.
+//   - backoffQ holds stages that moved from unschedulableStages and will move to
+//     activeQ when their backoff periods complete.
+//   - unschedulableStages holds stages that were already attempted for scheduling and
+//     are currently determined to be unschedulable.
 type PriorityQueue struct {
 	// StageNominator abstracts the operations to maintain nominated Stages.
 	framework.StageNominator
