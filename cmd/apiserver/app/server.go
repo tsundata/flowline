@@ -20,8 +20,8 @@ func NewAPIServerCommand() *cli.App {
 		Aliases: []string{"V"},
 		Usage:   "print only the version",
 	}
-	cli.VersionPrinter = func(cCtx *cli.Context) {
-		fmt.Printf("version=%s\n", cCtx.App.Version)
+	cli.VersionPrinter = func(_ *cli.Context) {
+		fmt.Printf("version=%s\n", version.Version)
 	}
 	return &cli.App{
 		Name:    "apiserver",
