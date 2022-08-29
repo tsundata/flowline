@@ -2,7 +2,7 @@ package scheduler
 
 import (
 	"bytes"
-	"encoding/json"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/scheduler/framework"
 	"github.com/tsundata/flowline/pkg/scheduler/framework/config"
@@ -276,6 +276,7 @@ func (h *HTTPExtender) hasManagedResources(_ interface{}) bool {
 
 // Helper function to send messages to the extender
 func (h *HTTPExtender) send(action string, args interface{}, result interface{}) error {
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	out, err := json.Marshal(args)
 	if err != nil {
 		return err

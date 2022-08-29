@@ -2,7 +2,7 @@ package events
 
 import (
 	"context"
-	"encoding/json"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/tsundata/flowline/pkg/api/client"
 	v1 "github.com/tsundata/flowline/pkg/api/client/core/v1"
 	eventsv1 "github.com/tsundata/flowline/pkg/api/client/events/v1"
@@ -208,6 +208,7 @@ func recordEvent(sink EventSink, event *meta.Event) (*meta.Event, bool) {
 }
 
 func createPatchBytesForSeries(event *meta.Event) ([]byte, error) {
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	// DeepCopyObject
 	oldEvent := event
 	oldEvent.Series = nil

@@ -19,7 +19,7 @@ func (d *DefaultScore) Name() string {
 	return Name
 }
 
-func (d *DefaultScore) Score(ctx context.Context, state *framework.CycleState, p *meta.Stage, workerName string) (int64, *framework.Status) {
+func (d *DefaultScore) Score(ctx context.Context, state *framework.CycleState, p *meta.Stage, workerUID string) (int64, *framework.Status) {
 	return 1, nil
 }
 

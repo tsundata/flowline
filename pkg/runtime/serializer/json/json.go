@@ -2,7 +2,7 @@ package json
 
 import (
 	"bytes"
-	"encoding/json"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/constant"
@@ -59,6 +59,7 @@ func identifier(options SerializerOptions) runtime.Identifier {
 		"pretty": strconv.FormatBool(options.Pretty),
 		"strict": strconv.FormatBool(options.Strict),
 	}
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	identifier, err := json.Marshal(result)
 	if err != nil {
 		flog.Fatalf("Failed marshaling identifier for json Serializer: %v", err)
@@ -142,11 +143,13 @@ func (s *Serializer) Encode(obj runtime.Object, w io.Writer) error {
 }
 
 func (s *Serializer) doEncode(obj runtime.Object, w io.Writer) error {
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	encoder := json.NewEncoder(w)
 	return encoder.Encode(obj)
 }
 
 func (s *Serializer) unmarshal(into runtime.Object, _, originalData []byte) (strictErrs []error, err error) {
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	var strictJSONErrs []error
 	err = json.Unmarshal(originalData, &into)
 	if err != nil {
@@ -203,6 +206,7 @@ func (SimpleMetaFactory) Interpret(data []byte) (*schema.GroupVersionKind, error
 		// +optional
 		Kind string `json:"kind,omitempty"`
 	}{}
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	if err := json.Unmarshal(data, &findKind); err != nil {
 		return nil, xerrors.Errorf("couldn't get version/kind; json parse error: %v", err)
 	}

@@ -1,7 +1,6 @@
 package watch
 
 import (
-	"encoding/json"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/runtime"
 	"github.com/tsundata/flowline/pkg/runtime/serializer/streaming"
@@ -32,6 +31,6 @@ func (e *Encoder) Encode(event *watch.Event) error {
 	}
 	return e.encoder.Encode(&meta.WatchEvent{
 		Type:   string(event.Type),
-		Object: meta.RawExtension{Raw: json.RawMessage(data)},
+		Object: meta.RawExtension{Raw: data},
 	})
 }

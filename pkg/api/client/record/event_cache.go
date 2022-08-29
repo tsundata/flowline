@@ -1,9 +1,9 @@
 package record
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/golang/groupcache/lru"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/tsundata/flowline/pkg/api/client/record/util"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/util/clock"
@@ -332,6 +332,7 @@ func (e *eventLogger) eventObserve(newEvent *meta.Event, key string) (*meta.Even
 		eventCopy2.LastTimestamp = &lt
 		eventCopy2.Message = ""
 
+		var json = jsoniter.ConfigCompatibleWithStandardLibrary
 		newData, _ := json.Marshal(event)
 		oldData, _ := json.Marshal(eventCopy2)
 		patch, err = util.CreateTwoWayMergePatch(oldData, newData, event)
