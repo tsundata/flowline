@@ -50,7 +50,7 @@ func NewControllerManagerCommand() *cli.App {
 		Flags:                flags,
 		Action: func(c *cli.Context) error {
 			conf := config.NewConfig()
-			conf.RestConfig.Host = c.String("api-url")
+			conf.RestConfig.Host = c.String("api-host")
 			conf.RestConfig.BearerToken = c.String("token")
 			return Run(conf.Complete(), signal.SetupSignalHandler())
 		},
