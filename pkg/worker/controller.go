@@ -215,8 +215,7 @@ func (jm *Controller) execute(ctx context.Context, stageKey string) (bool, error
 		return false, err
 	}
 
-	jm.recorder.Eventf(stageCopy, meta.EventTypeNormal, "SuccessfulExecute", "Stage %s execute success on worker %s", stageCopy.UID, jm.config.WorkerID)
-	jm.recorder.Eventf(stageCopy, meta.EventTypeNormal, "ExecuteResult", "Stage % run result %s on worker %+v", stageCopy.UID, stageCopy.Output)
+	jm.recorder.Eventf(stageCopy, meta.EventTypeNormal, "SuccessfulExecute", "Stage %s execute success (result: %+v) on worker %s", stageCopy.UID, stageCopy.Output, jm.config.WorkerID)
 
 	return true, nil
 }
