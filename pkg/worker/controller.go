@@ -216,6 +216,7 @@ func (jm *Controller) execute(ctx context.Context, stageKey string) (bool, error
 	}
 
 	jm.recorder.Eventf(stageCopy, meta.EventTypeNormal, "SuccessfulExecute", "Stage %s execute success on worker %s", stageCopy.UID, jm.config.WorkerID)
+	jm.recorder.Eventf(stageCopy, meta.EventTypeNormal, "ExecuteResult", "Stage % run result %s on worker %+v", stageCopy.UID, stageCopy.Output)
 
 	return true, nil
 }
@@ -229,8 +230,12 @@ func (jm *Controller) executeCode(_ context.Context, stage *meta.Stage) (result 
 	}()
 	result = stage
 
+	variables := make(map[string]string)
+	for _, variable := range stage.Variables {
+		variables[variable.Name] = variable.Value
+	}
 	rt := sandbox.Factory(sandbox.RuntimeType(result.Runtime))
-	out, err := rt.Run(result.Code, stage.Input)
+	out, err := rt.Run(result.Code, stage.Input, variables)
 	if err != nil {
 		flog.Error(err)
 		result.State = meta.StageFailed

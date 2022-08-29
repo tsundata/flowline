@@ -8,8 +8,8 @@ import (
 func TestRuntime(t *testing.T) {
 	js := NewRuntime()
 	out, err := js.Run(`
-parseInt(input() + 1)
-`, 1000)
+parseInt(input('number') + 1)
+`, 1000, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

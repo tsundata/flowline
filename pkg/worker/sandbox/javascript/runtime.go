@@ -21,7 +21,8 @@ func (r *Runtime) Name() string {
 	return "javascript"
 }
 
-func (r *Runtime) Run(code string, input interface{}) (output interface{}, err error) {
+func (r *Runtime) Run(code string, input interface{}, variables map[string]string) (output interface{}, err error) {
+	// input function
 	err = r.vm.Set("input", func(call otto.FunctionCall) otto.Value {
 		val, err := r.vm.ToValue(input)
 		t := call.Argument(0).String()
@@ -50,6 +51,21 @@ func (r *Runtime) Run(code string, input interface{}) (output interface{}, err e
 	if err != nil {
 		return nil, err
 	}
+	// variable function
+	err = r.vm.Set("variable", func(call otto.FunctionCall) otto.Value {
+		key := call.Argument(0).String()
+		value, ok := variables[key]
+		if !ok {
+			return otto.NullValue()
+		}
+
+		val, _ := otto.ToValue(value)
+		return val
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	val, err := r.vm.Run(code)
 	if err != nil {
 		return nil, err
