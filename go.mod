@@ -11,7 +11,7 @@ require (
 	github.com/go-openapi/spec v0.20.7
 	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
-	github.com/google/go-cmp v0.5.8
+	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/heimdalr/dag v1.2.1
