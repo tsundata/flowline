@@ -54,7 +54,7 @@ type Type struct {
 	// processing set.
 	queue []t
 
-	// dirty defines all of the items that need to be processed.
+	// dirty defines all the items that need to be processed.
 	dirty set
 
 	// Things that are currently being processed are in the processing set.

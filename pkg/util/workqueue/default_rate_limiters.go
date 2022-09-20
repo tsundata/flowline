@@ -13,7 +13,7 @@ type RateLimiter interface {
 	// Forget indicates that an item is finished being retried.  Doesn't matter whether it's for failing
 	// or for success, we'll stop tracking it
 	Forget(item interface{})
-	// NumRequeues returns back how many failures the item has had
+	// NumRequeues returns how many failures the item has had
 	NumRequeues(item interface{}) int
 }
 
@@ -22,7 +22,7 @@ type RateLimiter interface {
 func DefaultControllerRateLimiter() RateLimiter {
 	return NewMaxOfRateLimiter(
 		NewItemExponentialFailureRateLimiter(5*time.Millisecond, 1000*time.Second),
-		// 10 qps, 100 bucket size.  This is only for retry speed and its only the overall factor (not per item)
+		// 10 qps, 100 bucket size.  This is only for retry speed, and it's only the overall factor (not per item)
 		&BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(10), 100)},
 	)
 }

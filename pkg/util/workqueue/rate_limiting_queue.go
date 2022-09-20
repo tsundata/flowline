@@ -12,7 +12,7 @@ type RateLimitingInterface interface {
 	// still have to call `Done` on the queue.
 	Forget(item interface{})
 
-	// NumRequeues returns back how many times the item was requeued
+	// NumRequeues returns how many times the item was requeued
 	NumRequeues(item interface{}) int
 }
 

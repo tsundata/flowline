@@ -85,9 +85,8 @@ func NewAPIServerCommand() *cli.App {
 		},
 		Commands: []*cli.Command{
 			{
-				Name:    "token",
-				Aliases: []string{"T"},
-				Usage:   "generate token",
+				Name:  "token",
+				Usage: "generate token",
 				Action: func(c *cli.Context) error {
 					if c.String("user") == "" {
 						return xerrors.New("error user")

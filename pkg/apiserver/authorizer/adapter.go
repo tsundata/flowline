@@ -7,6 +7,7 @@ import (
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver/registry"
 	"github.com/tsundata/flowline/pkg/apiserver/registry/rest"
+	"github.com/tsundata/flowline/pkg/util/flog"
 	"strings"
 )
 
@@ -64,7 +65,10 @@ func (a *Adapter) loadPolicy(policy meta.Policy, model casbinModel.Model) {
 		lineText.WriteString(", ")
 		lineText.WriteString(policy.V5)
 	}
-	persist.LoadPolicyLine(lineText.String(), model)
+	err := persist.LoadPolicyLine(lineText.String(), model)
+	if err != nil {
+		flog.Error(err)
+	}
 }
 
 func (a *Adapter) SavePolicy(model casbinModel.Model) error {
