@@ -30,14 +30,14 @@ jobs:
     ### Lint ###
 
     - name: golangci-lint
-      uses: golangci/golangci-lint-action@v2
+      uses: golangci/golangci-lint-action@v3
       with:
-        version: v1.48.0
+        version: v1.51.1
 
     ### Build ###
 
     - name: Install GoReleaser
-      uses: goreleaser/goreleaser-action@v2
+      uses: goreleaser/goreleaser-action@v4
       with:
         version: latest
         install-only: true

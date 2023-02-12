@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Go 1.x
         uses: actions/setup-go@v3
@@ -20,14 +20,14 @@ jobs:
       ### Lint ###
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
+        uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.48.0
+          version: v1.51.1
 
       ### Release ###
 
       - name: Install GoReleaser
-        uses: goreleaser/goreleaser-action@v2
+        uses: goreleaser/goreleaser-action@v4
         with:
           version: latest
           install-only: true
