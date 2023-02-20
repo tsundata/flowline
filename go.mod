@@ -9,7 +9,7 @@ require (
 	github.com/emicklei/go-restful/v3 v3.10.1
 	github.com/evanphx/json-patch/v5 v5.6.0
 	github.com/go-openapi/spec v0.20.8
-	github.com/golang-jwt/jwt/v4 v4.4.3
+	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
