@@ -17,7 +17,7 @@ require (
 	github.com/heimdalr/dag v1.2.1
 	github.com/json-iterator/go v1.1.12
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
-	github.com/robertkrimen/otto v0.0.0-20211024170158-b87d35c0b86f
+	github.com/robertkrimen/otto v0.2.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/stretchr/testify v1.8.1
 	github.com/urfave/cli/v2 v2.24.4
