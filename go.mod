@@ -22,7 +22,7 @@ require (
 	github.com/stretchr/testify v1.8.2
 	github.com/urfave/cli/v2 v2.25.1
 	go.etcd.io/etcd/api/v3 v3.5.7
-	go.etcd.io/etcd/client/pkg/v3 v3.5.7
+	go.etcd.io/etcd/client/pkg/v3 v3.5.8
 	go.etcd.io/etcd/client/v3 v3.5.7
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.7.0
