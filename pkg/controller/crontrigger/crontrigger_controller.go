@@ -519,8 +519,8 @@ func (jm *Controller) syncCronJob(ctx context.Context, cronJob *meta.Workflow, j
 	if err != nil {
 		// this is likely a user error in defining the spec value
 		// we should log the error and not reconcile this crontrigger until an update to spec
-		flog.Errorf("unparseable schedule: %q : %s", cronJob.TriggerParam, err)
-		jm.recorder.Eventf(cronJob, meta.EventTypeWarning, "UnparseableScheule", "unparseable schedule: %q : %s", cronJob.TriggerParam, err)
+		flog.Errorf("unparseable schedule form crontrigger: %q : %s", cronJob.TriggerParam, err)
+		jm.recorder.Eventf(cronJob, meta.EventTypeWarning, "UnparseableScheule", "unparseable schedule form crontrigger: %q : %s", cronJob.TriggerParam, err)
 		return cronJob, nil, updateStatus, nil
 	}
 

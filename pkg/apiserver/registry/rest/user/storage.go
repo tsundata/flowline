@@ -217,56 +217,57 @@ func (r *subResource) userLogin(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	if list, ok := obj.(*meta.UserList); ok {
-		var user meta.User
-		for _, item := range list.Items {
-			if item.Name == login.Username {
-				user = item
-				break
-			}
-		}
-		if user.Name == "" {
-			_ = resp.WriteError(http.StatusBadRequest, xerrors.New("username or password error"))
-			return
-		}
-
-		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(login.Password))
-		if err != nil {
-			_ = resp.WriteError(http.StatusBadRequest, xerrors.New("username or password error"))
-			return
-		}
-		var jc = jwt.NewWithClaims(
-			jwt.SigningMethodHS512,
-			&meta.UserClaims{
-				RegisteredClaims: &jwt.RegisteredClaims{
-					ID:        user.UID,
-					ExpiresAt: jwt.NewNumericDate(time.Now().Add(8 * time.Hour)),
-					NotBefore: jwt.NewNumericDate(time.Now()),
-				},
-			},
-		)
-		if r.store.config.JWTSecret == "" {
-			_ = resp.WriteError(http.StatusBadRequest, xerrors.New("token error"))
-			return
-		}
-
-		secret := []byte(r.store.config.JWTSecret)
-		token, err := jc.SignedString(secret)
-		if err != nil {
-			flog.Error(err)
-			_ = resp.WriteError(http.StatusBadRequest, xerrors.New("token error"))
-			return
-		}
-
-		_ = resp.WriteEntity(meta.UserSession{UserUID: user.UID, Token: token})
-		return
-	} else {
+	list, ok := obj.(*meta.UserList)
+	if !ok {
 		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("user error"))
 		return
 	}
+
+	var user meta.User
+	for _, item := range list.Items {
+		if item.Name == login.Username {
+			user = item
+			break
+		}
+	}
+	if user.Name == "" {
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("username or password error"))
+		return
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(login.Password))
+	if err != nil {
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("username or password error"))
+		return
+	}
+	var jc = jwt.NewWithClaims(
+		jwt.SigningMethodHS512,
+		&meta.UserClaims{
+			RegisteredClaims: &jwt.RegisteredClaims{
+				ID:        user.UID,
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(8 * time.Hour)),
+				NotBefore: jwt.NewNumericDate(time.Now()),
+			},
+		},
+	)
+	if r.store.config.JWTSecret == "" {
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("token error"))
+		return
+	}
+
+	secret := []byte(r.store.config.JWTSecret)
+	token, err := jc.SignedString(secret)
+	if err != nil {
+		flog.Error(err)
+		_ = resp.WriteError(http.StatusBadRequest, xerrors.New("token error"))
+		return
+	}
+
+	_ = resp.WriteEntity(meta.UserSession{UserUID: user.UID, Token: token})
+	return
 }
 
-func (r *subResource) userLogout(req *restful.Request, resp *restful.Response) {
+func (r *subResource) userLogout(req *restful.Request, _ *restful.Response) {
 	obj := meta.UserSession{}
 	err := req.ReadEntity(&obj)
 	if err != nil {

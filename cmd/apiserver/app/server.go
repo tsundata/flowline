@@ -52,6 +52,7 @@ func NewAPIServerCommand() *cli.App {
 		altsrc.NewStringFlag(&cli.StringFlag{
 			Name:    "etcd",
 			Aliases: []string{"E"},
+			Value:   "127.0.0.1:2379",
 			Usage:   "etcd server host",
 			EnvVars: []string{"APISERVER_ETCD"},
 		}),
