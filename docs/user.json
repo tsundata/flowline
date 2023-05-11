@@ -1,0 +1,12 @@
+{
+  "name": "admin",
+  "uid": "e7ce2504-d41c-4657-992b-a1d02c11bb33",
+  "resourceVersion": "1",
+  "creationTimestamp": "2023-05-10T15:27:20.491782+08:00",
+  "password": "$2a$10$6zapAh8WGTswXHzioeQa1eBI2Lu63RqD7Xr7ZT0wuvNVpUymZzKcS",
+  "email": "admin@dev.local",
+  "active": true,
+  "roles": [
+    "admin"
+  ]
+}
