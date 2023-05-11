@@ -264,7 +264,6 @@ func (r *subResource) userLogin(req *restful.Request, resp *restful.Response) {
 	}
 
 	_ = resp.WriteEntity(meta.UserSession{UserUID: user.UID, Token: token})
-	return
 }
 
 func (r *subResource) userLogout(req *restful.Request, _ *restful.Response) {
