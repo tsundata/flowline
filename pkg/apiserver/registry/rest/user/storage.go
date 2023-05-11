@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/emicklei/go-restful/v3"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver/authorizer"
 	"github.com/tsundata/flowline/pkg/apiserver/config"

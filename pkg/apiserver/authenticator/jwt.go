@@ -2,7 +2,7 @@ package authenticator
 
 import (
 	"context"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver/authenticator/user"
 	"golang.org/x/xerrors"

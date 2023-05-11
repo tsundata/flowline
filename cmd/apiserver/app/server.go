@@ -2,7 +2,7 @@ package app
 
 import (
 	"fmt"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/tsundata/flowline/pkg/api/meta"
 	"github.com/tsundata/flowline/pkg/apiserver"
 	"github.com/tsundata/flowline/pkg/apiserver/config"
