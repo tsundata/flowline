@@ -68,13 +68,6 @@ builds:
         -X github.com/tsundata/flowline/pkg/util/version.BuildTime={{ .Timestamp }}
         #-X github.com/tsundata/flowline/pkg/util/version.GoVersion={{ replace .Env.GOVERSION " " "_" }}
 
-archives:
-  - replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-      amd64: x86_64
-
 checksum:
   name_template: 'checksums.txt'
 
