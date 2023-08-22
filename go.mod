@@ -14,7 +14,7 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.1
 	github.com/gorilla/mux v1.8.0
-	github.com/heimdalr/dag v1.2.1
+	github.com/heimdalr/dag v1.3.1
 	github.com/json-iterator/go v1.1.12
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
 	github.com/robertkrimen/otto v0.2.1
