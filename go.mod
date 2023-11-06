@@ -13,7 +13,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.4.0
-	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/mux v1.8.1
 	github.com/heimdalr/dag v1.3.1
 	github.com/json-iterator/go v1.1.12
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
