@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df
-	github.com/casbin/casbin/v2 v2.77.2
+	github.com/casbin/casbin/v2 v2.79.0
 	github.com/emicklei/go-restful-openapi/v2 v2.9.1
 	github.com/emicklei/go-restful/v3 v3.11.0
 	github.com/evanphx/json-patch/v5 v5.7.0
@@ -34,7 +34,7 @@ require (
 
 require (
 	github.com/BurntSushi/toml v1.3.2 // indirect
-	github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible // indirect
+	github.com/casbin/govaluate v1.1.0 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.3.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
@@ -52,9 +52,6 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/tidwall/gjson v1.14.4 // indirect
-	github.com/tidwall/match v1.1.1 // indirect
-	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
